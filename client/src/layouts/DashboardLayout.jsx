@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, NavLink, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import {
   LayoutDashboard, GraduationCap, Code2, Layers, MessageSquare,
@@ -36,6 +36,10 @@ export default function DashboardLayout() {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
+
+  if (user && user.role === 'admin') {
+    return <Navigate to="/admin/dashboard" replace />;
+  }
 
   const handleLogout = () => {
     dispatch(logoutThunk());

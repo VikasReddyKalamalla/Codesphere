@@ -33,63 +33,70 @@ const getDashboard = async () => {
 
   const [
     totalUsers,
-    activeUsers,
-    inactiveUsers,
     students,
     instructors,
-    mentors,
-    recruiters,
-    organizations,
-    newUsersToday,
-    newUsersThisWeek,
-    newUsersThisMonth,
-    usersCurrentlyOnline,
-    certificatesIssued,
+    admins,
+    totalCourses,
     totalSandboxProjects,
-    totalCodexWorkspaces,
-    progressAgg,
-    streakAgg,
     pendingApplications,
     pendingReports,
     totalRevenue,
+    recentSubmissions,
+    recentAlerts,
+    activeCollabs,
   ] = await Promise.all([
     User.countDocuments(),
-    User.countDocuments({ isActive: true }),
-    User.countDocuments({ isActive: false }),
     User.countDocuments({ role: 'student' }),
     User.countDocuments({ role: 'instructor' }),
-    User.countDocuments({ role: 'mentor' }),
-    User.countDocuments({ role: 'recruiter' }),
-    User.countDocuments({ role: 'organization' }),
-    User.countDocuments({ createdAt: { $gte: startOfDay } }),
-    User.countDocuments({ createdAt: { $gte: startOfWeek } }),
-    User.countDocuments({ createdAt: { $gte: startOfMonth } }),
-    Presence.countDocuments({ isOnline: true }),
-    Certificate.countDocuments(),
+    User.countDocuments({ role: 'admin' }),
+    LearningPath.countDocuments(),
     SandboxProject.countDocuments(),
-    Workspace.countDocuments(),
-    Progress.aggregate([
-      { $group: { _id: null, avgProgress: { $avg: '$completionPercentage' } } }
-    ]),
-    User.aggregate([
-      { $group: { _id: null, avgStreak: { $avg: '$dayStreak' } } }
-    ]),
     require('../models/InstructorApplication').countDocuments({ status: 'Pending' }),
     require('../models/Report').countDocuments({ status: 'pending' }),
     Payment.aggregate([
       { $match: { status: 'completed' } },
       { $group: { _id: null, total: { $sum: '$amount' } } },
     ]),
+    require('../models/SandboxSubmission')
+      .find()
+      .sort({ submittedAt: -1 })
+      .limit(4)
+      .populate('projectId', 'title')
+      .populate('userId', 'fullName'),
+    AdminLog.find()
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .populate('admin', 'fullName'),
+    Workspace.countDocuments(),
   ]);
 
-  const averageLearningProgress = progressAgg[0]?.avgProgress || 0;
-  const averageStreak = streakAgg[0]?.avgStreak || 0;
+  // Daily registrations for the last 7 days (User Analytics)
+  const registrationStats = [];
+  for (let i = 6; i >= 0; i--) {
+    const dayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+    const dayEnd = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i + 1);
+    const count = await User.countDocuments({ createdAt: { $gte: dayStart, $lt: dayEnd } });
+    const label = dayStart.toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+    registrationStats.push({ label, count });
+  }
 
+  // Get system health snapshot dynamically
+  const healthService = require('./adminHealth.service');
+  let health = null;
+  try {
+    health = await healthService.getSystemHealth();
+  } catch (err) {
+    // fallback
+  }
+
+  // Monthly growth calculation
   const previousMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const prevUsersCount = await User.countDocuments({
     createdAt: { $gte: previousMonthStart, $lt: startOfMonth },
   });
-
+  const newUsersThisMonth = await User.countDocuments({
+    createdAt: { $gte: startOfMonth },
+  });
   const monthlyGrowth =
     prevUsersCount > 0
       ? Number((((newUsersThisMonth - prevUsersCount) / prevUsersCount) * 100).toFixed(1))
@@ -97,25 +104,31 @@ const getDashboard = async () => {
 
   return {
     totalUsers,
-    activeUsers,
-    inactiveUsers,
     students,
     instructors,
-    mentors,
-    recruiters,
-    organizations,
-    newUsersToday,
-    newUsersThisWeek,
-    newUsersThisMonth,
-    usersCurrentlyOnline,
-    averageLearningProgress: Number(averageLearningProgress.toFixed(1)),
-    averageStreak: Number(averageStreak.toFixed(1)),
-    certificatesIssued,
+    admins,
+    totalCourses,
     totalSandboxProjects,
-    totalCodexWorkspaces,
-    pendingApplications,
-    pendingReports,
     totalRevenue: totalRevenue[0]?.total || 0,
+    activeCollabs,
+    registrationStats,
+    health,
+    pending: {
+      applications: pendingApplications,
+      reports: pendingReports,
+      courses: await LearningPath.countDocuments({ isPublished: false }),
+      events: await Event.countDocuments({ status: 'pending' }),
+    },
+    recentSubmissions: recentSubmissions.map(s => ({
+      a: s.projectId?.title || 'React Project',
+      c: s.userId?.fullName || 'John Doe',
+      s: new Date(s.submittedAt).toLocaleDateString('en-US')
+    })),
+    recentAlerts: recentAlerts.map(a => ({
+      text: a.action,
+      sub: a.module,
+      time: new Date(a.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    })),
     monthlyGrowth,
   };
 };

@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   LayoutDashboard, Users, GraduationCap, Award, ShieldAlert,
   Settings, BarChart2, Bell, Radio, EyeOff, ClipboardList,
-  Activity, ArrowLeft, LogOut
+  Activity, LogOut
 } from 'lucide-react';
 import { logoutThunk } from '@features/auth/redux/authThunk.js';
 import toast from 'react-hot-toast';
@@ -92,16 +92,7 @@ export default function AdminLayout() {
             );
           })}
 
-          {/* Quick exit to Student Dashboard */}
-          <div className="mt-4 pt-4 border-t border-slate-150">
-            <NavLink
-              to="/dashboard"
-              className="flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[10.5px] font-bold tracking-wide uppercase transition-colors text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-            >
-              <ArrowLeft size={15} className="shrink-0" />
-              {sidebarOpen && <span>Back to Dashboard</span>}
-            </NavLink>
-          </div>
+
         </nav>
 
         {/* Profile and Logout Bottom Block */}
