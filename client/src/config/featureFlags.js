@@ -1,0 +1,10 @@
+export const FEATURE_FLAGS = {
+  AI_ENABLED: true,
+  CHAT_ENABLED: true,
+  SANDBOX_ENABLED: true,
+  PAYMENTS_ENABLED: false,
+  ANALYTICS_ENABLED: true,
+  CERTIFICATES_ENABLED: true,
+  LIVE_SESSIONS_ENABLED: true
+};
+export default FEATURE_FLAGS;

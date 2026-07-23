@@ -1,0 +1,4 @@
+/* Auth feature custom overrides if necessary */
+.auth-illustration-bg {
+  background: radial-gradient(circle, rgba(99,102,241,0.1) 0%, rgba(255,255,255,0) 70%);
+}

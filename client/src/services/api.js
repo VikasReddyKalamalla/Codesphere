@@ -1,0 +1,17 @@
+export const API_ENDPOINTS = {
+  AUTH: '/auth',
+  DASHBOARD: '/dashboard',
+  LEARNING: '/learning',
+  RESOURCES: '/resources',
+  COMMUNITIES: '/communities',
+  SESSIONS: '/sessions',
+  EVENTS: '/events',
+  CODEX: '/codex',
+  SANDBOX: '/sandbox',
+  TESTS: '/tests',
+  PROFILE: '/profile',
+  INSTRUCTOR: '/instructor',
+  SUBSCRIPTION: '/subscription',
+  NOTIFICATIONS: '/notifications',
+  ADMIN: '/admin',
+};

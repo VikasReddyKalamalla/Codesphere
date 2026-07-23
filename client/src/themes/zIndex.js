@@ -1,0 +1,11 @@
+export const Z_INDEX = {
+  BASE: 0,
+  DROPDOWN: 1000,
+  NAVBAR: 1010,
+  SIDEBAR: 1020,
+  MODAL: 1050,
+  TOOLTIP: 1080,
+  TOAST: 1100,
+  LOADING: 1200
+};
+export default Z_INDEX;

@@ -1,0 +1,39 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "baseUrl": ".",
+    "paths": {
+      "@/*":             ["src/*"],
+      "@app/*":          ["src/app/*"],
+      "@assets/*":       ["src/assets/*"],
+      "@components/*":   ["src/components/*"],
+      "@features/*":     ["src/features/*"],
+      "@layouts/*":      ["src/layouts/*"],
+      "@routes/*":       ["src/routes/*"],
+      "@redux/*":        ["src/redux/*"],
+      "@services/*":     ["src/services/*"],
+      "@socket/*":       ["src/socket/*"],
+      "@hooks/*":        ["src/hooks/*"],
+      "@context/*":      ["src/context/*"],
+      "@constants/*":    ["src/constants/*"],
+      "@utils/*":        ["src/utils/*"],
+      "@validations/*":  ["src/validations/*"],
+      "@styles/*":       ["src/styles/*"],
+      "@themes/*":       ["src/themes/*"],
+      "@config/*":       ["src/config/*"],
+      "@data/*":         ["src/data/*"],
+      "@helpers/*":      ["src/helpers/*"],
+      "@guards/*":       ["src/guards/*"],
+      "@providers/*":    ["src/providers/*"]
+    },
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "strict": false
+  },
+  "include": ["src/**/*", "vite.config.js"],
+  "exclude": ["node_modules", "dist", "build"]
+}

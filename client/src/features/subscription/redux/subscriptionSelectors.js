@@ -1,0 +1,14 @@
+export const selectPlans = (state) => state.subscription?.plans || [];
+export const selectCurrentSubscription = (state) => state.subscription?.currentSubscription || null;
+export const selectInvoices = (state) => state.subscription?.invoices || [];
+export const selectUsageData = (state) => state.subscription?.usageData || null;
+export const selectActiveCoupons = (state) => state.subscription?.activeCoupons || [];
+export const selectReferralData = (state) => state.subscription?.referralData || null;
+export const selectOrganizationData = (state) => state.subscription?.organizationData || null;
+export const selectSelectedBillingCycle = (state) => state.subscription?.selectedBillingCycle || 'monthly';
+export const selectCurrency = (state) => state.subscription?.currency || 'INR';
+export const selectActiveViewTab = (state) => state.subscription?.activeViewTab || 'overview';
+export const selectAppliedCoupon = (state) => state.subscription?.appliedCoupon || null;
+export const selectCheckoutModalOpen = (state) => state.subscription?.checkoutModalOpen || false;
+export const selectSelectedPlanForCheckout = (state) => state.subscription?.selectedPlanForCheckout || null;
+export const selectSubscriptionStatus = (state) => state.subscription?.status || 'idle';

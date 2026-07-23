@@ -1,0 +1,4 @@
+/* Custom css rules for video meetings */
+.meeting-viewport {
+  background: radial-gradient(circle, rgba(15,23,42,1) 0%, rgba(2,6,23,1) 100%);
+}

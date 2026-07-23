@@ -1,0 +1,19 @@
+import apiClient from '@services/axios.js';
+
+export const fetchTemplatesAPI          = async ()         => (await apiClient.get('/sandbox/templates')).data;
+export const runCompileAPI              = async (payload)  => (await apiClient.post('/sandbox/run', payload)).data;
+export const fetchSandboxProjectsAPI    = async ()         => (await apiClient.get('/sandbox')).data;
+export const fetchMySandboxProjectsAPI  = async ()         => (await apiClient.get('/sandbox/my')).data;
+export const fetchBookmarkedSandboxProjectsAPI = async ()  => (await apiClient.get('/sandbox/my/bookmarks')).data;
+export const fetchMySubmissionsAPI      = async ()         => (await apiClient.get('/sandbox/my/submissions')).data;
+export const fetchProjectDetailsAPI     = async (id)       => (await apiClient.get(`/sandbox/${id}`)).data;
+export const fetchProjectStepsAPI       = async (id)       => (await apiClient.get(`/sandbox/${id}/steps`)).data;
+export const startProjectAPI            = async (id)       => (await apiClient.post(`/sandbox/${id}/start`)).data;
+export const fetchProgressAPI           = async (id)       => (await apiClient.get(`/sandbox/${id}/progress`)).data;
+export const updateProgressAPI          = async (id, data) => (await apiClient.put(`/sandbox/${id}/progress`, data)).data;
+export const addBookmarkAPI             = async (id)       => (await apiClient.post(`/sandbox/${id}/bookmark`)).data;
+export const removeBookmarkAPI          = async (id)       => (await apiClient.delete(`/sandbox/${id}/bookmark`)).data;
+export const getBookmarkStatusAPI       = async (id)       => (await apiClient.get(`/sandbox/${id}/bookmark-status`)).data;
+export const submitProjectAPI           = async (id, data) => (await apiClient.post(`/sandbox/${id}/submission`, data)).data;
+export const resetProgressAPI           = async (id)       => (await apiClient.post(`/sandbox/${id}/reset`)).data;
+export const fetchAllMyProgressAPI      = async ()         => (await apiClient.get('/sandbox/my/progress')).data;

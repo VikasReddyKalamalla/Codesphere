@@ -1,0 +1,4 @@
+export const ERROR_CODES = {
+  UNAUTHORIZED: 401,
+  COMPILER_TIMEOUT: 504,
+};

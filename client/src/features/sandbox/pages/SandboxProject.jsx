@@ -1,0 +1,1007 @@
+import React, { useState, useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import {
+  Compass, Briefcase, Bookmark, ClipboardList, Clock, ArrowRight, ChevronLeft,
+  BookOpen, Lock, CheckCircle2, Play, RotateCcw, Trash2, Plus, Minus, Sun, Moon,
+  Sparkles, Share2, AlertTriangle, Star, CheckSquare, HelpCircle, Terminal as TermIcon,
+  Laptop as LaptopIcon, Headphones as HeadphoneIcon, Keyboard as KeyboardIcon, ExternalLink,
+  FileCode, Code2, Palette, Braces, BadgeCheck, ShieldAlert
+} from 'lucide-react';
+import {
+  fetchProjectDetailsAPI,
+  fetchProjectStepsAPI,
+  fetchProgressAPI,
+  updateProgressAPI,
+  addBookmarkAPI,
+  removeBookmarkAPI,
+  getBookmarkStatusAPI,
+  submitProjectAPI,
+  resetProgressAPI,
+  fetchBookmarkedSandboxProjectsAPI,
+  fetchMySubmissionsAPI
+} from '../services/sandboxAPI.js';
+import toast from 'react-hot-toast';
+
+export const SandboxProject = () => {
+  const { projectId: id } = useParams();
+  const navigate = useNavigate();
+
+  // Project data states
+  const [project, setProject] = useState(null);
+  const [steps, setSteps] = useState([]);
+  const [currentStepIdx, setCurrentStepIdx] = useState(0);
+  const [progress, setProgress] = useState(null);
+  const [bookmarked, setBookmarked] = useState(false);
+  const [bookmarks, setBookmarks] = useState([]);
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Tab & Editor states
+  const [activeFile, setActiveFile] = useState('script.js');
+  const [activeConsoleTab, setActiveConsoleTab] = useState('output');
+  const [compileOutput, setCompileOutput] = useState([
+    'Initializing CodeSphere playpen compiler...',
+    'Secure sandbox sandbox environment initialized.',
+    'Playpen listener active.'
+  ]);
+  const [running, setRunning] = useState(false);
+  const [editorTheme, setEditorTheme] = useState('dark'); // 'dark' or 'light'
+
+  // Dynamic Shopping Cart preview state matching the screenshot
+  const [cartItems, setCartItems] = useState([
+    { id: 'laptop', name: 'Laptop', price: 999, quantity: 2, icon: LaptopIcon },
+    { id: 'headphones', name: 'Headphones', price: 199, quantity: 1, icon: HeadphoneIcon },
+    { id: 'keyboard', name: 'Keyboard', price: 79, quantity: 1, icon: KeyboardIcon },
+  ]);
+
+  // Returns project-specific starter file templates based on title/stack
+  const getProjectTemplates = (proj) => {
+    if (!proj) return { 'index.html': '', 'styles.css': '', 'script.js': '' };
+    const t = (proj.title || '').toLowerCase();
+    const s = (proj.technologyStack || []).map(x => x.toLowerCase());
+
+    if (t.includes('rest api') || t.includes('node') || t.includes('express') || s.includes('node.js')) {
+      return {
+        'server.js': `const express = require('express');\nconst mongoose = require('mongoose');\nrequire('dotenv').config();\n\nconst app = express();\napp.use(express.json());\n\n// Connect to MongoDB\nmongoose.connect(process.env.MONGO_URI)\n  .then(() => console.log('MongoDB connected'))\n  .catch(err => console.error(err));\n\n// TODO: Add routes here\n// app.use('/api/auth', require('./routes/auth'));\n\nconst PORT = process.env.PORT || 5000;\napp.listen(PORT, () => console.log('Server on port ' + PORT));`,
+        '.env': `PORT=5000\nMONGO_URI=mongodb://localhost:27017/myapi\nJWT_SECRET=your_secret_key\nJWT_EXPIRES_IN=7d`,
+        'routes/auth.js': `const express = require('express');\nconst router = express.Router();\nconst bcrypt = require('bcryptjs');\nconst jwt = require('jsonwebtoken');\n\n// POST /api/auth/register\nrouter.post('/register', async (req, res) => {\n  const { name, email, password } = req.body;\n  // TODO: hash password and create user\n  res.json({ message: 'Registered' });\n});\n\n// POST /api/auth/login\nrouter.post('/login', async (req, res) => {\n  const { email, password } = req.body;\n  // TODO: verify credentials and return JWT\n  res.json({ token: 'your-jwt-token' });\n});\n\nmodule.exports = router;`,
+      };
+    }
+
+    if (t.includes('react') || t.includes('dashboard') || t.includes('chart') || s.includes('react')) {
+      return {
+        'App.jsx': `import React from 'react';\nimport Dashboard from './components/Dashboard';\nimport './index.css';\n\nexport default function App() {\n  return (\n    <div className="min-h-screen bg-gray-100">\n      <Dashboard />\n    </div>\n  );\n}`,
+        'components/Dashboard.jsx': `import React from 'react';\nimport StatCard from './StatCard';\n\nconst stats = [\n  { label: 'Total Sales',  value: '$42,500', trend: '+12%' },\n  { label: 'New Users',    value: '1,284',   trend: '+8%'  },\n  { label: 'Revenue',      value: '$18,900', trend: '+5%'  },\n  { label: 'Orders',       value: '326',     trend: '-2%'  },\n];\n\nexport default function Dashboard() {\n  return (\n    <div className="p-6">\n      <h1 className="text-2xl font-bold mb-6">Analytics Dashboard</h1>\n      <div className="grid grid-cols-4 gap-4">\n        {stats.map(s => <StatCard key={s.label} {...s} />)}\n      </div>\n    </div>\n  );\n}`,
+        'components/StatCard.jsx': `import React from 'react';\n\nexport default function StatCard({ label, value, trend }) {\n  const pos = trend.startsWith('+');\n  return (\n    <div className="bg-white rounded-xl p-5 shadow">\n      <p className="text-sm text-gray-500">{label}</p>\n      <p className="text-2xl font-bold">{value}</p>\n      <p className={\`text-xs \${pos ? 'text-green-500' : 'text-red-500'}\`}>{trend}</p>\n    </div>\n  );\n}`,
+      };
+    }
+
+    if (t.includes('python') || t.includes('pandas') || t.includes('data') || s.includes('python')) {
+      return {
+        'pipeline.py': `import pandas as pd\nimport numpy as np\nimport matplotlib.pyplot as plt\n\n# Step 1: Load dataset\ndf = pd.read_csv('data/sales.csv')\nprint("Shape:", df.shape)\nprint(df.head())\n\n# Step 2: Inspect\nprint(df.dtypes)\nprint(df.isnull().sum())\n\n# Step 3: Clean\n# TODO: df.dropna(inplace=True)\n# TODO: df.drop_duplicates(inplace=True)\n\n# Step 4: Transform\n# TODO: df['total'] = df['qty'] * df['price']\n# TODO: monthly = df.groupby('month')['total'].sum()\n\n# Step 5: Visualize\n# TODO: plt.plot(monthly)\n# TODO: plt.show()\n\nprint("Pipeline complete.")`,
+        'requirements.txt': `pandas==2.1.0\nnumpy==1.25.0\nmatplotlib==3.8.0\nseaborn==0.13.0`,
+        'data/README.md': `# Dataset\n\nPlace your CSV as data/sales.csv\nExpected columns: date, product, category, quantity, unit_price, total_sales`,
+      };
+    }
+
+    // Generic fallback
+    return {
+      'index.html': `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8"/>\n  <title>${proj.title}</title>\n  <link rel="stylesheet" href="styles.css"/>\n</head>\n<body>\n  <div id="app"><h1>${proj.title}</h1></div>\n  <script src="script.js"></script>\n</body>\n</html>`,
+      'styles.css': `* { box-sizing: border-box; margin: 0; padding: 0; }\nbody { font-family: sans-serif; padding: 20px; background: #f5f5f5; }\n#app { max-width: 800px; margin: 0 auto; background: #fff; padding: 24px; border-radius: 8px; }`,
+      'script.js': `// ${proj.title}\nconsole.log("Project initialized: ${proj.title}");`,
+    };
+  };
+
+  const [editorCodes, setEditorCodes] = useState({ 'index.html': '', 'styles.css': '', 'script.js': '' });
+
+  useEffect(() => {
+    if (!id) return;
+
+    const fallbackSteps = [
+      { stepNumber: 1, title: 'Project Setup',   description: 'Initialize the HTML, CSS and JS files.' },
+      { stepNumber: 2, title: 'Add Products',     description: 'Display product list with name, price, and add to cart button.' },
+      { stepNumber: 3, title: 'Add to Cart',      description: 'Add functionality to add selected product to cart.', objectives: ['Add product to cart when Add to Cart is clicked', 'Prevent duplicate items', 'Update cart count in navbar', 'Show success message'], resources: ['MDN LocalStorage', 'JavaScript Array Methods'] },
+      { stepNumber: 4, title: 'Update Quantity',  description: 'Allow users to increase or decrease item quantity.' },
+      { stepNumber: 5, title: 'Remove Items',     description: 'Remove items from the cart.' },
+      { stepNumber: 6, title: 'Calculate Total',  description: 'Calculate and display total price of items.' },
+      { stepNumber: 7, title: 'Persist Cart',     description: 'Store cart data in localStorage.' },
+      { stepNumber: 8, title: 'Polish UI',         description: 'Improve UI/UX and make it responsive.' }
+    ];
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        // 1. Project details
+        let projData = null;
+        try { projData = (await fetchProjectDetailsAPI(id))?.data || null; } catch {}
+        if (!projData) projData = { title: 'Build an E-commerce Cart', description: 'Build a dynamic shopping cart with add/remove items, update quantity, and calculate total price.', difficulty: 'Intermediate', category: 'Frontend', technologyStack: ['HTML', 'CSS', 'JavaScript', 'Local Storage'], estimatedDuration: '4-6 hours', enrolledCount: '2.4K', averageRating: 4.8 };
+        setProject(projData);
+
+        // 2. Steps
+        let stepsData = [];
+        try {
+          const r = await fetchProjectStepsAPI(id);
+          stepsData = Array.isArray(r?.data) ? r.data : [];
+        } catch {}
+        setSteps(stepsData.length > 0 ? stepsData : fallbackSteps);
+
+        // 3. Progress (auto-created by backend if none exists)
+        let progressData = null;
+        try { progressData = (await fetchProgressAPI(id))?.data || null; } catch {}
+        if (progressData) {
+          setProgress(progressData);
+          setCurrentStepIdx(Math.max(0, (progressData.currentStep || 1) - 1));
+          if (progressData.codeFiles && Object.keys(progressData.codeFiles).length > 0) {
+            const files = progressData.codeFiles;
+            setEditorCodes(files);
+            setActiveFile(Object.keys(files)[0]);
+          } else {
+            const templates = getProjectTemplates(projData);
+            setEditorCodes(templates);
+            setActiveFile(Object.keys(templates)[0]);
+          }
+        } else {
+          setProgress({ currentStep: 1, completedSteps: [] });
+          setCurrentStepIdx(0);
+          const templates = getProjectTemplates(projData);
+          setEditorCodes(templates);
+          setActiveFile(Object.keys(templates)[0]);
+        }
+
+        // 4. Bookmark status
+        try {
+          const r = await getBookmarkStatusAPI(id);
+          setBookmarked(r?.data?.bookmarked || false);
+        } catch {}
+
+        // 5. Sidebar lists
+        try {
+          const subsRes = await fetchMySubmissionsAPI();
+          setSubmissions(subsRes?.data || subsRes || []);
+        } catch {}
+        try {
+          const bmsRes = await fetchBookmarkedSandboxProjectsAPI();
+          setBookmarks(bmsRes?.data || bmsRes || []);
+        } catch {}
+
+      } catch (err) {
+        console.error('Workspace load error:', err);
+        setSteps(fallbackSteps);
+        setEditorCodes(fileContents);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [id]);
+
+  // Realtime compiler logic that parses script.js content to update shopping cart details
+  useEffect(() => {
+    try {
+      const code = editorCodes['script.js'] || '';
+      const itemRegex = /name\s*:\s*['"]([^'"]+)['"]\s*,\s*price\s*:\s*(\d+)/g;
+      const found = [];
+      let match;
+      
+      while ((match = itemRegex.exec(code)) !== null) {
+        const name = match[1];
+        const price = parseInt(match[2], 10);
+        found.push({ name, price });
+      }
+      
+      if (found.length === 0) {
+        setCartItems([]);
+        return;
+      }
+      
+      setCartItems(prev => {
+        return found.map(f => {
+          const key = f.name.toLowerCase();
+          const existing = prev.find(item => item.name.toLowerCase() === key);
+          const quantity = existing ? existing.quantity : 1;
+          const icon = key.includes('laptop') ? LaptopIcon
+                     : key.includes('headphone') ? HeadphoneIcon
+                     : KeyboardIcon;
+          return {
+            id: key,
+            name: f.name,
+            price: f.price,
+            quantity,
+            icon
+          };
+        });
+      });
+    } catch (err) {
+      console.error('Realtime playpen compiler error:', err);
+    }
+  }, [editorCodes['script.js']]);
+
+  // Realtime style compiler that injects CSS modifications from styles.css into head
+  useEffect(() => {
+    let styleTag = document.getElementById('playpen-custom-styles');
+    if (!styleTag) {
+      styleTag = document.createElement('style');
+      styleTag.id = 'playpen-custom-styles';
+      document.head.appendChild(styleTag);
+    }
+    styleTag.innerHTML = editorCodes['styles.css'] || '';
+    
+    return () => {
+      const tag = document.getElementById('playpen-custom-styles');
+      if (tag) tag.remove();
+    };
+  }, [editorCodes['styles.css']]);
+
+  const handleQtyChange = (id, delta) => {
+    setCartItems(prev => prev.map(item => {
+      if (item.id === id) {
+        const nextQty = Math.max(1, item.quantity + delta);
+        return { ...item, quantity: nextQty };
+      }
+      return item;
+    }));
+  };
+
+  const handleRemoveItem = (id) => {
+    setCartItems(prev => prev.filter(item => item.id !== id));
+  };
+
+  const cartTotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+
+  const handleRunCode = () => {
+    setRunning(true);
+    setCompileOutput(prev => [
+      ...prev,
+      `[${new Date().toLocaleTimeString()}] Starting build process...`,
+      `[${new Date().toLocaleTimeString()}] Compiling files: ${Object.keys(editorCodes).join(', ')}`,
+      `[${new Date().toLocaleTimeString()}] CodeSphere sandbox deployment successful.`
+    ]);
+
+    // Auto-save code files to DB progress record
+    updateProgressAPI(id, { codeFiles: editorCodes })
+      .then((res) => { if (res?.data) setProgress(res.data); })
+      .catch(err => console.warn('Auto-save failed:', err));
+
+    setTimeout(() => {
+      setRunning(false);
+      setActiveConsoleTab('output');
+      toast.success('Code compiled and saved!');
+    }, 1500);
+  };
+
+  const toggleBookmark = () => {
+    const apiCall = bookmarked ? removeBookmarkAPI(id) : addBookmarkAPI(id);
+    apiCall
+      .then((res) => {
+        if (res.success) {
+          setBookmarked(!bookmarked);
+          toast.success(bookmarked ? 'Bookmark removed' : 'Project bookmarked');
+        }
+      })
+      .catch(() => toast.error('Failed to toggle bookmark'));
+  };
+
+  const handleShare = () => {
+    navigator.clipboard.writeText(window.location.href);
+    toast.success('Workspace link copied to clipboard!');
+  };
+
+  const handleStepSubmit = async () => {
+    const totalCount = steps.length || 8;
+    if (progress?.currentStep > totalCount) {
+      toast.success('Project completed!');
+      navigate('/sandbox');
+      return;
+    }
+    const stepToSubmit = currentStepIdx + 1;
+    const nextStepNum  = Math.min(totalCount, stepToSubmit + 1);
+    const pct          = Math.round((stepToSubmit / totalCount) * 100);
+
+    try {
+      // Save submission
+      await submitProjectAPI(id, {
+        submissionType: 'github',
+        githubUrl: 'https://github.com/codesphere/project',
+        notes: `Step ${stepToSubmit} submission`,
+      });
+
+      // Update progress + persist code files
+      const pRes = await updateProgressAPI(id, {
+        stepNumber:  stepToSubmit,
+        codeFiles:   editorCodes,
+      });
+      if (pRes?.data) {
+        setProgress(pRes.data);
+        setCurrentStepIdx(nextStepNum - 1);
+        toast.success(`Step ${stepToSubmit} submitted! Step ${nextStepNum} unlocked.`);
+      }
+    } catch {
+      // Optimistic local update
+      setProgress(prev => ({
+        ...prev,
+        currentStep:       stepToSubmit + 1,
+        completedSteps:    [...(prev?.completedSteps || []), stepToSubmit],
+        completionPercent: pct,
+      }));
+      setCurrentStepIdx(nextStepNum - 1);
+      toast.success(`Step ${stepToSubmit} marked complete!`);
+    }
+  };
+
+  const handleStepUnmark = async (stepNum) => {
+    const totalCount = steps.length || 8;
+    try {
+      const pRes = await updateProgressAPI(id, {
+        stepNumber: stepNum,
+        unmark: true,
+        codeFiles: editorCodes,
+      });
+      if (pRes?.data) {
+        setProgress(pRes.data);
+        toast.success(`Step ${stepNum} unmarked successfully.`);
+      }
+    } catch (err) {
+      console.error('Failed to unmark step:', err);
+      // Optimistic local update
+      setProgress(prev => {
+        const nextCompleted = (prev?.completedSteps || []).filter(s => s !== stepNum);
+        const nextPct = Math.round((nextCompleted.length / totalCount) * 100);
+        return {
+          ...prev,
+          currentStep: Math.min(prev?.currentStep || 1, stepNum),
+          completedSteps: nextCompleted,
+          completionPercent: nextPct,
+          status: 'in_progress',
+        };
+      });
+      toast.success(`Step ${stepNum} unmarked.`);
+    }
+  };
+
+  const handleResetProject = () => {
+    if (!window.confirm('Reset this project? All code edits and step progress will be cleared.')) return;
+    resetProgressAPI(id)
+      .then((res) => {
+        if (res?.data) {
+          setProgress(res.data);
+          const templates = getProjectTemplates(project);
+          setEditorCodes(templates);
+          setActiveFile(Object.keys(templates)[0]);
+          setCurrentStepIdx(0);
+          setCompileOutput(['Initializing CodeSphere sandbox...', 'Playpen reset. Ready.']);
+          toast.success('Project reset successfully.');
+        }
+      })
+      .catch(() => toast.error('Failed to reset project.'));
+  };
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[70vh] gap-3 bg-[#F8FAFC]">
+        <div className="w-9 h-9 rounded-full border-4 border-slate-200 border-t-[#04AA6D] animate-spin" />
+        <span className="text-xs font-bold text-slate-400 font-mono uppercase">Loading compiler workspace...</span>
+      </div>
+    );
+  }
+
+  const currentStep = steps[currentStepIdx] || {
+    title: 'Add to Cart',
+    description: 'Add functionality to add selected product to cart. Hint: Use array to store cart items and update UI dynamically.',
+    objectives: [
+      'Add product to cart when Add to Cart is clicked',
+      'Prevent duplicate items',
+      'Update cart count in navbar',
+      'Show success message'
+    ],
+    resources: ['MDN LocalStorage', 'JavaScript Array Methods']
+  };
+
+  const objectivesList = (currentStep.objectives && currentStep.objectives.length > 0)
+    ? currentStep.objectives
+    : [
+        'Add product to cart when Add to Cart is clicked',
+        'Prevent duplicate items',
+        'Update cart count in navbar',
+        'Show success message'
+      ];
+
+  const resourcesList = (currentStep.resources && currentStep.resources.length > 0)
+    ? currentStep.resources
+    : ['MDN LocalStorage', 'JavaScript Array Methods'];
+
+  const htmlContent = editorCodes['index.html'] || '';
+  const headerMatch = htmlContent.match(/class=["']cart-header["'][^>]*>([^<]+)</i) || htmlContent.match(/<h1>([^<]+)</i);
+  const cartTitle = headerMatch ? headerMatch[1].trim() : 'Shopping Cart';
+
+  const completedCount = progress?.completedSteps?.length || 0;
+  const totalStepsCount = steps.length || 8;
+  const calculatedPct = progress?.completionPercent || Math.round((completedCount / totalStepsCount) * 100);
+  const strokeDashoffset = 125.6 - (125.6 * calculatedPct) / 100;
+
+  return (
+    <div className="flex flex-col gap-4 w-full bg-[#F8FAFC] text-slate-650 text-left select-none min-h-screen">
+      
+      {/* Subheader Navigation */}
+      <div className="flex items-center gap-1.5 select-none border-b border-slate-200/60 pb-1.5">
+        <button
+          onClick={() => navigate('/sandbox')}
+          className="flex items-center gap-2 px-4 py-2 text-[11px] font-bold font-mono uppercase tracking-wider rounded-xl bg-[#04AA6D] text-white shadow-sm transition-all cursor-pointer"
+        >
+          <Compass size={13} />
+          Explore
+        </button>
+        <button
+          onClick={() => navigate('/sandbox?tab=projects')}
+          className="flex items-center gap-2 px-4 py-2 text-[11px] font-bold font-mono uppercase tracking-wider rounded-xl text-slate-500 hover:bg-slate-100/80 hover:text-slate-800 transition-all cursor-pointer"
+        >
+          <Briefcase size={13} />
+          My Projects
+        </button>
+        <button
+          onClick={() => navigate('/sandbox?tab=bookmarks')}
+          className="flex items-center gap-2 px-4 py-2 text-[11px] font-bold font-mono uppercase tracking-wider rounded-xl text-slate-500 hover:bg-slate-100/80 hover:text-slate-800 transition-all cursor-pointer"
+        >
+          <Bookmark size={13} />
+          Bookmarks
+        </button>
+        <button
+          onClick={() => navigate('/sandbox?tab=submissions')}
+          className="flex items-center gap-2 px-4 py-2 text-[11px] font-bold font-mono uppercase tracking-wider rounded-xl text-slate-500 hover:bg-slate-100/80 hover:text-slate-800 transition-all cursor-pointer"
+        >
+          <ClipboardList size={13} />
+          Submissions
+        </button>
+      </div>
+
+      {/* Breadcrumbs Row & Editor Actions */}
+      <div className="flex items-center justify-between select-none py-1">
+        <Link to="/sandbox" className="flex items-center gap-1.5 text-[11px] font-bold text-slate-500 hover:text-slate-800 uppercase tracking-wider transition-colors">
+          <ChevronLeft size={14} />
+          Back to Projects
+        </Link>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setEditorTheme(prev => prev === 'dark' ? 'light' : 'dark')} className="p-2 rounded-xl bg-white border border-slate-200/60 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-all shadow-sm cursor-pointer" title={editorTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
+            {editorTheme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
+          </button>
+          <button onClick={handleResetProject} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200/60 text-[10px] font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-50 uppercase tracking-wider transition-all shadow-sm cursor-pointer">
+            <RotateCcw size={12} />
+            Reset
+          </button>
+          <button onClick={handleRunCode} disabled={running} className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#04AA6D] hover:bg-[#03935e] text-[10px] font-bold text-white uppercase tracking-wider cursor-pointer shadow-md transition-all">
+            <Play size={11} fill="white" />
+            Run Code
+          </button>
+        </div>
+      </div>
+
+      {/* Main Grid Workspace Layout */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+        
+        {/* Column 1: Project Overview & Step List (col-span-3) */}
+        <div className="xl:col-span-3 flex flex-col gap-4">
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 flex-1 flex flex-col gap-4 shadow-sm">
+            
+            {/* E-commerce Card Graphic & Summary */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-start gap-3">
+                <div className="w-14 h-14 rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                  <img 
+                    src="/images/ecommerce_cart_illustration.png" 
+                    alt="E-commerce Cart" 
+                    className="w-full h-full object-cover" 
+                  />
+                </div>
+                <div className="leading-tight text-left min-w-0">
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider truncate">{project?.title || 'Build an E-commerce Cart'}</h3>
+                    <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase bg-amber-50 text-amber-600 border border-amber-100">
+                      {project?.difficulty || 'Intermediate'}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-405 mt-1.5 leading-relaxed font-sans line-clamp-2">
+                    {project?.description || 'Build a dynamic shopping cart with add/remove items, update quantity, and calculate total price.'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Technologies Stack rounded tag list */}
+              <div className="flex flex-wrap gap-1 mt-1">
+                {(project?.technologyStack || ['HTML', 'CSS', 'JavaScript', 'Local Storage']).map((tech) => (
+                  <span key={tech} className="text-[8.5px] font-semibold bg-slate-50 text-slate-500 border border-slate-100 rounded px-1.5 py-0.5 font-sans">{tech}</span>
+                ))}
+                <span className="text-[8.5px] font-semibold bg-slate-50 text-slate-500 border border-slate-100 rounded px-1.5 py-0.5 font-sans">+1</span>
+              </div>
+            </div>
+
+            {/* Instructor Details Card */}
+            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
+              <div className="flex items-center gap-2">
+                <img 
+                  src={project?.instructor?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&h=80&q=80'} 
+                  alt="Instructor" 
+                  className="w-7 h-7 rounded-full object-cover border border-slate-200" 
+                />
+                <div className="leading-none text-left">
+                  <span className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest">Instructor</span>
+                  <div className="flex items-center gap-1 mt-0.5">
+                    <p className="text-[10px] font-bold text-slate-800 uppercase">{project?.instructor?.fullName || 'Neha Sharma'}</p>
+                    <BadgeCheck size={11} className="text-[#04AA6D]" />
+                  </div>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 text-right leading-none">
+                <div className="flex items-center gap-0.5 text-[9.5px] font-bold text-amber-500">
+                  <Star size={11} className="fill-amber-500" />
+                  <span>4.8</span>
+                  <span className="text-slate-400 text-[8px] font-normal font-sans">(128)</span>
+                </div>
+                <div className="border-l border-slate-200 pl-2">
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Enrolled</span>
+                  <p className="text-[9.5px] font-bold text-slate-800 mt-0.5">{project?.enrolledCount || '2.4K'}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                <span>Project Steps</span>
+                <span className="bg-slate-100 text-slate-505 text-[8px] px-1.5 py-0.5 rounded-md border border-slate-200/60 font-mono">{steps.length} Steps</span>
+              </div>
+              <div className="flex flex-col gap-1.5 max-h-[500px] overflow-y-auto pr-1">
+                {steps.map((step, idx) => {
+                  const stepNum = idx + 1;
+                  const active = currentStepIdx === idx;
+                  const completed = progress?.completedSteps?.includes(stepNum) || (idx < (progress?.currentStep - 1 || 2));
+                  const locked = progress?.currentStep ? (stepNum > progress.currentStep && !completed) : (stepNum > 3);
+                  
+                  return (
+                    <button
+                      key={idx}
+                      disabled={locked}
+                      onClick={() => setCurrentStepIdx(idx)}
+                      className={`w-full flex items-center justify-between p-2 rounded-xl text-left border transition-all ${
+                        active 
+                          ? 'bg-emerald-50/40 border-[#04AA6D] text-[#04AA6D] shadow-sm' 
+                          : completed 
+                            ? 'bg-slate-50/40 border-slate-200/40 text-slate-500 hover:bg-slate-50' 
+                            : 'bg-slate-50/40 border-slate-200/40 text-slate-400 hover:bg-slate-50'
+                      } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        {completed ? (
+                          <CheckCircle2 size={13} className="text-[#04AA6D] shrink-0" />
+                        ) : locked ? (
+                          <Lock size={11} className="text-slate-350 shrink-0" />
+                        ) : (
+                          <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 text-[8.5px] font-bold border ${
+                            active ? 'bg-[#04AA6D] text-white border-[#04AA6D]' : 'border-slate-300 text-slate-500'
+                          }`}>{stepNum}</span>
+                        )}
+                        <div className="min-w-0 leading-tight">
+                          <p className="text-[9.5px] font-bold truncate uppercase tracking-wider">Step {stepNum}</p>
+                          <p className="text-[8.5px] truncate text-slate-400 mt-0.5">
+                            {step.title || (idx === 0 ? 'Project Setup' : idx === 1 ? 'Add Products' : idx === 2 ? 'Add to Cart' : idx === 3 ? 'Update Quantity' : idx === 4 ? 'Remove Items' : idx === 5 ? 'Calculate Total' : idx === 6 ? 'Persist Cart' : 'Polish UI')}
+                          </p>
+                        </div>
+                      </div>
+                      <ChevronLeft size={10} className="rotate-180 text-slate-400" />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Column 2: Current Step Instructions (col-span-3) */}
+        <div className="xl:col-span-3 flex flex-col gap-4">
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-sm">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Current Step</span>
+                {(progress?.completedSteps?.includes(currentStepIdx + 1) || (currentStepIdx < (progress?.currentStep - 1 || 2))) && (
+                  <button
+                    onClick={() => handleStepUnmark(currentStepIdx + 1)}
+                    className="text-[9px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1"
+                  >
+                    <RotateCcw size={10} />
+                    Unmark Complete
+                  </button>
+                )}
+              </div>
+              <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider mt-0.5">Step {currentStepIdx + 1}: {currentStep.title}</h2>
+              <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                {currentStep.description}
+              </p>
+
+              {/* Requirements Checklist */}
+              <div className="mt-4">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-2">Requirements</p>
+                <div className="flex flex-col gap-1.5">
+                  {objectivesList.map((req, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-left">
+                      <CheckCircle2 size={13} className="text-[#04AA6D] mt-0.5 shrink-0" />
+                      <span className="text-[10px] text-slate-600 leading-snug">{req}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Resources Links */}
+              <div className="mt-4">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Resources</p>
+                <div className="flex flex-col gap-1">
+                  {resourcesList.map(res => (
+                    <a key={res} href="#" className="text-[9.5px] font-bold text-[#04AA6D] hover:underline uppercase tracking-wider flex items-center gap-1">
+                      <BookOpen size={11} />
+                      {res}
+                      <ExternalLink size={9} className="text-[#04AA6D] inline" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Example Output Mockup Card — dynamic per project */}
+            <div className="mt-4 border-t border-slate-200/60 pt-4 select-none">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-2">Example Output</p>
+              <div className="p-3.5 bg-[#0B0F17] border border-[#1A202F] rounded-xl flex flex-col gap-2.5 text-slate-300">
+                {(() => {
+                  const t = (project?.title || '').toLowerCase();
+                  if (t.includes('rest api') || t.includes('node') || t.includes('express')) {
+                    return (
+                      <>
+                        <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
+                          <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">API Server</span>
+                          <span className="w-2 h-2 rounded-full bg-[#04AA6D] animate-pulse" />
+                        </div>
+                        {['> Server running on port 5000', '> MongoDB connected', '> POST /api/auth/register 201', '> POST /api/auth/login 200', '> Token: eyJhbGci...'].map((line, i) => (
+                          <p key={i} className="text-[9px] font-mono" style={{ color: line.includes('201') || line.includes('200') ? '#04AA6D' : line.includes('Token') ? '#60a5fa' : '#94a3b8' }}>{line}</p>
+                        ))}
+                      </>
+                    );
+                  }
+                  if (t.includes('react') || t.includes('dashboard') || t.includes('chart')) {
+                    return (
+                      <>
+                        <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
+                          <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">Dashboard Preview</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {[{ l: 'Total Sales', v: '$42,500', t: '+12%' }, { l: 'New Users', v: '1,284', t: '+8%' }, { l: 'Revenue', v: '$18,900', t: '+5%' }, { l: 'Orders', v: '326', t: '-2%' }].map((s, i) => (
+                            <div key={i} className="bg-[#121824] border border-[#1A202F] rounded-lg p-2">
+                              <p className="text-[8px] text-slate-500 uppercase">{s.l}</p>
+                              <p className="text-[11px] font-bold text-white">{s.v}</p>
+                              <p className={`text-[8px] font-bold ${s.t.startsWith('+') ? 'text-[#04AA6D]' : 'text-rose-400'}`}>{s.t}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  }
+                  if (t.includes('python') || t.includes('pandas') || t.includes('data')) {
+                    return (
+                      <>
+                        <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
+                          <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">Pipeline Output</span>
+                        </div>
+                        {['>>> Shape: (1000, 6)', '>>> Columns: date, product, qty, price', '>>> Missing values: 0', '>>> Groups: Electronics 480, Accessories 520', '>>> Pipeline complete. ✓'].map((line, i) => (
+                          <p key={i} className="text-[9px] font-mono" style={{ color: line.includes('complete') ? '#04AA6D' : line.includes('>>>') ? '#60a5fa' : '#94a3b8' }}>{line}</p>
+                        ))}
+                      </>
+                    );
+                  }
+                  // Generic
+                  return (
+                    <>
+                      <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
+                        <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">Output</span>
+                      </div>
+                      <p className="text-[9px] font-mono text-[#04AA6D]">{'> Project initialized. ✓'}</p>
+                      <p className="text-[9px] font-mono text-slate-400">{'> Ready. Start coding...'}</p>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Column 3: IDE Editor & Output (col-span-4) */}
+        <div className="xl:col-span-4 flex flex-col gap-4">
+          <div className="border border-slate-200/60 bg-white rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col justify-between min-h-[750px]">
+            
+            {/* Editor Headers / Selector Tab bar with File Icons */}
+            <div className="h-10 flex items-center justify-between px-3 border-b border-slate-200/60 select-none bg-slate-50/50">
+              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                {Object.keys(editorCodes).map(file => {
+                  const ext = file.split('.').pop();
+                  const FileIcon = ext === 'html' ? Code2 : ext === 'css' || ext === 'scss' ? Palette : ext === 'py' || ext === 'md' || ext === 'txt' ? FileCode : Braces;
+                  return (
+                    <button
+                      key={file}
+                      onClick={() => setActiveFile(file)}
+                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap ${
+                        activeFile === file
+                          ? 'bg-white text-slate-800 border border-slate-200 shadow-sm'
+                          : 'text-slate-400 hover:text-slate-700'
+                      }`}
+                    >
+                      <FileIcon size={10} className={activeFile === file ? 'text-[#04AA6D]' : 'text-slate-400'} />
+                      {file.split('/').pop()}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className={`flex-1 flex font-mono text-[10.5px] p-4 leading-relaxed overflow-y-auto min-h-[420px] select-text transition-colors duration-200 ${
+              editorTheme === 'dark' ? 'bg-[#0B0F17] text-indigo-150' : 'bg-slate-50/60 text-slate-850 border-b border-slate-200/40'
+            }`}>
+              <div className={`text-right pr-3 select-none transition-colors ${
+                editorTheme === 'dark' ? 'text-slate-600' : 'text-slate-400'
+              }`}>
+                {Array.from({ length: 28 }).map((_, i) => (
+                  <div key={i}>{i + 1}</div>
+                ))}
+              </div>
+              <textarea
+                value={editorCodes[activeFile]}
+                onChange={(e) => setEditorCodes({ ...editorCodes, [activeFile]: e.target.value })}
+                className={`flex-1 bg-transparent border-none outline-none resize-none overflow-y-auto no-scrollbar font-mono leading-relaxed h-full transition-colors ${
+                  editorTheme === 'dark' ? 'text-indigo-200 focus:text-white' : 'text-slate-750 focus:text-slate-900'
+                }`}
+                rows={28}
+              />
+            </div>
+
+            {/* Terminal Live Output preview box */}
+            <div className="border-t border-slate-200/60 flex flex-col justify-between bg-white">
+              {/* Switches */}
+              <div className="h-9 flex items-center px-4 border-b border-slate-200/60 select-none bg-slate-50/50">
+                <div className="flex items-center gap-4">
+                  {['output', 'console'].map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveConsoleTab(tab)}
+                      className={`text-[9.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 py-2 -mb-2 ${
+                        activeConsoleTab === tab 
+                          ? 'border-[#04AA6D] text-[#04AA6D]'
+                          : 'border-transparent text-slate-400 hover:text-slate-500'
+                      }`}
+                    >
+                      {tab}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Outputs panel */}
+              <div className="p-4 h-60 overflow-y-auto text-left font-mono text-[10px] leading-relaxed bg-[#0B0F17]">
+                {activeConsoleTab === 'console' ? (
+                  <div className="flex flex-col gap-1 text-slate-450 select-text">
+                    {compileOutput.map((line, idx) => (
+                      <p key={idx}>{line}</p>
+                    ))}
+                    {running && <p className="text-[#04AA6D] animate-pulse">Running playpen compiler process...</p>}
+                  </div>
+                ) : (
+                  /* Live Output Card Preview matched to screenshot exactly */
+                  !editorCodes['index.html'] || !editorCodes['index.html'].includes('cart') ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-slate-500 font-mono text-center gap-2">
+                      <ShieldAlert size={28} className="text-amber-500" />
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350">HTML Container Missing</p>
+                      <p className="text-[9px] text-slate-400 font-sans max-w-xs leading-normal">
+                        Your index.html is empty or missing the shopping cart element. Add the container tags to render the app.
+                      </p>
+                    </div>
+                  ) : cartItems.length === 0 ? (
+                    <div className="flex flex-col items-center justify-center py-10 text-slate-500 font-mono text-center gap-2">
+                      <TermIcon size={24} className="text-slate-550" />
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350">Empty Cart Preview</p>
+                      <p className="text-[9px] text-slate-400 font-sans max-w-xs leading-normal">
+                        The products array in script.js is cleared or empty. Define products to load preview elements.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="shopping-cart-container flex flex-col gap-3 text-slate-300 select-none animate-fade-in">
+                      
+                      <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                        <div className="flex items-center gap-1.5">
+                          <span className="cart-header text-[11px] font-black text-white uppercase tracking-wider">{cartTitle}</span>
+                          <span className="w-4 h-4 rounded-full bg-[#04AA6D] text-white flex items-center justify-center text-[8px] font-bold">{cartItems.length}</span>
+                        </div>
+                      </div>
+
+                      <div className="cart-items-list flex flex-col gap-2">
+                        {cartItems.map((item) => {
+                          const Icon = item.icon;
+                          return (
+                            <div key={item.id} className="cart-item flex items-center justify-between p-2 rounded-xl bg-[#121824] border border-[#1A202F]">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-7 h-7 rounded-lg bg-[#0B0F17] border border-[#1A202F] flex items-center justify-center text-[#04AA6D] shrink-0">
+                                  <Icon size={13} />
+                                </div>
+                                <div className="text-left leading-none">
+                                  <span className="item-name text-[10px] font-bold text-white uppercase tracking-wider">{item.name}</span>
+                                </div>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <span className="item-price text-[10px] font-extrabold text-white">${item.price * item.quantity}</span>
+                                
+                                {/* Counter box */}
+                                <div className="counter-box flex items-center gap-2 bg-[#0B0F17] border border-[#1A202F] rounded-lg px-1.5 py-0.5">
+                                  <button onClick={() => handleQtyChange(item.id, -1)} className="text-slate-400 hover:text-white cursor-pointer">
+                                    <Minus size={9} />
+                                  </button>
+                                  <span className="text-[9.5px] font-bold text-slate-200 w-3 text-center">{item.quantity}</span>
+                                  <button onClick={() => handleQtyChange(item.id, 1)} className="text-slate-400 hover:text-white cursor-pointer">
+                                    <Plus size={9} />
+                                  </button>
+                                </div>
+
+                                {/* Delete button */}
+                                <button onClick={() => handleRemoveItem(item.id)} className="delete-btn text-rose-500 hover:text-rose-400 cursor-pointer">
+                                  <Trash2 size={11} />
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex items-center justify-between border-t border-slate-800 pt-2 text-[10px] font-bold text-white uppercase tracking-wider">
+                        <span className="total-label">Total:</span>
+                        <span className="total-price text-emerald-500 font-extrabold">${cartTotal}</span>
+                      </div>
+
+                    </div>
+                  )
+                )}
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+        {/* Column 4: Side Information Panel (col-span-2) */}
+        <div className="xl:col-span-2 flex flex-col gap-4">
+          
+          {/* Your Progress */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Your Progress</p>
+              <div className="flex items-center gap-3 justify-center select-none py-1">
+                <div className="relative flex items-center justify-center shrink-0">
+                  <svg height="52" width="52">
+                    <circle stroke="#E2E8F0" fill="transparent" strokeWidth="4.5" r="20" cx="26" cy="26" />
+                    <circle stroke="#04AA6D" fill="transparent" strokeWidth="4.5" strokeDasharray="125.6" strokeDashoffset={strokeDashoffset} strokeLinecap="round" r="20" cx="26" cy="26" className="origin-center -rotate-90 transition-all duration-300" />
+                  </svg>
+                  <div className="absolute flex flex-col items-center justify-center">
+                    <span className="text-[10px] font-black text-slate-800">{calculatedPct}%</span>
+                  </div>
+                </div>
+                <div className="text-left font-mono">
+                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider leading-none">Steps</span>
+                  <p className="text-[10px] font-black text-slate-700 leading-none mt-0.5">{completedCount} / {totalStepsCount} Steps Completed</p>
+                </div>
+              </div>
+            </div>
+            <button onClick={handleStepSubmit} className="mt-4 block w-full py-2 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl text-center text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm">
+              {progress?.currentStep > totalStepsCount ? 'Project Completed' : 'Continue Step ' + (progress?.currentStep || 3)}
+            </button>
+            {(progress?.completedSteps?.includes(currentStepIdx + 1) || (currentStepIdx < (progress?.currentStep - 1 || 2))) && (
+              <button
+                onClick={() => handleStepUnmark(currentStepIdx + 1)}
+                className="mt-2 block w-full py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-center text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+              >
+                Unmark Step {currentStepIdx + 1}
+              </button>
+            )}
+          </div>
+
+          {/* Project Info */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 text-left shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3 font-mono">Project Info</p>
+            <div className="flex flex-col gap-2.5">
+              {[
+                { name: 'Difficulty', val: project?.difficulty || 'Intermediate', style: 'text-amber-600 font-bold capitalize bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100/60 w-max' },
+                { name: 'Enrolled Students', val: project?.enrolledCount || '2.4K', style: 'text-slate-800 font-bold' },
+                { name: 'Estimated Time', val: project?.estimatedDuration || '4-6 hours', style: 'text-slate-800 font-bold' },
+                { name: 'Last Updated', val: '24 Apr 2025', style: 'text-slate-800 font-semibold' },
+                { name: 'Project ID', val: 'CS-SBX-1024', style: 'text-slate-400 font-mono' },
+              ].map((info) => (
+                <div key={info.name} className="flex flex-col gap-0.5 text-[8.5px] font-bold text-slate-400 uppercase leading-none select-none">
+                  <span>{info.name}</span>
+                  <span className={`text-[10px] mt-1 ${info.style}`}>{info.val}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 text-left shadow-sm">
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">Actions</p>
+            <div className="flex flex-col gap-1.5">
+              <button onClick={toggleBookmark} className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 text-[9.5px] font-bold text-slate-600 uppercase tracking-wider border border-slate-200/60 cursor-pointer">
+                <span>{bookmarked ? 'Remove Bookmark' : 'Bookmark Project'}</span>
+                <Star size={12} className={bookmarked ? 'text-amber-500 fill-amber-500' : 'text-slate-400'} />
+              </button>
+              <button onClick={handleShare} className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 text-[9.5px] font-bold text-slate-600 uppercase tracking-wider border border-slate-200/60 cursor-pointer">
+                <span>Share Project</span>
+                <Share2 size={12} className="text-slate-400" />
+              </button>
+              <button onClick={() => toast('Issue logged with admin.')} className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 text-[9.5px] font-bold text-slate-600 uppercase tracking-wider border border-slate-200/60 cursor-pointer">
+                <span>Report Issue</span>
+                <AlertTriangle size={12} className="text-slate-400" />
+              </button>
+            </div>
+          </div>
+
+          {/* Submissions */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 text-left shadow-sm">
+            <div className="flex items-center justify-between mb-3 text-[10px] font-bold">
+              <span className="uppercase text-slate-400">Submissions</span>
+              <span className="text-[#04AA6D] hover:underline cursor-pointer text-[9.5px]">View All</span>
+            </div>
+            <div className="flex flex-col gap-2">
+              {submissions && submissions.length > 0 ? (
+                submissions.map((sub, idx) => {
+                  const tag = sub.status === 'submitted' ? 'Under Review' : sub.score !== undefined ? `${sub.score}/100` : 'Submitted';
+                  const color = sub.status === 'submitted' ? 'bg-amber-50 text-amber-600 border-amber-100' : 'bg-emerald-50 text-emerald-600 border-emerald-100';
+                  const dateStr = new Date(sub.createdAt || sub.submittedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+                  return (
+                    <div key={idx} className="p-2 rounded-xl bg-slate-50 border border-slate-200/60 flex flex-col gap-1">
+                      <div className="flex items-center justify-between select-none">
+                        <span className="text-[10px] font-bold text-slate-800 font-mono">Submission #{submissions.length - idx}</span>
+                        <span className={`text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase border ${color}`}>{tag}</span>
+                      </div>
+                      <span className="text-[8.5px] text-slate-400 mt-0.5">{dateStr}</span>
+                    </div>
+                  );
+                })
+              ) : (
+                <p className="text-xs text-slate-450 font-semibold py-1.5">No submissions yet.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Bookmarked Projects */}
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 text-left shadow-sm">
+            <div className="flex items-center justify-between mb-3 text-[10px] font-bold">
+              <span className="uppercase text-slate-400">Bookmarks</span>
+              <span className="text-[#04AA6D] hover:underline cursor-pointer text-[9.5px]">View All</span>
+            </div>
+            <div className="flex flex-col gap-3">
+              {bookmarks && bookmarks.length > 0 ? (
+                bookmarks.map((bm, idx) => {
+                  const title = bm.projectId?.title || bm.title;
+                  const tag = bm.projectId?.difficulty || bm.difficulty || 'Beginner';
+                  return (
+                    <Link to={`/sandbox/${bm.projectId?._id || bm.projectId}`} key={idx} className="flex items-start justify-between gap-1 select-none hover:opacity-80 transition-opacity">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-bold text-slate-700 truncate uppercase tracking-wider font-mono">{title}</p>
+                        <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">{tag}</span>
+                      </div>
+                      <Bookmark size={11} className="text-[#04AA6D] shrink-0 mt-0.5 fill-[#04AA6D]" />
+                    </Link>
+                  );
+                })
+              ) : (
+                <p className="text-xs text-slate-455 font-semibold py-1.5">No bookmarked projects.</p>
+              )}
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+    </div>
+  );
+};
+export default SandboxProject;
