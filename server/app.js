@@ -1,5 +1,11 @@
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const compression = require('compression');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+const { apiLimiter, authLimiter } = require('./middlewares/rateLimit.middleware');
+const { performanceMonitoring } = require('./config/monitoring');
 
 const authRoutes         = require('./routes/auth.routes');
 const dashboardRoutes    = require('./routes/dashboard.routes');
@@ -60,14 +66,19 @@ const errorMiddleware = require('./middlewares/error.middleware');
 const app = express();
 
 // ─── Global Middlewares ───────────────────────────────────────────────────────
-const allowedOrigins = [
-  'http://localhost:5173',
-  'http://127.0.0.1:5173',
-  'http://localhost:3000',
-  'http://127.0.0.1:3000',
-  'http://localhost:5000',
-  'http://127.0.0.1:5000'
-];
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',');
+
+// Security headers
+app.use(helmet());
+
+// Compression
+app.use(compression());
+
+// Performance monitoring
+app.use(performanceMonitoring);
+
+// Rate limiting
+app.use('/api/', apiLimiter);
 
 app.use(cors({
   origin: (origin, callback) => {
@@ -139,6 +150,7 @@ const couponRoutes       = require('./routes/coupon.routes');
 const referralRoutes     = require('./routes/referral.routes');
 const usageRoutes        = require('./routes/usage.routes');
 const organizationRoutes = require('./routes/organization.routes');
+const codeExecutionRoutes = require('./routes/codeExecution.routes');
 
 const settingsRoutes = require('./routes/settings.routes');
 
@@ -146,6 +158,7 @@ app.use('/api/coupons',       couponRoutes);
 app.use('/api/referrals',     referralRoutes);
 app.use('/api/usage',         usageRoutes);
 app.use('/api/organizations', organizationRoutes);
+app.use('/api/execute',       codeExecutionRoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/plans',         planRoutes);
 app.use('/api/billing',       billingRoutes);
@@ -159,9 +172,27 @@ app.use('/api/announcements',           announcementRoutes);
 app.use('/api/notification-logs',       logRoutes);
 app.use('/api/settings',                settingsRoutes);
 
+// ─── API Documentation ────────────────────────────────────────────────────────
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  swaggerOptions: {
+    url: '/api/swagger-spec',
+  },
+}));
+
+app.get('/api/swagger-spec', (req, res) => {
+  res.json(swaggerSpec);
+});
+
 // ─── Health Check ─────────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
   res.json({ message: 'CodeSphere API is running' });
+});
+
+app.get('/health', (req, res) => {
+  const { getHealthStatus } = require('./config/monitoring');
+  const mongoose = require('mongoose');
+  const health = getHealthStatus(mongoose);
+  res.status(health.status === 'healthy' ? 200 : 503).json(health);
 });
 
 // ─── Global Error Handler ────────────────────────────────────────────────────
