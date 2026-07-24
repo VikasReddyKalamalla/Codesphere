@@ -16,7 +16,7 @@ export const LessonSidebar = ({ modules = [], activeLesson, onLessonSelect }) =>
             <AccordionItem key={idx} title={mod.title} defaultOpen={idx === 0}>
               <div className="flex flex-col gap-1.5">
                 {(mod.lessons || []).map((les, idy) => {
-                  const isCurrent = activeLesson?.id === les.id;
+                  const isCurrent = (activeLesson?.id || activeLesson?._id) === (les.id || les._id);
                   return (
                     <button
                       key={idy}

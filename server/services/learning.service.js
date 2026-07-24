@@ -40,7 +40,11 @@ const getAllPaths = async ({ page = 1, limit = 10, category, difficulty, isPremi
 const getPathById = async (id) => {
   const path = await LearningPath
     .findById(id)
-    .populate({ path: 'modules', options: { sort: { order: 1 } } })
+    .populate({
+      path: 'modules',
+      populate: { path: 'lessons', options: { sort: { order: 1 } } },
+      options: { sort: { order: 1 } }
+    })
     .populate('createdBy', 'fullName avatar');
 
   if (!path) throw createError('Learning path not found', 404);

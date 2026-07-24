@@ -29,10 +29,12 @@ export const LessonCard = ({ lesson = {}, courseId }) => {
   };
 
   const getLessonUrl = () => {
+    const lId = lesson.id || lesson._id;
+    const mId = lesson.moduleId?._id || lesson.moduleId || 'module1';
     if (lesson.type === 'article') {
-      return ROUTES.LEARNING_ARTICLE.replace(':pathId', courseId).replace(':lessonId', lesson.id);
+      return ROUTES.LEARNING_ARTICLE.replace(':pathId', courseId).replace(':lessonId', lId);
     }
-    return ROUTES.LEARNING_LESSON.replace(':pathId', courseId).replace(':moduleId', 'module1').replace(':lessonId', lesson.id);
+    return ROUTES.LEARNING_LESSON.replace(':pathId', courseId).replace(':moduleId', mId).replace(':lessonId', lId);
   };
 
   const shouldOpenNewTab = lesson.type === 'article';

@@ -65,7 +65,7 @@ export const Tests = () => {
   const handleSelectTest = (test) => {
     dispatch(setSelectedTest(test));
     dispatch(startAttemptSession(test));
-    navigate(`/tests/${test._id || test.id}/runner`);
+    navigate(`/tests/${test._id || test.id}`);
   };
 
   const handleBookmark = (test) => {

@@ -4,94 +4,39 @@ import { Logo } from '@components/Logo.jsx';
 import { ArrowLeft, Copy, Check, ExternalLink, CheckCircle2 } from 'lucide-react';
 import apiClient from '@services/axios.js';
 
-// Mock data for demonstration - this will come from API later
-const mockArticleData = {
-  title: 'Introduction to React Components',
-  courseTitle: 'Vite & React Masterclass',
-  sections: [
-    {
-      type: 'heading',
-      level: 2,
-      content: 'What is a React Component?'
-    },
-    {
-      type: 'paragraph',
-      content: 'Components are the building blocks of any React application. They let you split the UI into independent, reusable pieces, and think about each piece in isolation.'
-    },
-    {
-      type: 'heading',
-      level: 3,
-      content: 'Types of Components'
-    },
-    {
-      type: 'list',
-      items: [
-        'Functional Components (Recommended)',
-        'Class Components (Legacy)'
-      ]
-    },
-    {
-      type: 'heading',
-      level: 3,
-      content: 'Creating a Functional Component'
-    },
-    {
-      type: 'code',
-      language: 'javascript',
-      content: `// Simple functional component
-function Welcome({ name }) {
-  return <h1>Hello, {name}!</h1>;
-}
-
-// Using arrow function (common pattern)
-const Greeting = ({ message }) => (
-  <p className="greeting">{message}</p>
-);
-
-export { Welcome, Greeting };`
-    },
-    {
-      type: 'note',
-      content: 'Always start component names with a capital letter. React treats components starting with lowercase letters as DOM tags.'
-    },
-    {
-      type: 'heading',
-      level: 3,
-      content: 'Using Components'
-    },
-    {
-      type: 'code',
-      language: 'javascript',
-      content: `import { Welcome, Greeting } from './components';
-
-function App() {
-  return (
-    <div className="app">
-      <Welcome name="Alice" />
-      <Greeting message="Welcome to CodeSphere!" />
-    </div>
-  );
-}
-
-export default App;`
-    },
-    {
-      type: 'tip',
-      content: 'Components can accept props (properties) to make them dynamic and reusable.'
-    },
-    {
-      type: 'warning',
-      content: 'Never modify props directly. They should be read-only.'
-    }
-  ]
-};
-
 const ArticlePage = () => {
   const { pathId: courseId, lessonId } = useParams();
   const [copied, setCopied] = useState(null);
-  const [article, setArticle] = useState(mockArticleData);
+  const [article, setArticle] = useState(null);
   const [isCompleted, setIsCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [pageLoading, setPageLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchLesson = async () => {
+      setPageLoading(true);
+      try {
+        const response = await apiClient.get(`/lessons/single/${lessonId}`);
+        const data = response.data?.data || response.data || response;
+        if (data) {
+          let sections = data.articleSections || [];
+          if (sections.length === 0 && data.article) {
+            sections = [{ type: 'paragraph', content: data.article }];
+          }
+          setArticle({
+            title: data.title,
+            courseTitle: data.moduleId?.title || 'Learning Course',
+            sections: sections
+          });
+        }
+      } catch (err) {
+        console.error('Failed to fetch lesson:', err);
+      } finally {
+        setPageLoading(false);
+      }
+    };
+    fetchLesson();
+  }, [lessonId]);
 
   // Mark lesson as complete
   const markComplete = useCallback(async () => {
@@ -218,6 +163,23 @@ const ArticlePage = () => {
         return null;
     }
   };
+
+  if (pageLoading) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
+        <div className="text-slate-500 dark:text-slate-400 font-medium">Loading Article...</div>
+      </div>
+    );
+  }
+
+  if (!article) {
+    return (
+      <div className="min-h-screen bg-white dark:bg-slate-950 flex flex-col items-center justify-center gap-4">
+        <div className="text-slate-500 dark:text-slate-400 font-medium">Article not found.</div>
+        <Link to={`/learning/${courseId}`} className="text-[#04AA6D] hover:underline font-bold">Back to Course</Link>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white dark:bg-slate-950">
