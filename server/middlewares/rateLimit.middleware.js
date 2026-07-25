@@ -49,13 +49,16 @@ const createRedisStore = (prefix) => {
  */
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // 100 requests
+  max: 2000, // 2000 requests
   message: 'Too many requests from this IP, please try again later',
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
   store: createRedisStore('rate-limit-api:'),
   skip: (req) => {
-    // Skip rate limiting for health checks and public routes
+    // Skip rate limiting for health checks and local development/localhost IPs
+    if (process.env.NODE_ENV === 'development') return true;
+    const ip = req.ip || req.connection?.remoteAddress || '';
+    if (ip.includes('127.0.0.1') || ip.includes('::1') || ip.includes('localhost')) return true;
     return req.path === '/health' || req.path === '/';
   },
   keyGenerator: (req) => {
