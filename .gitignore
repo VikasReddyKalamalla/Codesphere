@@ -38,9 +38,6 @@ server/uploads/
 *.njsproj
 *.sw?
 
-# Cloned VS Code repository
-vscode/
-
 # VS Code Test Web Cache
 .vscode-test-web/
 
