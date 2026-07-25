@@ -19,3 +19,4 @@ export const resetProgressAPI           = async (id)       => (await apiClient.p
 export const fetchAllMyProgressAPI      = async ()         => (await apiClient.get('/sandbox/my/progress')).data;
 export const initWorkspaceAPI           = async (id)       => (await apiClient.post(`/sandbox/${id}/workspace/init`)).data;
 export const syncWorkspaceAPI           = async (id)       => (await apiClient.post(`/sandbox/${id}/workspace/sync`)).data;
+export const stopWorkspaceAPI           = async (id)       => (await apiClient.delete(`/sandbox/${id}/workspace/stop`)).data;

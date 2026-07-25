@@ -7,6 +7,8 @@ const swaggerSpec = require('./config/swagger');
 const { apiLimiter, authLimiter } = require('./middlewares/rateLimit.middleware');
 const { performanceMonitoring } = require('./config/monitoring');
 
+const vscodeProxyRouter  = require('./middlewares/vscodeProxy.middleware');
+
 const authRoutes         = require('./routes/auth.routes');
 const dashboardRoutes    = require('./routes/dashboard.routes');
 const learningRoutes     = require('./routes/learning.routes');
@@ -68,8 +70,11 @@ const app = express();
 // ─── Global Middlewares ───────────────────────────────────────────────────────
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',');
 
-// Security headers
-app.use(helmet());
+// Security headers (allow VS Code iframe to load from same origin)
+app.use(helmet({
+  contentSecurityPolicy: false,   // VS Code Web sets its own CSP
+  frameguard: false,              // we control X-Frame-Options per-route
+}));
 
 // Compression
 app.use(compression());
@@ -97,6 +102,11 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// ─── VS Code Web Proxy ────────────────────────────────────────────────────────
+// Proxies /vscode-web/:port/* → http://127.0.0.1:<port>/*
+// This keeps the iframe on the same origin, avoiding CORS/X-Frame-Options blocks.
+app.use('/vscode-web', vscodeProxyRouter);
 
 // ─── Static Uploads ──────────────────────────────────────────────────────────
 app.use('/uploads', express.static('uploads'));
