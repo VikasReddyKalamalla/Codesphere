@@ -42,7 +42,9 @@ import {
   submitProjectAPI,
   resetProgressAPI,
   fetchBookmarkedSandboxProjectsAPI,
-  fetchMySubmissionsAPI
+  fetchMySubmissionsAPI,
+  initWorkspaceAPI,
+  syncWorkspaceAPI
 } from '../services/sandboxAPI.js';
 import toast from 'react-hot-toast';
 
@@ -59,6 +61,8 @@ export const SandboxProject = () => {
   const [bookmarks, setBookmarks] = useState([]);
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [iframeUrl, setIframeUrl] = useState('');
+  const [loadingWorkspace, setLoadingWorkspace] = useState(false);
 
   // Tab & Editor states
   const [activeFile, setActiveFile] = useState('script.js');
@@ -172,6 +176,19 @@ export const SandboxProject = () => {
           setActiveFile(Object.keys(templates)[0]);
         }
 
+        // Initialize VS Code Web workspace
+        setLoadingWorkspace(true);
+        try {
+          const workspaceRes = await initWorkspaceAPI(id);
+          if (workspaceRes?.data?.iframeUrl) {
+            setIframeUrl(workspaceRes.data.iframeUrl);
+          }
+        } catch (wErr) {
+          console.error('Failed to initialize VS Code workspace:', wErr);
+        } finally {
+          setLoadingWorkspace(false);
+        }
+
         // 4. Bookmark status
         try {
           const r = await getBookmarkStatusAPI(id);
@@ -273,17 +290,28 @@ export const SandboxProject = () => {
 
   const cartTotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
-  const handleRunCode = () => {
+  const handleRunCode = async () => {
     setRunning(true);
+    let currentCodes = editorCodes;
+    try {
+      const syncRes = await syncWorkspaceAPI(id);
+      if (syncRes?.data?.codeFiles) {
+        currentCodes = syncRes.data.codeFiles;
+        setEditorCodes(currentCodes);
+      }
+    } catch (syncErr) {
+      console.warn('Workspace sync failed, compiling memory state:', syncErr);
+    }
+
     setCompileOutput(prev => [
       ...prev,
       `[${new Date().toLocaleTimeString()}] Starting build process...`,
-      `[${new Date().toLocaleTimeString()}] Compiling files: ${Object.keys(editorCodes).join(', ')}`,
+      `[${new Date().toLocaleTimeString()}] Compiling files: ${Object.keys(currentCodes).join(', ')}`,
       `[${new Date().toLocaleTimeString()}] CodeSphere sandbox deployment successful.`
     ]);
 
     // Auto-save code files to DB progress record
-    updateProgressAPI(id, { codeFiles: editorCodes })
+    updateProgressAPI(id, { codeFiles: currentCodes })
       .then((res) => { if (res?.data) setProgress(res.data); })
       .catch(err => console.warn('Auto-save failed:', err));
 
@@ -322,6 +350,17 @@ export const SandboxProject = () => {
     const nextStepNum  = Math.min(totalCount, stepToSubmit + 1);
     const pct          = Math.round((stepToSubmit / totalCount) * 100);
 
+    let currentCodes = editorCodes;
+    try {
+      const syncRes = await syncWorkspaceAPI(id);
+      if (syncRes?.data?.codeFiles) {
+        currentCodes = syncRes.data.codeFiles;
+        setEditorCodes(currentCodes);
+      }
+    } catch (syncErr) {
+      console.warn('Workspace sync failed, using memory state:', syncErr);
+    }
+
     try {
       // Save submission
       await submitProjectAPI(id, {
@@ -333,7 +372,7 @@ export const SandboxProject = () => {
       // Update progress + persist code files
       const pRes = await updateProgressAPI(id, {
         stepNumber:  stepToSubmit,
-        codeFiles:   editorCodes,
+        codeFiles:   currentCodes,
       });
       if (pRes?.data) {
         setProgress(pRes.data);
@@ -355,11 +394,22 @@ export const SandboxProject = () => {
 
   const handleStepUnmark = async (stepNum) => {
     const totalCount = steps.length || 8;
+    let currentCodes = editorCodes;
+    try {
+      const syncRes = await syncWorkspaceAPI(id);
+      if (syncRes?.data?.codeFiles) {
+        currentCodes = syncRes.data.codeFiles;
+        setEditorCodes(currentCodes);
+      }
+    } catch (syncErr) {
+      console.warn('Workspace sync failed, using memory state:', syncErr);
+    }
+
     try {
       const pRes = await updateProgressAPI(id, {
         stepNumber: stepNum,
         unmark: true,
-        codeFiles: editorCodes,
+        codeFiles: currentCodes,
       });
       if (pRes?.data) {
         setProgress(pRes.data);
@@ -737,162 +787,30 @@ export const SandboxProject = () => {
         {/* Column 3: IDE Editor & Output (col-span-4) */}
         <div className="xl:col-span-4 flex flex-col gap-4">
           <div className="border border-slate-200/60 bg-white rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col justify-between min-h-[750px]">
-            
-            {/* Editor Headers / Selector Tab bar with File Icons */}
-            <div className="h-10 flex items-center justify-between px-3 border-b border-slate-200/60 select-none bg-slate-50/50">
-              <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
-                {Object.keys(editorCodes).map(file => {
-                  const ext = file.split('.').pop();
-                  const FileIcon = ext === 'html' ? Code2 : ext === 'css' || ext === 'scss' ? Palette : ext === 'py' || ext === 'md' || ext === 'txt' ? FileCode : Braces;
-                  return (
-                    <button
-                      key={file}
-                      onClick={() => setActiveFile(file)}
-                      className={`flex items-center gap-1.5 px-3 py-1 rounded-lg text-[9px] font-bold uppercase tracking-wider transition-colors cursor-pointer whitespace-nowrap ${
-                        activeFile === file
-                          ? 'bg-white text-slate-800 border border-slate-200 shadow-sm'
-                          : 'text-slate-400 hover:text-slate-700'
-                      }`}
-                    >
-                      <FileIcon size={10} className={activeFile === file ? 'text-[#04AA6D]' : 'text-slate-400'} />
-                      {file.split('/').pop()}
-                    </button>
-                  );
-                })}
+            {loadingWorkspace ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 font-mono text-center gap-3">
+                <div className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-[#04AA6D] animate-spin" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350 animate-pulse">Launching VS Code Sandbox...</p>
+                <p className="text-[9px] text-slate-400 font-sans max-w-xs leading-normal">
+                  Preparing your local filesystem workspace and starting the VS Code Server. Please hold on...
+                </p>
               </div>
-            </div>
-
-            <div className={`flex-1 flex flex-col min-h-[420px] transition-colors duration-200 ${
-              editorTheme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white border-b border-slate-200/40'
-            }`}>
-              <Editor
-                height="100%"
-                language={getEditorLanguage(activeFile)}
-                theme={editorTheme === 'dark' ? 'vs-dark' : 'light'}
-                value={editorCodes[activeFile]}
-                onChange={(val) => setEditorCodes({ ...editorCodes, [activeFile]: val || '' })}
-                options={{
-                  fontSize: 12.5,
-                  fontFamily: 'Fira Code, Menlo, Monaco, Consolas, Courier New, monospace',
-                  minimap: { enabled: false },
-                  automaticLayout: true,
-                  lineNumbers: 'on',
-                  wordWrap: 'on',
-                  scrollBeyondLastLine: false,
-                  padding: { top: 12, bottom: 12 },
-                  cursorBlinking: 'smooth',
-                  cursorSmoothCaretAnimation: 'on',
-                }}
+            ) : !iframeUrl ? (
+              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 font-mono text-center gap-3">
+                <ShieldAlert size={28} className="text-rose-500" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350">VS Code Sandbox Offline</p>
+                <p className="text-[9px] text-slate-400 font-sans max-w-xs leading-normal">
+                  Failed to spawn VS Code server. Check your backend console logs for Visual Studio / Node-gyp compile issues.
+                </p>
+              </div>
+            ) : (
+              <iframe
+                src={iframeUrl}
+                className="w-full h-full border-none flex-1 min-h-[750px]"
+                title="VS Code Sandbox"
+                allow="clipboard-read; clipboard-write; fullscreen"
               />
-            </div>
-
-            {/* Terminal Live Output preview box */}
-            <div className="border-t border-slate-200/60 flex flex-col justify-between bg-white">
-              {/* Switches */}
-              <div className="h-9 flex items-center px-4 border-b border-slate-200/60 select-none bg-slate-50/50">
-                <div className="flex items-center gap-4">
-                  {['output', 'console'].map(tab => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveConsoleTab(tab)}
-                      className={`text-[9.5px] font-bold uppercase tracking-wider transition-colors cursor-pointer border-b-2 py-2 -mb-2 ${
-                        activeConsoleTab === tab 
-                          ? 'border-[#04AA6D] text-[#04AA6D]'
-                          : 'border-transparent text-slate-400 hover:text-slate-500'
-                      }`}
-                    >
-                      {tab}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Outputs panel */}
-              <div className="p-4 h-60 overflow-y-auto text-left font-mono text-[10px] leading-relaxed bg-[#0B0F17]">
-                {activeConsoleTab === 'console' ? (
-                  <div className="flex flex-col gap-1 text-slate-450 select-text">
-                    {compileOutput.map((line, idx) => (
-                      <p key={idx}>{line}</p>
-                    ))}
-                    {running && <p className="text-[#04AA6D] animate-pulse">Running playpen compiler process...</p>}
-                  </div>
-                ) : (
-                  /* Live Output Card Preview matched to screenshot exactly */
-                  !editorCodes['index.html'] || !editorCodes['index.html'].includes('cart') ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-slate-500 font-mono text-center gap-2">
-                      <ShieldAlert size={28} className="text-amber-500" />
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350">HTML Container Missing</p>
-                      <p className="text-[9px] text-slate-400 font-sans max-w-xs leading-normal">
-                        Your index.html is empty or missing the shopping cart element. Add the container tags to render the app.
-                      </p>
-                    </div>
-                  ) : cartItems.length === 0 ? (
-                    <div className="flex flex-col items-center justify-center py-10 text-slate-500 font-mono text-center gap-2">
-                      <TermIcon size={24} className="text-slate-550" />
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350">Empty Cart Preview</p>
-                      <p className="text-[9px] text-slate-400 font-sans max-w-xs leading-normal">
-                        The products array in script.js is cleared or empty. Define products to load preview elements.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="shopping-cart-container flex flex-col gap-3 text-slate-300 select-none animate-fade-in">
-                      
-                      <div className="flex items-center justify-between pb-1 border-b border-slate-800">
-                        <div className="flex items-center gap-1.5">
-                          <span className="cart-header text-[11px] font-black text-white uppercase tracking-wider">{cartTitle}</span>
-                          <span className="w-4 h-4 rounded-full bg-[#04AA6D] text-white flex items-center justify-center text-[8px] font-bold">{cartItems.length}</span>
-                        </div>
-                      </div>
-
-                      <div className="cart-items-list flex flex-col gap-2">
-                        {cartItems.map((item) => {
-                          const Icon = item.icon;
-                          return (
-                            <div key={item.id} className="cart-item flex items-center justify-between p-2 rounded-xl bg-[#121824] border border-[#1A202F]">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 rounded-lg bg-[#0B0F17] border border-[#1A202F] flex items-center justify-center text-[#04AA6D] shrink-0">
-                                  <Icon size={13} />
-                                </div>
-                                <div className="text-left leading-none">
-                                  <span className="item-name text-[10px] font-bold text-white uppercase tracking-wider">{item.name}</span>
-                                </div>
-                              </div>
-                              <div className="flex items-center gap-3">
-                                <span className="item-price text-[10px] font-extrabold text-white">${item.price * item.quantity}</span>
-                                
-                                {/* Counter box */}
-                                <div className="counter-box flex items-center gap-2 bg-[#0B0F17] border border-[#1A202F] rounded-lg px-1.5 py-0.5">
-                                  <button onClick={() => handleQtyChange(item.id, -1)} className="text-slate-400 hover:text-white cursor-pointer">
-                                    <Minus size={9} />
-                                  </button>
-                                  <span className="text-[9.5px] font-bold text-slate-200 w-3 text-center">{item.quantity}</span>
-                                  <button onClick={() => handleQtyChange(item.id, 1)} className="text-slate-400 hover:text-white cursor-pointer">
-                                    <Plus size={9} />
-                                  </button>
-                                </div>
-
-                                {/* Delete button */}
-                                <button onClick={() => handleRemoveItem(item.id)} className="delete-btn text-rose-500 hover:text-rose-400 cursor-pointer">
-                                  <Trash2 size={11} />
-                                </button>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      <div className="flex items-center justify-between border-t border-slate-800 pt-2 text-[10px] font-bold text-white uppercase tracking-wider">
-                        <span className="total-label">Total:</span>
-                        <span className="total-price text-emerald-500 font-extrabold">${cartTotal}</span>
-                      </div>
-
-                    </div>
-                  )
-                )}
-              </div>
-
-            </div>
-
+            )}
           </div>
         </div>
 

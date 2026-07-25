@@ -41,3 +41,7 @@ server/uploads/
 # Cloned VS Code repository
 vscode/
 
+# VS Code Test Web Cache
+.vscode-test-web/
+
+
