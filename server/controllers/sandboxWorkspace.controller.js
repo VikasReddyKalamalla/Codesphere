@@ -4,7 +4,6 @@ const cp = require('child_process');
 const { syncDbToDisk, syncDiskToDb, getWorkspacePath } = require('../utils/workspaceSync');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
-const portfinder = require('portfinder'); // We can use portfinder if installed, or do a manual search for free ports
 
 const activeServers = new Map(); // key: "projectId_userId", value: { port, process }
 
