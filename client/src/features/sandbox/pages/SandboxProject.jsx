@@ -538,21 +538,6 @@ export const SandboxProject = () => {
           <button onClick={() => setEditorTheme(prev => prev === 'dark' ? 'light' : 'dark')} className="p-2 rounded-xl bg-white border border-slate-200/60 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-all shadow-sm cursor-pointer" title={editorTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
             {editorTheme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
           </button>
-          
-          <button
-            onClick={() => {
-              if (iframeUrl) {
-                window.open(iframeUrl, '_blank');
-              } else {
-                toast.error('VS Code server is initializing... please wait a moment');
-              }
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0B0F17] hover:bg-slate-900 text-[#04AA6D] hover:text-emerald-400 text-[10px] font-bold font-mono uppercase tracking-wider transition-all shadow-md cursor-pointer border border-slate-800"
-            title="Open VS Code Studio in New Tab"
-          >
-            <ExternalLink size={12} />
-            <span>Open VS Code Tab</span>
-          </button>
           <button onClick={handleResetProject} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200/60 text-[10px] font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-50 uppercase tracking-wider transition-all shadow-sm cursor-pointer">
             <RotateCcw size={12} />
             Reset
