@@ -13,7 +13,7 @@ const activeServers = new Map(); // key: "projectId_userId", value: { port, proc
  * POST /api/sandbox/:projectId/workspace/init
  */
 const initWorkspace = asyncHandler(async (req, res) => {
-  const { projectId } = req.params;
+  const { id: projectId } = req.params;
   const userId = req.user._id;
   const key = `${projectId}_${userId}`;
 
@@ -81,7 +81,7 @@ const initWorkspace = asyncHandler(async (req, res) => {
  * POST /api/sandbox/:projectId/workspace/sync
  */
 const syncWorkspace = asyncHandler(async (req, res) => {
-  const { projectId } = req.params;
+  const { id: projectId } = req.params;
   const userId = req.user._id;
 
   // Sync disk -> DB
