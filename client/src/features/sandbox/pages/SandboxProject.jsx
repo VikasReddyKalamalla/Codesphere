@@ -299,10 +299,13 @@ export const SandboxProject = () => {
   // Open VS Code in a dedicated tab at the absolute URL
   const handleOpenInNewTab = () => {
     if (!iframeUrl) return;
-    const absoluteUrl = iframeUrl.startsWith('http')
-      ? iframeUrl
-      : `${window.location.origin}${iframeUrl}`;
-    window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
+    // If it's a proxied path like /vscode-web/9888/, open direct server URL in new tab
+    // for the best full-screen experience (no proxy overhead)
+    if (wsPort && iframeUrl.startsWith('/vscode-web/')) {
+      window.open(`http://127.0.0.1:${wsPort}/`, '_blank', 'noopener,noreferrer');
+    } else {
+      window.open(iframeUrl, '_blank', 'noopener,noreferrer');
+    }
   };
 
   // Realtime compiler logic that parses script.js content to update shopping cart details
@@ -1000,8 +1003,7 @@ export const SandboxProject = () => {
                   title="VS Code Web Studio"
                   className="flex-1 w-full border-none"
                   style={{ minHeight: '700px', height: '100%' }}
-                  allow="clipboard-read; clipboard-write; fullscreen; cross-origin-isolated"
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"
+                  allow="clipboard-read; clipboard-write; fullscreen"
                 />
               </div>
             )}

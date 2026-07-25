@@ -15,6 +15,7 @@ export default defineConfig({
         target: 'http://localhost:5000',
         ws: true,
         changeOrigin: true,
+        // Don't strip the /vscode-web prefix — Express handles path routing
       },
       '/api': {
         target: 'http://localhost:5000',

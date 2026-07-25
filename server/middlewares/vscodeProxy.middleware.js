@@ -1,138 +1,115 @@
 /**
  * VS Code Web Proxy Middleware
  * ─────────────────────────────────────────────────────────────────────────────
- * Routes:
- *   GET/POST/WS  /vscode-web/:port/*  →  http://127.0.0.1:<port>/*
+ * Mounts at /vscode-web in app.js (app.use('/vscode-web', router)).
  *
- * Why this exists:
- *   The @vscode/test-web server spawns on 127.0.0.1:<port>.  Embedding it
- *   directly in an <iframe> breaks because the browser considers it a
- *   cross-origin frame (different port = different origin).
- *   By proxying every request through the Express API server we keep
- *   everything on the same origin and avoid CORS / X-Frame-Options issues.
+ * URL scheme:
+ *   /vscode-web/<port>/<rest...>  →  http://127.0.0.1:<port>/<rest...>
  *
- * Security:
- *   - Only ports in the allowed range [9888, 9999] are proxied.
- *   - The middleware validates the port before forwarding.
- *   - WebSocket upgrade (for VS Code's built-in terminal / file-watch) is
- *     also forwarded via node's http.request upgrade mechanism.
+ * The Vite dev-server also proxies /vscode-web → Express (already in vite.config.js).
+ * So the browser always requests /vscode-web/<port>/... regardless of environment.
+ *
+ * VS Code Web internally generates absolute URLs like
+ *   http://127.0.0.1:<port>/static/build/...
+ * The proxy rewrites those response headers so the browser follows the proxied path.
+ *
+ * WebSocket upgrade (VS Code terminal / live-share) is handled via attachWsProxy().
  */
 
-const http     = require('http');
-const net      = require('net');
-const url      = require('url');
-const express  = require('express');
-const httpProxy = require('http-proxy');
+'use strict';
+
+const express          = require('express');
+const { createProxyMiddleware } = require('http-proxy-middleware');
 
 const MIN_PORT = 9888;
 const MAX_PORT = 9999;
 
-// One shared proxy server instance (reused for every request)
-const proxy = httpProxy.createProxyServer({
-  ws:              true,
-  changeOrigin:    true,
-  xfwd:            true,
-  proxyTimeout:    30000,
-  timeout:         30000,
-});
-
-// Silence default "ECONNREFUSED" noise when the VS Code server hasn't started yet
-proxy.on('error', (err, _req, res) => {
-  const msg = 'VS Code server not reachable. It may still be starting — please retry in a moment.';
-  if (res && !res.headersSent) {
-    if (typeof res.writeHead === 'function') {
-      res.writeHead(502, { 'Content-Type': 'text/plain' });
-    }
-    res.end(msg);
-  }
-});
-
-/**
- * Build the target URL from the :port param.
- * Returns null when the port is outside the allowed range.
- */
-const resolveTarget = (portStr) => {
-  const port = parseInt(portStr, 10);
-  if (isNaN(port) || port < MIN_PORT || port > MAX_PORT) return null;
-  return `http://127.0.0.1:${port}`;
+const isValidPort = (p) => {
+  const n = parseInt(p, 10);
+  return !isNaN(n) && n >= MIN_PORT && n <= MAX_PORT;
 };
 
-/**
- * Express router that handles HTTP + WebSocket proxying.
- *
- * Usage in app.js:
- *   const vscodeProxyRouter = require('./middlewares/vscodeProxy.middleware');
- *   app.use('/vscode-web', vscodeProxyRouter);
- */
 const router = express.Router();
 
-// ─── HTTP requests ────────────────────────────────────────────────────────────
+/**
+ * Dynamic proxy: for every request to /:port/*, proxy to http://127.0.0.1:<port>/*
+ *
+ * http-proxy-middleware is used here instead of http-proxy because it correctly
+ * handles path rewriting and response header rewriting (Location redirects).
+ */
 router.use('/:port', (req, res, next) => {
-  const target = resolveTarget(req.params.port);
-  if (!target) {
-    return res.status(400).json({ error: 'Invalid or out-of-range VS Code server port.' });
+  const port = req.params.port;
+
+  if (!isValidPort(port)) {
+    return res.status(400).json({ error: `Invalid VS Code server port: ${port}` });
   }
 
-  // Strip the /vscode-web/:port prefix so the VS Code server sees the right path
-  req.url = req.url.replace(new RegExp(`^\\/${req.params.port}`), '') || '/';
+  // Strip /vscode-web/<port> prefix — req.url at this point starts with /
+  // because Express has already consumed the /:port segment. So req.url is
+  // already the correct downstream path (e.g. "/" or "/static/build/...").
+  const target = `http://127.0.0.1:${port}`;
 
-  // Allow embedding in <iframe> from same origin
-  res.removeHeader('X-Frame-Options');
-  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
-
-  proxy.web(req, res, { target }, (err) => {
-    if (!res.headersSent) {
-      if (err && (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET')) {
-        res.status(502).send(`
-          <!DOCTYPE html>
-          <html>
-          <head>
-            <meta http-equiv="refresh" content="2">
-            <title>Starting VS Code Studio</title>
-            <style>
-              body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-              .spinner { border: 3px solid #21262d; border-top: 3px solid #04AA6D; border-radius: 50%; width: 28px; height: 28px; animation: spin 1s linear infinite; margin-bottom: 16px; }
-              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
-              .msg { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #8b949e; }
-              .sub { font-size: 11px; color: #484f58; margin-top: 6px; }
-            </style>
-          </head>
-          <body>
-            <div class="spinner"></div>
-            <div class="msg">VS Code Web Server Starting…</div>
-            <div class="sub">Connecting to workspace. Retrying automatically in 2 seconds</div>
-          </body>
-          </html>
-        `);
-      } else {
-        next(err);
-      }
-    }
+  const proxy = createProxyMiddleware({
+    target,
+    changeOrigin: true,
+    ws: true,
+    // Rewrite absolute Location headers in redirects so they go through our proxy
+    autoRewrite: true,
+    // Don't compress — let VS Code serve pre-gzipped assets as-is
+    compress: false,
+    // Remove X-Frame-Options so the iframe can embed VS Code
+    on: {
+      proxyRes: (proxyRes) => {
+        delete proxyRes.headers['x-frame-options'];
+        delete proxyRes.headers['content-security-policy'];
+        // Allow embedding from any same-origin parent
+        proxyRes.headers['x-frame-options'] = 'SAMEORIGIN';
+      },
+      error: (err, req, res) => {
+        if (res && !res.headersSent) {
+          res.status(502).json({
+            error: 'VS Code server not reachable',
+            detail: err.message,
+          });
+        }
+      },
+    },
   });
+
+  return proxy(req, res, next);
 });
 
 /**
  * Attach WebSocket upgrade handler to an http.Server instance.
- * Call this once after server.listen() in server.js:
  *
+ * Call once in server.js after server creation:
  *   const { attachWsProxy } = require('./middlewares/vscodeProxy.middleware');
  *   attachWsProxy(httpServer);
  */
 const attachWsProxy = (server) => {
   server.on('upgrade', (req, socket, head) => {
-    // Only proxy WS connections that match our prefix
     const match = req.url.match(/^\/vscode-web\/(\d+)(\/.*)?$/);
     if (!match) return;
 
-    const target = resolveTarget(match[1]);
-    if (!target) {
+    const port = match[1];
+    if (!isValidPort(port)) {
       socket.destroy();
       return;
     }
 
-    // Rewrite URL for the downstream server
+    // Rewrite URL to downstream path before proxying
     req.url = match[2] || '/';
-    proxy.ws(req, socket, head, { target });
+
+    const proxy = createProxyMiddleware({
+      target: `http://127.0.0.1:${port}`,
+      ws: true,
+      changeOrigin: true,
+    });
+
+    // Trigger WS proxy upgrade
+    if (proxy.upgrade) {
+      proxy.upgrade(req, socket, head);
+    }
   });
 };
 

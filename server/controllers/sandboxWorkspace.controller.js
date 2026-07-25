@@ -92,20 +92,22 @@ const resolveBuild = async () => {
 };
 
 /**
- * Wait until the VS Code web server responds to an HTTP request (max 15 s).
+ * Wait until the VS Code web server responds to an HTTP request.
+ * Resolves (never rejects) — worst case after maxMs we return anyway.
  */
-const waitForServer = (port, maxMs = 15000) =>
-  new Promise((resolve, reject) => {
+const waitForServer = (port, maxMs = 20000) =>
+  new Promise((resolve) => {
     const start   = Date.now();
     const attempt = () => {
       http.get(`http://127.0.0.1:${port}/`, res => {
-        res.resume(); // drain
+        res.resume();
         resolve();
       }).on('error', () => {
         if (Date.now() - start > maxMs) {
-          reject(new Error(`VS Code server on port ${port} did not start within ${maxMs}ms`));
+          console.warn(`[vscode-web] Readiness timeout for port ${port} after ${maxMs}ms — returning anyway`);
+          resolve();
         } else {
-          setTimeout(attempt, 400);
+          setTimeout(attempt, 300);
         }
       });
     };
@@ -154,7 +156,7 @@ const initWorkspace = asyncHandler(async (req, res) => {
   console.log(`[vscode-web] Starting server for ${key} on port ${port} | workspace: ${normalizedPath}`);
 
   const { runServer } = getTestWebModules();
-  const server = await runServer('127.0.0.1', port, {
+  const server = await runServer('0.0.0.0', port, {
     build,
     folderMountPath: normalizedPath,
     esm:             true,
@@ -163,16 +165,11 @@ const initWorkspace = asyncHandler(async (req, res) => {
 
   activeServers.set(key, { port, server, workspacePath: normalizedPath });
 
-  // 4 ── Wait for HTTP readiness (up to 15 s)
-  try {
-    await waitForServer(port);
-  } catch (readinessErr) {
-    console.warn(`[vscode-web] Readiness check failed for port ${port}:`, readinessErr.message);
-    // Don't abort – the iframe will handle the retry on the client side
-  }
+  // 4 ── Wait for HTTP readiness (up to 20 s) before returning to client
+  await waitForServer(port, 20000);
 
-  const iframeUrl = `/vscode-web/${port}/`;
-  console.log(`[vscode-web] Server ready → proxied at ${iframeUrl} (backend port ${port})`);
+  const iframeUrl = `http://127.0.0.1:${port}/`;
+  console.log(`[vscode-web] Server ready → ${iframeUrl}`);
 
   return successResponse(res, 200, 'Workspace initialized and VS Code server started', {
     iframeUrl,
