@@ -1,6 +1,7 @@
 const SandboxProgress = require('../models/SandboxProgress');
 const SandboxProject  = require('../models/SandboxProject');
 const SandboxStep     = require('../models/SandboxStep');
+const { syncDbToDisk } = require('../utils/workspaceSync');
 
 const createError = (message, statusCode) => {
   const err = new Error(message);
@@ -130,6 +131,13 @@ const updateProgress = async (projectId, userId, body) => {
   }
 
   await progress.save();
+  if (codeFiles) {
+    try {
+      await syncDbToDisk(projectId, userId);
+    } catch (err) {
+      console.warn('Failed to sync updated codeFiles to disk:', err.message);
+    }
+  }
   return progress;
 };
 

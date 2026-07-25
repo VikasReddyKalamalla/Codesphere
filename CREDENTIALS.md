@@ -7,7 +7,7 @@ This document contains all default user credentials seeded into the CodeSphere d
 ## 🛡️ Admin Account
 > **Access:** Platform Administration, User & Instructor Management, System Settings, Content Moderation, Analytics.
 
-| Name | Role | Email | Username | Password | Plan |
+| Name | Role |Email | Username | Password | Plan |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Admin User** | `admin` | `admin@codesphere.dev` | `adminuser` | `admin123` | Premium |
 

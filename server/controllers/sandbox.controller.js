@@ -15,6 +15,7 @@ const seedSandboxDatabase = async () => {
     if (!instructor) {
       instructor = await User.create({
         fullName: 'Neha Sharma',
+        username: 'nehasharma',
         email: 'neha@codesphere.com',
         password: 'password123',
         role: 'instructor',
