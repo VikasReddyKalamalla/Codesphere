@@ -8,7 +8,6 @@ const axios = require('axios');
 const logger = require('../utils/logger');
 
 const JUDGE0_API_BASE = process.env.JUDGE0_API_URL || 'https://judge0-ce.p.rapidapi.com';
-const JUDGE0_API_KEY = process.env.JUDGE0_API_KEY;
 const JUDGE0_HOST = process.env.JUDGE0_HOST || 'judge0-ce.p.rapidapi.com';
 
 // Language ID mappings for Judge0
@@ -55,7 +54,8 @@ const getLanguageId = (language) => {
  */
 const executeCode = async (code, language, input = '', timeLimit = EXECUTION_TIMEOUT) => {
   try {
-    if (!JUDGE0_API_KEY) {
+    const apiKey = process.env.JUDGE0_API_KEY;
+    if (!apiKey || apiKey === 'test-api-key') {
       logger.warn('Judge0 API key not configured, returning mock result');
       return getMockExecutionResult(code, language);
     }
@@ -75,12 +75,13 @@ const executeCode = async (code, language, input = '', timeLimit = EXECUTION_TIM
       },
       {
         headers: {
-          'X-RapidAPI-Key': JUDGE0_API_KEY,
+          'X-RapidAPI-Key': apiKey,
           'X-RapidAPI-Host': JUDGE0_HOST,
           'Content-Type': 'application/json',
         },
       }
     );
+
 
     const token = submissionResponse.data.token;
     logger.info(`Code submission token: ${token}`);
@@ -107,7 +108,7 @@ const pollJudge0Result = async (token, maxWaitTime = 30) => {
         `${JUDGE0_API_BASE}/submissions/${token}?base64_encoded=false`,
         {
           headers: {
-            'X-RapidAPI-Key': JUDGE0_API_KEY,
+            'X-RapidAPI-Key': process.env.JUDGE0_API_KEY,
             'X-RapidAPI-Host': JUDGE0_HOST,
           },
         }

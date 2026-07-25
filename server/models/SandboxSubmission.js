@@ -17,13 +17,17 @@ const sandboxSubmissionSchema = new mongoose.Schema(
     // ─── Submission Content ───────────────────────────────────────────────────
     submissionType: {
       type:    String,
-      enum:    { values: ['github', 'zip', 'live_demo'], message: '{VALUE} is not a valid submission type' },
+      enum:    { values: ['github', 'zip', 'live_demo', 'code'], message: '{VALUE} is not a valid submission type' },
       default: 'github',
     },
     githubUrl:   { type: String, default: '' },
     zipFileUrl:  { type: String, default: '' },
     liveDemoUrl: { type: String, default: '' },
     notes:       { type: String, default: '', maxlength: [2000, 'Notes cannot exceed 2000 characters'] },
+    codeLanguage: { type: String, default: '' },
+    codeContent:  { type: String, default: '' },
+    testsPassed:  { type: Boolean, default: false },
+    testResults:  { type: mongoose.Schema.Types.Mixed, default: [] },
 
     // ─── Status ───────────────────────────────────────────────────────────────
     status: {

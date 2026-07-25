@@ -36,5 +36,8 @@ server/uploads/
 *.suo
 *.ntvs*
 *.njsproj
-*.sln
 *.sw?
+
+# Cloned VS Code repository
+vscode/
+

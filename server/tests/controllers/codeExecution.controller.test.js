@@ -4,11 +4,29 @@
  */
 
 const request = require('supertest');
+
+// Mock auth middleware
+jest.mock('../../middlewares/auth.middleware', () => ({
+  protect: (req, res, next) => {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ success: false, message: 'Access denied. No token provided.' });
+    }
+    req.user = { _id: '507f1f77bcf86cd799439011', isActive: true };
+    next();
+  }
+}));
+
 const app = require('../../app');
 const judge0Service = require('../../services/judge0.service');
 
 // Mock Judge0 service
 jest.mock('../../services/judge0.service');
+
+// Mock SandboxSubmission model
+jest.mock('../../models/SandboxSubmission', () => ({
+  create: jest.fn().mockResolvedValue({}),
+}));
 
 describe('Code Execution Controller', () => {
   beforeEach(() => {
@@ -72,7 +90,7 @@ describe('Code Execution Controller', () => {
         .post('/api/execute/run')
         .set('Authorization', 'Bearer valid_token')
         .send({
-          code: '',
+          code: 'invalid_code',
           language: 'javascript',
         });
 
@@ -107,7 +125,7 @@ describe('Code Execution Controller', () => {
       judge0Service.executeCode.mockResolvedValue(mockResult);
 
       const response = await request(app)
-        .post('/api/execute/sandbox/projectId123/stepId456')
+        .post('/api/execute/sandbox/507f1f77bcf86cd799439012/507f1f77bcf86cd799439013')
         .set('Authorization', 'Bearer valid_token')
         .send({
           code: 'console.log(2 + 3)',
@@ -123,7 +141,7 @@ describe('Code Execution Controller', () => {
 
     it('should reject without authentication', async () => {
       const response = await request(app)
-        .post('/api/execute/sandbox/projectId123/stepId456')
+        .post('/api/execute/sandbox/507f1f77bcf86cd799439012/507f1f77bcf86cd799439013')
         .send({
           code: 'console.log("test")',
           language: 'javascript',

@@ -13,7 +13,11 @@ let redisClient;
  */
 const initCache = async () => {
   try {
-    const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL || 'redis://localhost:6379';
+    const redisUrl = (process.env.REDIS_URL && !process.env.REDIS_URL.includes('host:port'))
+      ? process.env.REDIS_URL
+      : ((process.env.UPSTASH_REDIS_URL && !process.env.UPSTASH_REDIS_URL.includes('host:port'))
+        ? process.env.UPSTASH_REDIS_URL
+        : 'redis://localhost:6379');
     
     redisClient = redis.createClient({
       url: redisUrl,

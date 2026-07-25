@@ -1,5 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
+import Editor from '@monaco-editor/react';
+
+const getEditorLanguage = (filename) => {
+  const ext = filename.split('.').pop().toLowerCase();
+  switch (ext) {
+    case 'js':
+    case 'jsx':
+      return 'javascript';
+    case 'ts':
+    case 'tsx':
+      return 'typescript';
+    case 'html':
+      return 'html';
+    case 'css':
+      return 'css';
+    case 'py':
+      return 'python';
+    case 'json':
+      return 'json';
+    default:
+      return 'plaintext';
+  }
+};
+
 import {
   Compass, Briefcase, Bookmark, ClipboardList, Clock, ArrowRight, ChevronLeft,
   BookOpen, Lock, CheckCircle2, Play, RotateCcw, Trash2, Plus, Minus, Sun, Moon,
@@ -738,23 +762,27 @@ export const SandboxProject = () => {
               </div>
             </div>
 
-            <div className={`flex-1 flex font-mono text-[10.5px] p-4 leading-relaxed overflow-y-auto min-h-[420px] select-text transition-colors duration-200 ${
-              editorTheme === 'dark' ? 'bg-[#0B0F17] text-indigo-150' : 'bg-slate-50/60 text-slate-850 border-b border-slate-200/40'
+            <div className={`flex-1 flex flex-col min-h-[420px] transition-colors duration-200 ${
+              editorTheme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white border-b border-slate-200/40'
             }`}>
-              <div className={`text-right pr-3 select-none transition-colors ${
-                editorTheme === 'dark' ? 'text-slate-600' : 'text-slate-400'
-              }`}>
-                {Array.from({ length: 28 }).map((_, i) => (
-                  <div key={i}>{i + 1}</div>
-                ))}
-              </div>
-              <textarea
+              <Editor
+                height="100%"
+                language={getEditorLanguage(activeFile)}
+                theme={editorTheme === 'dark' ? 'vs-dark' : 'light'}
                 value={editorCodes[activeFile]}
-                onChange={(e) => setEditorCodes({ ...editorCodes, [activeFile]: e.target.value })}
-                className={`flex-1 bg-transparent border-none outline-none resize-none overflow-y-auto no-scrollbar font-mono leading-relaxed h-full transition-colors ${
-                  editorTheme === 'dark' ? 'text-indigo-200 focus:text-white' : 'text-slate-750 focus:text-slate-900'
-                }`}
-                rows={28}
+                onChange={(val) => setEditorCodes({ ...editorCodes, [activeFile]: val || '' })}
+                options={{
+                  fontSize: 12.5,
+                  fontFamily: 'Fira Code, Menlo, Monaco, Consolas, Courier New, monospace',
+                  minimap: { enabled: false },
+                  automaticLayout: true,
+                  lineNumbers: 'on',
+                  wordWrap: 'on',
+                  scrollBeyondLastLine: false,
+                  padding: { top: 12, bottom: 12 },
+                  cursorBlinking: 'smooth',
+                  cursorSmoothCaretAnimation: 'on',
+                }}
               />
             </div>
 

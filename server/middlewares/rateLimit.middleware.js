@@ -4,32 +4,44 @@
  */
 
 const rateLimit = require('express-rate-limit');
-const RedisStore = require('rate-limit-redis');
+const { RedisStore } = require('rate-limit-redis');
 const redis = require('redis');
 
 // Create Redis client for distributed rate limiting
 let redisClient;
-let store;
 
 try {
-  const redisUrl = process.env.UPSTASH_REDIS_URL || process.env.REDIS_URL || 'redis://localhost:6379';
-  redisClient = redis.createClient({ url: redisUrl });
-  
-  redisClient.on('error', (err) => {
-    console.error('Redis client error:', err);
-  });
+  // Only connect to Redis when not running tests
+  if (process.env.NODE_ENV !== 'test') {
+    const redisUrl = (process.env.REDIS_URL && !process.env.REDIS_URL.includes('host:port'))
+      ? process.env.REDIS_URL
+      : ((process.env.UPSTASH_REDIS_URL && !process.env.UPSTASH_REDIS_URL.includes('host:port'))
+        ? process.env.UPSTASH_REDIS_URL
+        : 'redis://localhost:6379');
+    redisClient = redis.createClient({ url: redisUrl });
+    
+    redisClient.on('error', (err) => {
+      console.error('Redis client error:', err);
+    });
 
-  redisClient.connect();
-
-  // Use Redis store for rate limiting (useful for multiple server instances)
-  store = new RedisStore({
-    client: redisClient,
-    prefix: 'rate-limit:',
-  });
+    redisClient.connect();
+  }
 } catch (error) {
-  console.warn('Redis not available, using in-memory rate limiting');
-  // Falls back to memory store if Redis is unavailable
+  console.warn('Redis not available, using in-memory rate limiting. Error:', error.message);
 }
+
+/**
+ * Helper to create a unique RedisStore for each rate limiter (required by express-rate-limit v7+)
+ */
+const createRedisStore = (prefix) => {
+  if (process.env.NODE_ENV === 'test' || !redisClient) {
+    return undefined; // Falls back to default in-memory store
+  }
+  return new RedisStore({
+    sendCommand: (...args) => redisClient.sendCommand(args),
+    prefix: prefix,
+  });
+};
 
 /**
  * General API rate limiter
@@ -41,7 +53,7 @@ const apiLimiter = rateLimit({
   message: 'Too many requests from this IP, please try again later',
   standardHeaders: true, // Return rate limit info in `RateLimit-*` headers
   legacyHeaders: false, // Disable `X-RateLimit-*` headers
-  store: store,
+  store: createRedisStore('rate-limit-api:'),
   skip: (req) => {
     // Skip rate limiting for health checks and public routes
     return req.path === '/health' || req.path === '/';
@@ -62,7 +74,7 @@ const authLimiter = rateLimit({
   message: 'Too many login attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
-  store: store,
+  store: createRedisStore('rate-limit-auth:'),
 });
 
 /**
@@ -75,7 +87,7 @@ const codeLimiter = rateLimit({
   message: 'Too many code execution requests, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
-  store: store,
+  store: createRedisStore('rate-limit-code:'),
   keyGenerator: (req) => req.user?._id || req.ip,
 });
 
@@ -89,7 +101,7 @@ const uploadLimiter = rateLimit({
   message: 'Too many file uploads, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
-  store: store,
+  store: createRedisStore('rate-limit-upload:'),
   keyGenerator: (req) => req.user?._id || req.ip,
 });
 
@@ -103,7 +115,7 @@ const paymentLimiter = rateLimit({
   message: 'Too many payment attempts, please try again later',
   standardHeaders: true,
   legacyHeaders: false,
-  store: store,
+  store: createRedisStore('rate-limit-payment:'),
   keyGenerator: (req) => req.user?._id || req.ip,
 });
 

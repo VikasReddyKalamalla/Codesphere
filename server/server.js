@@ -13,6 +13,10 @@ initSocket(server);
 
 // Connect to MongoDB then start server
 connectDB().then(() => {
+  // Create database indexes on startup
+  const { createIndexes } = require('./config/indexes');
+  createIndexes().catch((err) => console.error('Failed to create database indexes:', err));
+
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
   });
