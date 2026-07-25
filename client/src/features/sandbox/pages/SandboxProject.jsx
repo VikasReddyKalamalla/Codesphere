@@ -786,10 +786,10 @@ export const SandboxProject = () => {
 
         {/* Column 3: IDE Editor & Output (col-span-4) */}
         <div className="xl:col-span-4 flex flex-col gap-4">
-          <div className="border border-slate-200/60 bg-[#0B0F17] rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col justify-between min-h-[750px] relative">
+          <div className="border border-slate-200/60 bg-white rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col justify-between min-h-[750px] relative">
             
             {/* Top Workspace Bar */}
-            <div className="h-10 px-4 bg-[#0B0F17] border-b border-slate-800 flex items-center justify-between text-slate-300">
+            <div className="h-10 px-4 bg-slate-900 border-b border-slate-800 flex items-center justify-between text-slate-300">
               <div className="flex items-center gap-2 font-mono text-[10px] uppercase font-bold tracking-wider">
                 <span className="w-2 h-2 rounded-full bg-[#04AA6D] animate-ping" />
                 <span className="text-white">VS Code Web Studio</span>
@@ -810,17 +810,17 @@ export const SandboxProject = () => {
             </div>
 
             {loadingWorkspace ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 font-mono text-center gap-3 bg-[#0B0F17]">
-                <div className="w-9 h-9 rounded-full border-4 border-slate-800 border-t-[#04AA6D] animate-spin" />
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350 animate-pulse">Launching VS Code Server...</p>
+              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 font-mono text-center gap-3 bg-white">
+                <div className="w-9 h-9 rounded-full border-4 border-slate-200 border-t-[#04AA6D] animate-spin" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 animate-pulse">Launching VS Code Server...</p>
                 <p className="text-[9px] text-slate-400 font-sans max-w-xs leading-normal">
                   Preparing your local filesystem workspace and starting the VS Code Server. Please hold on...
                 </p>
               </div>
             ) : !iframeUrl ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 font-mono text-center gap-3 bg-[#0B0F17]">
+              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 font-mono text-center gap-3 bg-white">
                 <ShieldAlert size={32} className="text-rose-500" />
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">VS Code Sandbox Offline</p>
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-600">VS Code Sandbox Offline</p>
                 <p className="text-[9px] text-slate-400 font-sans max-w-xs leading-normal">
                   Failed to spawn VS Code server. Try refreshing the page.
                 </p>
@@ -828,7 +828,7 @@ export const SandboxProject = () => {
             ) : (
               <div className="flex-1 flex flex-col w-full h-full relative">
                 {/* Visual Banner Overlay to ensure 1-click access if iframe blocked */}
-                <div className="bg-[#121824] border-b border-slate-800 px-4 py-2 flex items-center justify-between text-xs">
+                <div className="bg-slate-900 border-b border-slate-800 px-4 py-2 flex items-center justify-between text-xs">
                   <div className="flex items-center gap-2 text-slate-300 font-sans text-[11px]">
                     <Sparkles size={14} className="text-[#04AA6D]" />
                     <span>Want full workspace space? Launch directly in a dedicated browser tab!</span>

@@ -12,11 +12,20 @@ const getWorkspacePath = (projectId, userId) => {
  * Write files from DB progress to disk.
  */
 const syncDbToDisk = async (projectId, userId) => {
-  const progress = await SandboxProgress.findOne({ projectId, userId });
-  if (!progress) return;
-
   const workspacePath = getWorkspacePath(projectId, userId);
   await fsPromises.mkdir(workspacePath, { recursive: true });
+
+  let progress = await SandboxProgress.findOne({ projectId, userId });
+  if (!progress) {
+    progress = new SandboxProgress({
+      projectId,
+      userId,
+      currentStep: 1,
+      completedSteps: [],
+      completionPercent: 0,
+      codeFiles: {}
+    });
+  }
 
   // Get code files from progress
   let codeFiles = progress.codeFiles;

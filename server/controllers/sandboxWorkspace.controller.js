@@ -48,8 +48,10 @@ const initWorkspace = asyncHandler(async (req, res) => {
   const serverScript = path.join(vscodeDir, 'scripts', 'code-web.js');
 
   // Command: node scripts/code-web.js <workspacePath> --port <port> --host 127.0.0.1
-  // We use backslashes on Windows for path formatting
   const formattedWorkspacePath = path.normalize(workspacePath);
+  if (!fs.existsSync(formattedWorkspacePath)) {
+    fs.mkdirSync(formattedWorkspacePath, { recursive: true });
+  }
 
   const proc = cp.spawn(process.execPath, [
     serverScript,
@@ -68,6 +70,9 @@ const initWorkspace = asyncHandler(async (req, res) => {
   // Save server state
   activeServers.set(key, { port, proc });
   console.log(`VS Code Web server running on http://localhost:${port}/ for workspace ${formattedWorkspacePath}`);
+
+  // Give process 400ms to open TCP socket
+  await new Promise(resolve => setTimeout(resolve, 400));
 
   // Return the iframe URL
   return successResponse(res, 200, 'Workspace initialized and VS Code server started', {
