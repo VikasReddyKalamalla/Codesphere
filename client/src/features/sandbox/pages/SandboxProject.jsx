@@ -230,7 +230,9 @@ export const SandboxProject = () => {
         const port = res?.data?.port;
         if (!url) throw new Error('No iframeUrl in response');
         if (isMounted.current) {
-          setIframeUrl(url);
+          const backendOrigin = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+          const fullUrl = url.startsWith('http') ? url : `${backendOrigin}${url}`;
+          setIframeUrl(fullUrl);
           setWsPort(port ?? null);
           setWsStatus('ready');
           wsRetryCount.current = 0;
@@ -262,12 +264,11 @@ export const SandboxProject = () => {
     };
   }, [id, loading, startWorkspace]);
 
-  // Cleanup: stop VS Code server and sync files when user leaves the page
+  // Best-effort sync when navigating away
   useEffect(() => {
     return () => {
       if (!id) return;
-      // Best-effort stop — fire-and-forget
-      stopWorkspaceAPI(id).catch(() => {});
+      syncWorkspaceAPI(id).catch(() => {});
     };
   }, [id]);
 
@@ -298,8 +299,9 @@ export const SandboxProject = () => {
   // Open VS Code in a dedicated tab at the absolute URL
   const handleOpenInNewTab = () => {
     if (!iframeUrl) return;
-    // iframeUrl is a same-origin relative path like /vscode-web/9888/
-    const absoluteUrl = `${window.location.origin}${iframeUrl}`;
+    const absoluteUrl = iframeUrl.startsWith('http')
+      ? iframeUrl
+      : `${window.location.origin}${iframeUrl}`;
     window.open(absoluteUrl, '_blank', 'noopener,noreferrer');
   };
 

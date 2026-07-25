@@ -81,7 +81,33 @@ router.use('/:port', (req, res, next) => {
   res.setHeader('X-Frame-Options', 'SAMEORIGIN');
 
   proxy.web(req, res, { target }, (err) => {
-    if (!res.headersSent) next(err);
+    if (!res.headersSent) {
+      if (err && (err.code === 'ECONNREFUSED' || err.code === 'ECONNRESET')) {
+        res.status(502).send(`
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta http-equiv="refresh" content="2">
+            <title>Starting VS Code Studio</title>
+            <style>
+              body { background: #0d1117; color: #c9d1d9; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+              .spinner { border: 3px solid #21262d; border-top: 3px solid #04AA6D; border-radius: 50%; width: 28px; height: 28px; animation: spin 1s linear infinite; margin-bottom: 16px; }
+              @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+              .msg { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #8b949e; }
+              .sub { font-size: 11px; color: #484f58; margin-top: 6px; }
+            </style>
+          </head>
+          <body>
+            <div class="spinner"></div>
+            <div class="msg">VS Code Web Server Starting…</div>
+            <div class="sub">Connecting to workspace. Retrying automatically in 2 seconds</div>
+          </body>
+          </html>
+        `);
+      } else {
+        next(err);
+      }
+    }
   });
 });
 

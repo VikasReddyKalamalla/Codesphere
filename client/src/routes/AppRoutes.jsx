@@ -58,6 +58,7 @@ const CreateWorkspacePage = lazy(() => import('@features/codex/pages/CreateWorks
 const WorkspacePage      = lazy(() => import('@features/codex/pages/WorkspacePage.jsx'));
 const SandboxPage        = lazy(() => import('@features/sandbox/pages/SandboxPage.jsx'));
 const SandboxProjectPage = lazy(() => import('@features/sandbox/pages/SandboxProjectPage.jsx'));
+const WebIDEPage         = lazy(() => import('@features/ide/WebIDE.jsx'));
 const TestsPage          = lazy(() => import('@features/tests/pages/TestsPage.jsx'));
 const TestDetailPage     = lazy(() => import('@features/tests/pages/TestDetailPage.jsx'));
 const TestAttemptPage    = lazy(() => import('@features/tests/pages/TestAttemptPage.jsx'));
@@ -200,9 +201,10 @@ const AppRoutes = () => {
         <Route path={ROUTES.CODEX_CREATE}      element={<W><CreateWorkspacePage /></W>} />
         <Route path={ROUTES.WORKSPACE}         element={<W><WorkspacePage /></W>} />
 
-        {/* Sandbox */}
+        {/* Sandbox & Web IDE */}
         <Route path={ROUTES.SANDBOX}           element={<W><SandboxPage /></W>} />
         <Route path={ROUTES.SANDBOX_PROJECT}   element={<W><SandboxProjectPage /></W>} />
+        <Route path={ROUTES.IDE}               element={<W><WebIDEPage /></W>} />
 
         {/* Tests */}
         <Route path={ROUTES.TESTS}             element={<W><TestsPage /></W>} />

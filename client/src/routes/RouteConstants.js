@@ -59,6 +59,7 @@ export const ROUTES = {
   // ─── Sandbox ────────────────────────────────────────────────────────────────
   SANDBOX:         '/sandbox',
   SANDBOX_PROJECT: '/sandbox/:projectId',
+  IDE:             '/ide',
 
   // ─── Tests / Assessments ────────────────────────────────────────────────────
   TESTS:           '/tests',
