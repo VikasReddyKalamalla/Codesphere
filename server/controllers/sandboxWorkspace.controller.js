@@ -46,8 +46,27 @@ const initWorkspace = asyncHandler(async (req, res) => {
   console.log(`Starting VS Code Web server for ${key} on port ${port}...`);
   const testDataDir = path.join(__dirname, '..', '..', '.vscode-test-web');
   
-  // Ensure prebuilt VS Code Web release bundle is downloaded & unzipped
-  const build = await testWebDownload.downloadAndUnzipVSCode(testDataDir, 'insiders');
+  let buildLocation = null;
+  if (fs.existsSync(testDataDir)) {
+    const entries = fs.readdirSync(testDataDir);
+    const vscodeFolder = entries.find(e => e.startsWith('vscode-web-'));
+    if (vscodeFolder) {
+      buildLocation = path.join(testDataDir, vscodeFolder);
+    }
+  }
+
+  let build;
+  if (buildLocation) {
+    build = { type: 'static', location: buildLocation };
+  } else {
+    try {
+      build = await testWebDownload.downloadAndUnzipVSCode(testDataDir, 'stable');
+    } catch (e) {
+      console.warn('downloadAndUnzipVSCode failed, using local fallback:', e.message);
+      const fallbackDir = path.join(__dirname, '..', '..', 'vscode');
+      build = { type: 'static', location: fallbackDir };
+    }
+  }
 
   const server = await testWebMain.runServer('127.0.0.1', port, {
     build,
