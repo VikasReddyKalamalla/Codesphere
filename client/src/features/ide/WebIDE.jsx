@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import Editor from '@monaco-editor/react';
 import {
   FileText, Folder, Plus, Trash2, Search, Save, Play, Settings,
-  ChevronRight, ChevronDown, Download, RotateCcw, Terminal
+  ChevronRight, ChevronDown, Download, RotateCcw, Terminal, X,
+  Code2, GitBranch, Split, Maximize2, Minimize2, Copy, Eye,
+  Command, Terminal as TerminalIcon, Bug, Zap, AlertCircle
 } from 'lucide-react';
 import axios from 'axios';
 import toast from 'react-hot-toast';
@@ -10,16 +12,26 @@ import toast from 'react-hot-toast';
 const WebIDE = () => {
   const [activeProject, setActiveProject] = useState(null);
   const [files, setFiles] = useState([]);
+  const [openTabs, setOpenTabs] = useState([]);
   const [activeFile, setActiveFile] = useState(null);
   const [fileContent, setFileContent] = useState('');
   const [fileLanguage, setFileLanguage] = useState('plaintext');
   const [expandedDirs, setExpandedDirs] = useState(new Set());
   const [searchQuery, setSearchQuery] = useState('');
   const [showSearch, setShowSearch] = useState(false);
+  const [showTerminal, setShowTerminal] = useState(false);
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [showExplorer, setShowExplorer] = useState(true);
   const [theme, setTheme] = useState('dark');
-  const [unsavedChanges, setUnsavedChanges] = useState(false);
+  const [unsavedChanges, setUnsavedChanges] = useState(new Set());
   const [isLoading, setIsLoading] = useState(false);
+  const [splitView, setSplitView] = useState(false);
+  const [minimap, setMinimap] = useState(true);
+  const [wordWrap, setWordWrap] = useState(true);
+  const [fontSize, setFontSize] = useState(14);
+  const [gitStatus, setGitStatus] = useState('main');
   const editorRef = useRef(null);
+  const terminalRef = useRef(null);
 
   // API calls
   const apiClient = axios.create({
@@ -57,7 +69,7 @@ const WebIDE = () => {
     }
   };
 
-  // Open file
+  // Open file in tab
   const openFile = async (file) => {
     if (file.type === 'directory') {
       setExpandedDirs((prev) => {
@@ -78,15 +90,44 @@ const WebIDE = () => {
         params: { filePath: file.path },
       });
 
+      // Add to open tabs if not already there
+      if (!openTabs.find(tab => tab.path === file.path)) {
+        setOpenTabs([...openTabs, { ...file, language: response.data.data.language }]);
+      }
+
       setActiveFile(file);
       setFileContent(response.data.data.content);
       setFileLanguage(response.data.data.language);
-      setUnsavedChanges(false);
+      unsavedChanges.delete(file.path);
+      setUnsavedChanges(new Set(unsavedChanges));
     } catch (error) {
       toast.error('Failed to open file');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Close tab
+  const closeTab = (tabPath) => {
+    const filtered = openTabs.filter(tab => tab.path !== tabPath);
+    setOpenTabs(filtered);
+    
+    if (activeFile?.path === tabPath) {
+      if (filtered.length > 0) {
+        setActiveFile(filtered[0]);
+        setFileContent(filtered[0].content);
+      } else {
+        setActiveFile(null);
+        setFileContent('');
+      }
+    }
+  };
+
+  // Close all tabs
+  const closeAllTabs = () => {
+    setOpenTabs([]);
+    setActiveFile(null);
+    setFileContent('');
   };
 
   // Save file
@@ -98,10 +139,27 @@ const WebIDE = () => {
         filePath: activeFile.path,
         content: fileContent,
       });
-      setUnsavedChanges(false);
+      unsavedChanges.delete(activeFile.path);
+      setUnsavedChanges(new Set(unsavedChanges));
       toast.success('File saved');
     } catch (error) {
       toast.error('Failed to save file');
+    }
+  };
+
+  // Save all files
+  const saveAllFiles = async () => {
+    try {
+      for (const tab of openTabs) {
+        await apiClient.post('/file', {
+          filePath: tab.path,
+          content: fileContent,
+        });
+      }
+      setUnsavedChanges(new Set());
+      toast.success('All files saved');
+    } catch (error) {
+      toast.error('Failed to save files');
     }
   };
 
@@ -196,132 +254,259 @@ const WebIDE = () => {
 
   return (
     <div className={`h-screen flex flex-col ${theme === 'dark' ? 'bg-gray-900 text-white' : 'bg-white text-gray-900'}`}>
-      {/* Header */}
-      <div className="bg-gray-800 p-3 flex items-center justify-between border-b">
-        <div className="flex items-center gap-2">
-          <h1 className="text-lg font-bold">Web IDE</h1>
-          {activeProject && <span className="text-sm text-gray-400">{activeProject}</span>}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={createWorkspace}
-            className="p-2 hover:bg-gray-700 rounded"
-            title="New Project"
-          >
-            <Plus size={18} />
-          </button>
-          <button
-            onClick={() => setShowSearch(!showSearch)}
-            className="p-2 hover:bg-gray-700 rounded"
-            title="Search"
-          >
-            <Search size={18} />
-          </button>
-          {unsavedChanges && (
-            <button onClick={saveFile} className="p-2 bg-blue-600 hover:bg-blue-700 rounded" title="Save">
-              <Save size={18} />
-            </button>
+      {/* Top Bar */}
+      <div className="bg-gray-800 h-10 flex items-center justify-between px-3 border-b border-gray-700">
+        <div className="flex items-center gap-3">
+          <Code2 size={20} className="text-blue-400" />
+          <span className="font-semibold text-sm">VS Code Web IDE</span>
+          {activeProject && (
+            <span className="text-xs text-gray-400 ml-2">• {activeProject}</span>
           )}
-          <button className="p-2 hover:bg-gray-700 rounded" title="Settings">
-            <Settings size={18} />
-          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <GitBranch size={14} className="text-gray-400" />
+          <span className="text-xs text-gray-400">{gitStatus}</span>
         </div>
       </div>
-
-      {/* Search Bar */}
-      {showSearch && (
-        <div className="bg-gray-800 p-2 flex gap-2 border-b">
-          <input
-            type="text"
-            placeholder="Search files..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-            className="flex-1 px-2 py-1 bg-gray-700 rounded text-sm"
-          />
-          <button onClick={handleSearch} className="px-3 py-1 bg-blue-600 rounded text-sm hover:bg-blue-700">
-            Search
-          </button>
-        </div>
-      )}
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar - File Explorer */}
-        <div className="w-64 bg-gray-800 border-r border-gray-700 overflow-y-auto flex flex-col">
-          <div className="p-3 border-b border-gray-700">
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-sm">EXPLORER</span>
-              <button onClick={createNewFile} className="p-1 hover:bg-gray-700 rounded" title="New File">
-                <Plus size={14} />
-              </button>
-            </div>
+        {/* Sidebar - Navigation */}
+        {showSidebar && (
+          <div className="w-12 bg-gray-900 border-r border-gray-800 flex flex-col items-center py-2 gap-4">
+            <button
+              onClick={() => setShowExplorer(!showExplorer)}
+              className={`p-2 rounded hover:bg-gray-800 ${showExplorer ? 'bg-gray-800' : ''}`}
+              title="Explorer"
+            >
+              <FileText size={20} className={showExplorer ? 'text-blue-400' : 'text-gray-400'} />
+            </button>
+            <button
+              onClick={() => setShowSearch(!showSearch)}
+              className={`p-2 rounded hover:bg-gray-800 ${showSearch ? 'bg-gray-800' : ''}`}
+              title="Search"
+            >
+              <Search size={20} className={showSearch ? 'text-blue-400' : 'text-gray-400'} />
+            </button>
+            <button
+              className="p-2 rounded hover:bg-gray-800"
+              title="Source Control"
+            >
+              <GitBranch size={20} className="text-gray-400" />
+            </button>
+            <button
+              className="p-2 rounded hover:bg-gray-800"
+              title="Run & Debug"
+            >
+              <Bug size={20} className="text-gray-400" />
+            </button>
+            <button
+              className="p-2 rounded hover:bg-gray-800"
+              title="Extensions"
+            >
+              <Zap size={20} className="text-gray-400" />
+            </button>
           </div>
+        )}
 
-          <div className="flex-1 overflow-y-auto p-2">
-            {files.length > 0 ? <FileTree items={files} /> : <p className="text-gray-500 text-sm p-2">No files</p>}
-          </div>
-        </div>
-
-        {/* Main Editor Area */}
-        <div className="flex-1 flex flex-col bg-gray-900">
-          {/* Tabs */}
-          {activeFile && (
-            <div className="bg-gray-800 border-b border-gray-700 flex items-center overflow-x-auto">
-              <div className="flex items-center gap-1 p-2 bg-gray-700 rounded-t">
-                <FileText size={14} />
-                <span className="text-sm">{activeFile.name}</span>
-                {unsavedChanges && <span className="text-yellow-400">●</span>}
+        {/* File Explorer Panel */}
+        {showExplorer && (
+          <div className="w-64 bg-gray-800 border-r border-gray-700 overflow-hidden flex flex-col">
+            <div className="p-3 border-b border-gray-700">
+              <div className="flex items-center justify-between">
+                <span className="font-semibold text-xs uppercase">EXPLORER</span>
+                <div className="flex gap-1">
+                  <button onClick={createNewFile} className="p-1 hover:bg-gray-700 rounded" title="New File">
+                    <Plus size={14} />
+                  </button>
+                  <button onClick={createWorkspace} className="p-1 hover:bg-gray-700 rounded" title="New Folder">
+                    <Folder size={14} />
+                  </button>
+                </div>
               </div>
             </div>
-          )}
 
-          {/* Editor */}
-          {activeFile ? (
-            <div className="flex-1 overflow-hidden">
-              <Editor
-                ref={editorRef}
-                height="100%"
-                language={fileLanguage}
-                value={fileContent}
-                onChange={(value) => {
-                  setFileContent(value);
-                  setUnsavedChanges(true);
-                }}
-                theme={theme === 'dark' ? 'vs-dark' : 'vs-light'}
-                options={{
-                  minimap: { enabled: true },
-                  wordWrap: 'on',
-                  formatOnPaste: true,
-                  formatOnType: true,
-                  autoClosingBrackets: 'always',
-                  autoClosingQuotes: 'always',
-                }}
-              />
+            <div className="flex-1 overflow-y-auto p-2">
+              {files.length > 0 ? (
+                <FileTree items={files} />
+              ) : (
+                <div className="text-gray-500 text-xs p-2 text-center">
+                  <p>No folders open</p>
+                  <button onClick={createWorkspace} className="mt-2 px-2 py-1 bg-blue-600 rounded text-white">
+                    Open Folder
+                  </button>
+                </div>
+              )}
             </div>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-500">
-              <div className="text-center">
-                <FileText size={48} className="mx-auto mb-4 opacity-50" />
-                <p>Open a file to start editing</p>
+
+            <div className="p-2 border-t border-gray-700 text-xs text-gray-400">
+              <div className="flex justify-between">
+                <span>{files.length} items</span>
+                <Settings size={12} />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Editor Area */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Tab Bar */}
+          <div className="bg-gray-800 border-b border-gray-700 flex items-center overflow-x-auto h-10">
+            {openTabs.length === 0 ? (
+              <div className="flex-1 flex items-center px-3 text-gray-500 text-xs">
+                No files opened
+              </div>
+            ) : (
+              <>
+                {openTabs.map((tab) => (
+                  <div
+                    key={tab.path}
+                    onClick={() => {
+                      setActiveFile(tab);
+                      setFileLanguage(tab.language);
+                    }}
+                    className={`flex items-center gap-2 px-3 py-2 border-r border-gray-700 cursor-pointer hover:bg-gray-700 text-xs ${
+                      activeFile?.path === tab.path ? 'bg-gray-700 border-b-2 border-blue-500' : ''
+                    }`}
+                  >
+                    <FileText size={12} />
+                    <span className="max-w-[120px] truncate">{tab.name}</span>
+                    {unsavedChanges.has(tab.path) && <span className="text-yellow-400">●</span>}
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        closeTab(tab.path);
+                      }}
+                      className="hover:bg-gray-600 p-0.5 rounded"
+                    >
+                      <X size={12} />
+                    </button>
+                  </div>
+                ))}
+                {openTabs.length > 1 && (
+                  <button
+                    onClick={closeAllTabs}
+                    className="ml-auto px-2 py-1 hover:bg-gray-700 text-gray-400 hover:text-white text-xs"
+                    title="Close All"
+                  >
+                    <X size={14} />
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Editor + Split View */}
+          <div className="flex-1 flex overflow-hidden gap-1 bg-gray-900 p-1">
+            {activeFile ? (
+              <div className="flex-1 flex flex-col overflow-hidden bg-gray-950 rounded">
+                <Editor
+                  ref={editorRef}
+                  height="100%"
+                  language={fileLanguage}
+                  value={fileContent}
+                  onChange={(value) => {
+                    setFileContent(value);
+                    const newSet = new Set(unsavedChanges);
+                    newSet.add(activeFile.path);
+                    setUnsavedChanges(newSet);
+                  }}
+                  theme={theme === 'dark' ? 'vs-dark' : 'vs-light'}
+                  options={{
+                    minimap: { enabled: minimap },
+                    wordWrap: wordWrap ? 'on' : 'off',
+                    fontSize: fontSize,
+                    formatOnPaste: true,
+                    formatOnType: true,
+                    autoClosingBrackets: 'always',
+                    autoClosingQuotes: 'always',
+                    scrollBeyondLastLine: false,
+                    smoothScrolling: true,
+                    cursorBlinking: 'blink',
+                    renderWhitespace: 'selection',
+                  }}
+                />
+              </div>
+            ) : (
+              <div className="flex-1 flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <Code2 size={64} className="mx-auto mb-4 opacity-30" />
+                  <p className="text-lg">No file selected</p>
+                  <p className="text-sm text-gray-400">Open a file from the explorer</p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Terminal Panel */}
+          {showTerminal && (
+            <div className="h-40 bg-gray-900 border-t border-gray-700 flex flex-col">
+              <div className="bg-gray-800 px-3 py-2 border-b border-gray-700 flex justify-between items-center">
+                <div className="flex items-center gap-2 text-xs">
+                  <TerminalIcon size={14} />
+                  <span>TERMINAL</span>
+                </div>
+                <button onClick={() => setShowTerminal(false)} className="p-1 hover:bg-gray-700 rounded">
+                  <X size={14} />
+                </button>
+              </div>
+              <div ref={terminalRef} className="flex-1 overflow-y-auto p-3 font-mono text-xs text-gray-300">
+                <div className="text-gray-500">Terminal ready...</div>
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Status Bar */}
-      <div className="bg-gray-800 px-4 py-2 flex items-center justify-between text-xs border-t border-gray-700">
+      {/* Bottom Status Bar */}
+      <div className="bg-gray-800 h-7 flex items-center justify-between px-3 border-t border-gray-700 text-xs">
         <div className="flex items-center gap-4">
           {activeFile && (
             <>
-              <span>{fileLanguage}</span>
-              <span>Ln 1, Col 1</span>
+              <span className="text-gray-400">{fileLanguage.toUpperCase()}</span>
+              <span className="text-gray-400">•</span>
+              <span className="text-gray-400">Ln 1, Col 1</span>
+              <span className="text-gray-400">•</span>
+              <span className="text-gray-400">Spaces: 2</span>
             </>
           )}
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} className="hover:bg-gray-700 px-2 py-1 rounded">
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setMinimap(!minimap)}
+            className={`${minimap ? 'text-blue-400' : 'text-gray-400'} hover:text-white`}
+            title="Toggle Minimap"
+          >
+            <Eye size={14} />
+          </button>
+          <button
+            onClick={() => setWordWrap(!wordWrap)}
+            className={`${wordWrap ? 'text-blue-400' : 'text-gray-400'} hover:text-white`}
+            title="Toggle Word Wrap"
+          >
+            Alt+Z
+          </button>
+          <button
+            onClick={() => setShowTerminal(!showTerminal)}
+            className="text-gray-400 hover:text-white"
+            title="Toggle Terminal"
+          >
+            <TerminalIcon size={14} />
+          </button>
+          {unsavedChanges.size > 0 && (
+            <button
+              onClick={saveAllFiles}
+              className="text-yellow-400 hover:text-yellow-300"
+              title="Save All"
+            >
+              Save All ({unsavedChanges.size})
+            </button>
+          )}
+          <button
+            onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+            className="text-gray-400 hover:text-white"
+            title="Toggle Theme"
+          >
             {theme === 'dark' ? '☀️' : '🌙'}
           </button>
         </div>
