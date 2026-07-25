@@ -1,15 +1,19 @@
 const path = require('path');
 const fs = require('fs');
-const cp = require('child_process');
-const { syncDbToDisk, syncDiskToDb, getWorkspacePath } = require('../utils/workspaceSync');
+const { syncDbToDisk, syncDiskToDb } = require('../utils/workspaceSync');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 
-const activeServers = new Map(); // key: "projectId_userId", value: { port, process }
+// Require test-web server modules directly
+const vscodeDir = path.join(__dirname, '..', '..', 'vscode');
+const testWebMain = require(path.join(vscodeDir, 'node_modules', '@vscode', 'test-web', 'out', 'server', 'main.js'));
+const testWebDownload = require(path.join(vscodeDir, 'node_modules', '@vscode', 'test-web', 'out', 'server', 'download.js'));
+
+const activeServers = new Map(); // key: "projectId_userId", value: { port, server }
 
 /**
- * Initialize workspace folder, write default files, and spawn VS Code Web server pointing to it
- * POST /api/sandbox/:projectId/workspace/init
+ * Initialize workspace folder, write default files, and run VS Code Web server pointing to it
+ * POST /api/sandbox/:id/workspace/init
  */
 const initWorkspace = asyncHandler(async (req, res) => {
   const { id: projectId } = req.params;
@@ -18,21 +22,17 @@ const initWorkspace = asyncHandler(async (req, res) => {
 
   // 1. Sync files from Mongoose DB to server disk
   const workspacePath = await syncDbToDisk(projectId, userId);
+  const formattedWorkspacePath = path.normalize(workspacePath);
+  if (!fs.existsSync(formattedWorkspacePath)) {
+    fs.mkdirSync(formattedWorkspacePath, { recursive: true });
+  }
 
   // 2. Check if a server is already running for this user/project
   if (activeServers.has(key)) {
     const existing = activeServers.get(key);
-    // Double check if process is still alive
-    try {
-      // kill(0) checks if process is running without killing it
-      process.kill(existing.proc.pid, 0);
-      return successResponse(res, 200, 'Workspace VS Code server already running', {
-        iframeUrl: `http://localhost:${existing.port}/`
-      });
-    } catch (e) {
-      // Process died, remove it
-      activeServers.delete(key);
-    }
+    return successResponse(res, 200, 'Workspace VS Code server already running', {
+      iframeUrl: `http://localhost:${existing.port}/`
+    });
   }
 
   // 3. Find a free port starting from 9888
@@ -42,37 +42,22 @@ const initWorkspace = asyncHandler(async (req, res) => {
     port++;
   }
 
-  // 4. Start the VS Code Web server pointing to the workspace folder
+  // 4. Run VS Code Web server in Node process
   console.log(`Starting VS Code Web server for ${key} on port ${port}...`);
-  const vscodeDir = path.join(__dirname, '..', '..', 'vscode');
-  const serverScript = path.join(vscodeDir, 'scripts', 'code-web.js');
+  const testDataDir = path.join(__dirname, '..', '..', '.vscode-test-web');
+  
+  // Ensure prebuilt VS Code Web release bundle is downloaded & unzipped
+  const build = await testWebDownload.downloadAndUnzipVSCode(testDataDir, 'insiders');
 
-  // Command: node scripts/code-web.js <workspacePath> --port <port> --host 127.0.0.1
-  const formattedWorkspacePath = path.normalize(workspacePath);
-  if (!fs.existsSync(formattedWorkspacePath)) {
-    fs.mkdirSync(formattedWorkspacePath, { recursive: true });
-  }
-
-  const proc = cp.spawn(process.execPath, [
-    serverScript,
-    formattedWorkspacePath,
-    '--port', port.toString(),
-    '--host', '127.0.0.1',
-    '--browserType', 'none'
-  ], {
-    cwd: vscodeDir,
-    stdio: 'ignore',
-    detached: true
+  const server = await testWebMain.runServer('127.0.0.1', port, {
+    build,
+    folderMountPath: formattedWorkspacePath,
+    printServerLog: false
   });
 
-  proc.unref();
-
   // Save server state
-  activeServers.set(key, { port, proc });
+  activeServers.set(key, { port, server });
   console.log(`VS Code Web server running on http://localhost:${port}/ for workspace ${formattedWorkspacePath}`);
-
-  // Give process 400ms to open TCP socket
-  await new Promise(resolve => setTimeout(resolve, 400));
 
   // Return the iframe URL
   return successResponse(res, 200, 'Workspace initialized and VS Code server started', {
@@ -82,7 +67,7 @@ const initWorkspace = asyncHandler(async (req, res) => {
 
 /**
  * Sync files from disk back to Mongoose DB
- * POST /api/sandbox/:projectId/workspace/sync
+ * POST /api/sandbox/:id/workspace/sync
  */
 const syncWorkspace = asyncHandler(async (req, res) => {
   const { id: projectId } = req.params;
