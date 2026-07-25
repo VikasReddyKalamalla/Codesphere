@@ -538,6 +538,21 @@ export const SandboxProject = () => {
           <button onClick={() => setEditorTheme(prev => prev === 'dark' ? 'light' : 'dark')} className="p-2 rounded-xl bg-white border border-slate-200/60 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-all shadow-sm cursor-pointer" title={editorTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
             {editorTheme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
           </button>
+          
+          <button
+            onClick={() => {
+              if (iframeUrl) {
+                window.open(iframeUrl, '_blank');
+              } else {
+                toast.error('VS Code server is initializing... please wait a moment');
+              }
+            }}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0B0F17] hover:bg-slate-900 text-[#04AA6D] hover:text-emerald-400 text-[10px] font-bold font-mono uppercase tracking-wider transition-all shadow-md cursor-pointer border border-slate-800"
+            title="Open VS Code Studio in New Tab"
+          >
+            <ExternalLink size={12} />
+            <span>Open VS Code Tab</span>
+          </button>
           <button onClick={handleResetProject} className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white border border-slate-200/60 text-[10px] font-bold text-slate-500 hover:text-slate-800 hover:bg-slate-50 uppercase tracking-wider transition-all shadow-sm cursor-pointer">
             <RotateCcw size={12} />
             Reset
@@ -786,30 +801,69 @@ export const SandboxProject = () => {
 
         {/* Column 3: IDE Editor & Output (col-span-4) */}
         <div className="xl:col-span-4 flex flex-col gap-4">
-          <div className="border border-slate-200/60 bg-white rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col justify-between min-h-[750px]">
+          <div className="border border-slate-200/60 bg-[#0B0F17] rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col justify-between min-h-[750px] relative">
+            
+            {/* Top Workspace Bar */}
+            <div className="h-10 px-4 bg-[#0B0F17] border-b border-slate-800 flex items-center justify-between text-slate-300">
+              <div className="flex items-center gap-2 font-mono text-[10px] uppercase font-bold tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-[#04AA6D] animate-ping" />
+                <span className="text-white">VS Code Web Studio</span>
+                <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-[#04AA6D] text-[9px] border border-emerald-500/20">
+                  {iframeUrl ? 'Ready' : 'Starting'}
+                </span>
+              </div>
+
+              {iframeUrl && (
+                <button
+                  onClick={() => window.open(iframeUrl, '_blank')}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#04AA6D] hover:bg-[#03935e] text-white text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
+                >
+                  <ExternalLink size={11} />
+                  <span>Open Fullscreen</span>
+                </button>
+              )}
+            </div>
+
             {loadingWorkspace ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 font-mono text-center gap-3">
-                <div className="w-8 h-8 rounded-full border-4 border-slate-200 border-t-[#04AA6D] animate-spin" />
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350 animate-pulse">Launching VS Code Sandbox...</p>
+              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 font-mono text-center gap-3 bg-[#0B0F17]">
+                <div className="w-9 h-9 rounded-full border-4 border-slate-800 border-t-[#04AA6D] animate-spin" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350 animate-pulse">Launching VS Code Server...</p>
                 <p className="text-[9px] text-slate-400 font-sans max-w-xs leading-normal">
                   Preparing your local filesystem workspace and starting the VS Code Server. Please hold on...
                 </p>
               </div>
             ) : !iframeUrl ? (
-              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 font-mono text-center gap-3">
-                <ShieldAlert size={28} className="text-rose-500" />
-                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-350">VS Code Sandbox Offline</p>
+              <div className="flex-1 flex flex-col items-center justify-center py-20 text-slate-500 font-mono text-center gap-3 bg-[#0B0F17]">
+                <ShieldAlert size={32} className="text-rose-500" />
+                <p className="text-[10px] font-bold uppercase tracking-wider text-slate-300">VS Code Sandbox Offline</p>
                 <p className="text-[9px] text-slate-400 font-sans max-w-xs leading-normal">
-                  Failed to spawn VS Code server. Check your backend console logs for Visual Studio / Node-gyp compile issues.
+                  Failed to spawn VS Code server. Try refreshing the page.
                 </p>
               </div>
             ) : (
-              <iframe
-                src={iframeUrl}
-                className="w-full h-full border-none flex-1 min-h-[750px]"
-                title="VS Code Sandbox"
-                allow="clipboard-read; clipboard-write; fullscreen"
-              />
+              <div className="flex-1 flex flex-col w-full h-full relative">
+                {/* Visual Banner Overlay to ensure 1-click access if iframe blocked */}
+                <div className="bg-[#121824] border-b border-slate-800 px-4 py-2 flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2 text-slate-300 font-sans text-[11px]">
+                    <Sparkles size={14} className="text-[#04AA6D]" />
+                    <span>Want full workspace space? Launch directly in a dedicated browser tab!</span>
+                  </div>
+                  <button
+                    onClick={() => window.open(iframeUrl, '_blank')}
+                    className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-[#04AA6D] border border-emerald-500/30 text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer whitespace-nowrap"
+                  >
+                    <ExternalLink size={11} />
+                    <span>Launch in New Tab</span>
+                  </button>
+                </div>
+
+                <iframe
+                  src={iframeUrl}
+                  className="w-full h-full border-none flex-1 min-h-[700px]"
+                  title="VS Code Sandbox"
+                  allow="clipboard-read; clipboard-write; fullscreen"
+                />
+              </div>
             )}
           </div>
         </div>
