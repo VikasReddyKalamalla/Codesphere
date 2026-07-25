@@ -164,6 +164,7 @@ const codeExecutionRoutes = require('./routes/codeExecution.routes');
 const liveStreamRoutes = require('./routes/liveStream.routes');
 const analyticsAdvancedRoutes = require('./routes/analyticsAdvanced.routes');
 const backupRoutes = require('./routes/backup.routes');
+const webIDERoutes = require('./routes/webIDE.routes');
 
 const settingsRoutes = require('./routes/settings.routes');
 
@@ -175,6 +176,7 @@ app.use('/api/execute',       codeExecutionRoutes);
 app.use('/api/streaming',     liveStreamRoutes);
 app.use('/api/analytics',     analyticsAdvancedRoutes);
 app.use('/api/backups',       backupRoutes);
+app.use('/api/ide',           webIDERoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/plans',         planRoutes);
 app.use('/api/billing',       billingRoutes);
