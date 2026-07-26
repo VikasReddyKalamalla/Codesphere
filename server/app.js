@@ -206,10 +206,10 @@ app.get('/', (req, res) => {
   res.json({ message: 'CodeSphere API is running' });
 });
 
-app.get('/health', (req, res) => {
+app.get('/health', async (req, res) => {
   const { getHealthStatus } = require('./config/monitoring');
   const mongoose = require('mongoose');
-  const health = getHealthStatus(mongoose);
+  const health = await getHealthStatus(mongoose);
   res.status(health.status === 'healthy' ? 200 : 503).json(health);
 });
 

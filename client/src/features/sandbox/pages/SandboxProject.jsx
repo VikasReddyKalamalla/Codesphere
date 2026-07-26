@@ -290,22 +290,27 @@ export const SandboxProject = () => {
   }, [id, wsStatus]);
 
   // Manual retry handler
-  const handleRetryWorkspace = () => {
+  const handleRetryWorkspace = useCallback(() => {
     clearTimeout(wsRetryTimer.current);
     wsRetryCount.current = 0;
     startWorkspace(id);
-  };
+  }, [id, startWorkspace]);
+
+  // Listen for reconnect signals from iframe error page
+  useEffect(() => {
+    const handleMsg = (e) => {
+      if (e.data === 'RECONNECT_VSCODE') {
+        handleRetryWorkspace();
+      }
+    };
+    window.addEventListener('message', handleMsg);
+    return () => window.removeEventListener('message', handleMsg);
+  }, [handleRetryWorkspace]);
 
   // Open VS Code in a dedicated tab at the absolute URL
   const handleOpenInNewTab = () => {
     if (!iframeUrl) return;
-    // If it's a proxied path like /vscode-web/9888/, open direct server URL in new tab
-    // for the best full-screen experience (no proxy overhead)
-    if (wsPort && iframeUrl.startsWith('/vscode-web/')) {
-      window.open(`http://127.0.0.1:${wsPort}/`, '_blank', 'noopener,noreferrer');
-    } else {
-      window.open(iframeUrl, '_blank', 'noopener,noreferrer');
-    }
+    window.open(iframeUrl, '_blank', 'noopener,noreferrer');
   };
 
   // Realtime compiler logic that parses script.js content to update shopping cart details
@@ -717,8 +722,8 @@ export const SandboxProject = () => {
                 {steps.map((step, idx) => {
                   const stepNum = idx + 1;
                   const active = currentStepIdx === idx;
-                  const completed = progress?.completedSteps?.includes(stepNum) || (idx < (progress?.currentStep - 1 || 2));
-                  const locked = progress?.currentStep ? (stepNum > progress.currentStep && !completed) : (stepNum > 3);
+                  const completed = (progress?.completedSteps || []).includes(stepNum) || stepNum < (progress?.currentStep || 1);
+                  const locked = stepNum > (progress?.currentStep || 1) && !completed;
                   
                   return (
                     <button
@@ -766,7 +771,7 @@ export const SandboxProject = () => {
             <div className="flex flex-col gap-4">
               <div className="flex items-center justify-between">
                 <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Current Step</span>
-                {(progress?.completedSteps?.includes(currentStepIdx + 1) || (currentStepIdx < (progress?.currentStep - 1 || 2))) && (
+                {(progress?.completedSteps?.includes(currentStepIdx + 1) || (currentStepIdx + 1 < (progress?.currentStep || 1))) && (
                   <button
                     onClick={() => handleStepUnmark(currentStepIdx + 1)}
                     className="text-[9px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1"
@@ -1035,9 +1040,9 @@ export const SandboxProject = () => {
               </div>
             </div>
             <button onClick={handleStepSubmit} className="mt-4 block w-full py-2 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl text-center text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm">
-              {progress?.currentStep > totalStepsCount ? 'Project Completed' : 'Continue Step ' + (progress?.currentStep || 3)}
+              {progress?.currentStep > totalStepsCount ? 'Project Completed' : 'Continue Step ' + (progress?.currentStep || 1)}
             </button>
-            {(progress?.completedSteps?.includes(currentStepIdx + 1) || (currentStepIdx < (progress?.currentStep - 1 || 2))) && (
+            {(progress?.completedSteps?.includes(currentStepIdx + 1) || (currentStepIdx + 1 < (progress?.currentStep || 1))) && (
               <button
                 onClick={() => handleStepUnmark(currentStepIdx + 1)}
                 className="mt-2 block w-full py-2 bg-rose-500 hover:bg-rose-600 text-white rounded-xl text-center text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"

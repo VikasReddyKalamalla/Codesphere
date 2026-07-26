@@ -156,7 +156,7 @@ const initWorkspace = asyncHandler(async (req, res) => {
   console.log(`[vscode-web] Starting server for ${key} on port ${port} | workspace: ${normalizedPath}`);
 
   const { runServer } = getTestWebModules();
-  const server = await runServer('0.0.0.0', port, {
+  const server = await runServer('127.0.0.1', port, {
     build,
     folderMountPath: normalizedPath,
     esm:             true,
@@ -168,7 +168,7 @@ const initWorkspace = asyncHandler(async (req, res) => {
   // 4 ── Wait for HTTP readiness (up to 20 s) before returning to client
   await waitForServer(port, 20000);
 
-  const iframeUrl = `http://127.0.0.1:${port}/`;
+  const iframeUrl = `/vscode-web/${port}/`;
   console.log(`[vscode-web] Server ready → ${iframeUrl}`);
 
   return successResponse(res, 200, 'Workspace initialized and VS Code server started', {

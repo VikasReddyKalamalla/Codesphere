@@ -67,10 +67,77 @@ router.use('/:port', (req, res, next) => {
       },
       error: (err, req, res) => {
         if (res && !res.headersSent) {
-          res.status(502).json({
-            error: 'VS Code server not reachable',
-            detail: err.message,
-          });
+          res.setHeader('Content-Type', 'text/html');
+          res.status(502).send(`
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+              <meta charset="UTF-8"/>
+              <title>Reconnecting VS Code Studio</title>
+              <style>
+                * { box-sizing: border-box; margin: 0; padding: 0; }
+                body {
+                  background-color: #0d1117;
+                  color: #c9d1d9;
+                  font-family: system-ui, -apple-system, sans-serif;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  justify-content: center;
+                  height: 100vh;
+                  text-align: center;
+                  padding: 20px;
+                }
+                .card {
+                  background: #161b22;
+                  border: 1px solid #30363d;
+                  border-radius: 16px;
+                  padding: 32px 24px;
+                  max-width: 360px;
+                  display: flex;
+                  flex-direction: column;
+                  align-items: center;
+                  gap: 16px;
+                }
+                .icon-box {
+                  width: 48px;
+                  height: 48px;
+                  border-radius: 12px;
+                  background: rgba(248, 81, 73, 0.1);
+                  border: 1px solid rgba(248, 81, 73, 0.2);
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-size: 20px;
+                }
+                h3 { font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #f85149; }
+                p { font-size: 11px; color: #8b949e; line-height: 1.5; }
+                button {
+                  background: #04AA6D;
+                  color: white;
+                  border: none;
+                  padding: 10px 20px;
+                  border-radius: 10px;
+                  font-weight: 700;
+                  font-size: 11px;
+                  text-transform: uppercase;
+                  letter-spacing: 0.5px;
+                  cursor: pointer;
+                  transition: background 0.2s;
+                }
+                button:hover { background: #03935e; }
+              </style>
+            </head>
+            <body>
+              <div class="card">
+                <div class="icon-box">⚡</div>
+                <h3>VS Code Server Disconnected</h3>
+                <p>The workspace editor instance was interrupted. Click below to automatically restart your VS Code session.</p>
+                <button onclick="if(window.parent){window.parent.postMessage('RECONNECT_VSCODE','*');} else {window.location.reload();}">Reconnect Workspace</button>
+              </div>
+            </body>
+            </html>
+          `);
         }
       },
     },
