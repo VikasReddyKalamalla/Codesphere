@@ -9,6 +9,7 @@ const redis = require('redis');
 
 // Create Redis client for distributed rate limiting
 let redisClient;
+let redisConnected = false;
 
 try {
   // Only connect to Redis when not running tests
@@ -22,9 +23,19 @@ try {
     
     redisClient.on('error', (err) => {
       console.error('Redis client error:', err);
+      redisConnected = false;
     });
 
-    redisClient.connect();
+    redisClient.on('connect', () => {
+      console.log('✓ Redis connected for rate limiting');
+      redisConnected = true;
+    });
+
+    // Start connection in background (non-blocking)
+    redisClient.connect().catch(err => {
+      console.warn('Redis connection failed (non-critical for dev):', err.message);
+      redisConnected = false;
+    });
   }
 } catch (error) {
   console.warn('Redis not available, using in-memory rate limiting. Error:', error.message);
@@ -34,7 +45,7 @@ try {
  * Helper to create a unique RedisStore for each rate limiter (required by express-rate-limit v7+)
  */
 const createRedisStore = (prefix) => {
-  if (process.env.NODE_ENV === 'test' || !redisClient) {
+  if (process.env.NODE_ENV === 'test' || !redisClient || !redisConnected) {
     return undefined; // Falls back to default in-memory store
   }
   return new RedisStore({

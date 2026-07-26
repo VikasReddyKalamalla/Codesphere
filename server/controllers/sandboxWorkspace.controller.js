@@ -126,8 +126,8 @@ const waitForServer = (port, maxMs = 20000) =>
  */
 const initWorkspace = asyncHandler(async (req, res) => {
   const { id: projectId } = req.params;
-  const userId = req.user._id.toString();
-  const key    = `${projectId}_${userId}`;
+  const userId = req.user._id; // Keep as ObjectId for DB queries
+  const key    = `${projectId}_${userId.toString()}`; // Convert to string only for key
 
   // 1 ── Sync DB → disk  (creates workspace dir + writes code files)
   const workspacePath = await syncDbToDisk(projectId, userId);
@@ -185,7 +185,7 @@ const initWorkspace = asyncHandler(async (req, res) => {
  */
 const syncWorkspace = asyncHandler(async (req, res) => {
   const { id: projectId } = req.params;
-  const userId = req.user._id.toString();
+  const userId = req.user._id; // Keep as ObjectId for DB queries
 
   const progress = await syncDiskToDb(projectId, userId);
   if (!progress) {
@@ -203,8 +203,8 @@ const syncWorkspace = asyncHandler(async (req, res) => {
  */
 const stopWorkspace = asyncHandler(async (req, res) => {
   const { id: projectId } = req.params;
-  const userId = req.user._id.toString();
-  const key    = `${projectId}_${userId}`;
+  const userId = req.user._id; // Keep as ObjectId for DB queries
+  const key    = `${projectId}_${userId.toString()}`; // Convert to string only for key
 
   if (!activeServers.has(key)) {
     return successResponse(res, 200, 'No active workspace server to stop', { stopped: false });

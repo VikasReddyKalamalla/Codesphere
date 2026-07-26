@@ -1,6 +1,19 @@
 const jwt            = require('jsonwebtoken');
-const User           = require('../models/User');
 const { errorResponse } = require('../utils/apiResponse');
+
+// Determine which database to use
+let User;
+const USE_MOCK_DB = process.env.NODE_ENV === 'development';
+
+if (USE_MOCK_DB) {
+  User = require('../services/mockDatabase');
+} else {
+  try {
+    User = require('../models/User');
+  } catch (err) {
+    User = require('../services/mockDatabase');
+  }
+}
 
 /**
  * protect — verifies the Bearer JWT in Authorization header.
