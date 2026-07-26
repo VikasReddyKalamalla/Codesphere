@@ -54,13 +54,14 @@ export const Sandbox = () => {
         if (res.success && res.data) {
           // Normalize structure depending on tab response
           if (activeTab === 'explore') {
-            setProjects(res.data.projects || []);
+            // res.data.data contains the projects array
+            setProjects(res.data.data || res.data.projects || []);
           } else if (activeTab === 'projects') {
-            setProjects(res.data.projects || res.data || []);
+            setProjects(res.data.data || res.data.projects || res.data || []);
           } else if (activeTab === 'bookmarks') {
-            setProjects(res.data.projects || res.data.bookmarks || res.data || []);
+            setProjects(res.data.data || res.data.projects || res.data.bookmarks || res.data || []);
           } else {
-            setProjects(res.data.submissions || res.data || []);
+            setProjects(res.data.data || res.data.submissions || res.data || []);
           }
         }
       })

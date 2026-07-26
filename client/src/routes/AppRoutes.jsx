@@ -58,6 +58,7 @@ const CreateWorkspacePage = lazy(() => import('@features/codex/pages/CreateWorks
 const WorkspacePage      = lazy(() => import('@features/codex/pages/WorkspacePage.jsx'));
 const SandboxPage        = lazy(() => import('@features/sandbox/pages/SandboxPage.jsx'));
 const SandboxProjectPage = lazy(() => import('@features/sandbox/pages/SandboxProjectPage.jsx'));
+const VSCodeWebIDE       = lazy(() => import('@pages/VSCodeWebIDE.jsx'));
 const WebIDEPage         = lazy(() => import('@features/ide/WebIDE.jsx'));
 const TestsPage          = lazy(() => import('@features/tests/pages/TestsPage.jsx'));
 const TestDetailPage     = lazy(() => import('@features/tests/pages/TestDetailPage.jsx'));
@@ -204,6 +205,7 @@ const AppRoutes = () => {
         {/* Sandbox & Web IDE */}
         <Route path={ROUTES.SANDBOX}           element={<W><SandboxPage /></W>} />
         <Route path={ROUTES.SANDBOX_PROJECT}   element={<W><SandboxProjectPage /></W>} />
+        <Route path="/vscode/:projectId"       element={<W><VSCodeWebIDE /></W>} />
         <Route path={ROUTES.IDE}               element={<W><WebIDEPage /></W>} />
 
         {/* Tests */}

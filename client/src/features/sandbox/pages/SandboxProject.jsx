@@ -309,8 +309,9 @@ export const SandboxProject = () => {
 
   // Open VS Code in a dedicated tab at the absolute URL
   const handleOpenInNewTab = () => {
-    if (!iframeUrl) return;
-    window.open(iframeUrl, '_blank', 'noopener,noreferrer');
+    // Open VS Code IDE in a new tab
+    const vscodeUrl = `/vscode/${id}`;
+    window.open(vscodeUrl, '_blank', 'width=1400,height=900,noopener,noreferrer');
   };
 
   // Realtime compiler logic that parses script.js content to update shopping cart details
@@ -631,6 +632,14 @@ export const SandboxProject = () => {
           Back to Projects
         </Link>
         <div className="flex items-center gap-2">
+          <button 
+            onClick={handleOpenInNewTab} 
+            className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-[10px] font-bold text-white uppercase tracking-wider transition-all shadow-md cursor-pointer"
+            title="Open VS Code in full screen"
+          >
+            <ExternalLink size={12} />
+            Open VS Code
+          </button>
           <button onClick={() => setEditorTheme(prev => prev === 'dark' ? 'light' : 'dark')} className="p-2 rounded-xl bg-white border border-slate-200/60 text-slate-500 hover:text-slate-800 hover:bg-slate-50 transition-all shadow-sm cursor-pointer" title={editorTheme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}>
             {editorTheme === 'dark' ? <Sun size={13} /> : <Moon size={13} />}
           </button>

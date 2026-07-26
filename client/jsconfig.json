@@ -27,7 +27,8 @@
       "@data/*":         ["src/data/*"],
       "@helpers/*":      ["src/helpers/*"],
       "@guards/*":       ["src/guards/*"],
-      "@providers/*":    ["src/providers/*"]
+      "@providers/*":    ["src/providers/*"],
+      "@pages/*":        ["src/pages/*"]
     },
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,

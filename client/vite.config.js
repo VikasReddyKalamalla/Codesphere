@@ -48,6 +48,7 @@ export default defineConfig({
       '@types': resolve(__dirname, 'src/types'),
       '@guards': resolve(__dirname, 'src/guards'),
       '@providers': resolve(__dirname, 'src/providers'),
+      '@pages': resolve(__dirname, 'src/pages'),
     },
   },
 });
