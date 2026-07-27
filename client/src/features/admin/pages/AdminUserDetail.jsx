@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import apiClient from '@services/axios.js';
 import {
   ArrowLeft, User as UserIcon, Mail, Phone, MapPin, Calendar, Clock,
-  FileText, GraduationCap, Trophy, Award, BookOpen,
+  FileText, GraduationCap, Trophy, Award, BookOpen, Flame,
   Code2, Database, GitPullRequest, GitCommit, FileCode, MessageSquare,
   ThumbsUp, Users, Activity, BarChart2, Shield, Settings, Key, Ban,
   CheckCircle, RefreshCw, Smartphone, Monitor
@@ -82,7 +82,16 @@ export default function AdminUserDetail() {
 
   if (!profile) return null;
 
-  const { personal, learning, sandbox, codex, community, assessments, timeline, devices } = profile;
+  const {
+    personal = {},
+    learning = {},
+    sandbox = {},
+    codex = {},
+    community = {},
+    assessments = {},
+    timeline = [],
+    devices = []
+  } = profile || {};
 
   return (
     <div className="flex flex-col gap-6 w-full animate-fade-in text-slate-800">
@@ -349,7 +358,7 @@ export default function AdminUserDetail() {
                 {/* Course Progress bars */}
                 <div className="border border-slate-100 rounded-2xl p-5">
                   <h4 className="text-xs font-black text-slate-850 mb-4">Course Enrolments & Progress</h4>
-                  {learning.courseProgress.length === 0 ? (
+                  {(!learning.courseProgress || learning.courseProgress.length === 0) ? (
                     <p className="text-xs text-slate-450 italic py-4">No active learning paths enrolled.</p>
                   ) : (
                     <div className="flex flex-col gap-4">
@@ -370,12 +379,12 @@ export default function AdminUserDetail() {
 
                 {/* Completed Certs List */}
                 <div className="border border-slate-100 rounded-2xl p-5">
-                  <h4 className="text-xs font-black text-slate-850 mb-4">Certificates Earned ({learning.certificatesEarned.length})</h4>
-                  {learning.certificatesEarned.length === 0 ? (
+                  <h4 className="text-xs font-black text-slate-850 mb-4">Certificates Earned ({(learning.certificatesEarned || []).length})</h4>
+                  {(!learning.certificatesEarned || learning.certificatesEarned.length === 0) ? (
                     <p className="text-xs text-slate-450 italic py-2">No certificates issued yet.</p>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {learning.certificatesEarned.map((cert, idx) => (
+                      {(learning.certificatesEarned || []).map((cert, idx) => (
                         <div key={idx} className="p-3 border border-slate-100 bg-slate-50/50 rounded-xl flex items-center justify-between">
                           <div>
                             <p className="text-xs font-black text-slate-800 line-clamp-1">{cert.course?.title || 'Course Certificate'}</p>
@@ -428,14 +437,14 @@ export default function AdminUserDetail() {
                       </div>
                       <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl">
                         <p className="text-[8px] uppercase tracking-wide font-extrabold text-slate-400">Languages</p>
-                        <p className="text-xs font-black text-slate-800 mt-1.5 truncate font-mono-origin">{sandbox.languagesUsed.join(', ') || 'N/A'}</p>
+                        <p className="text-xs font-black text-slate-800 mt-1.5 truncate font-mono-origin">{(sandbox.languagesUsed || []).join(', ') || 'N/A'}</p>
                       </div>
                     </div>
 
                     {/* Recent Sandbox projects list */}
                     <div>
                       <h5 className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 mb-2 font-mono-origin">Recent Projects</h5>
-                      {sandbox.recentProjects.length === 0 ? (
+                      {(!sandbox.recentProjects || sandbox.recentProjects.length === 0) ? (
                         <p className="text-[11px] text-slate-450 italic">No project repository initialized.</p>
                       ) : (
                         <div className="flex flex-col gap-2">
@@ -458,33 +467,33 @@ export default function AdminUserDetail() {
                         <h4 className="text-xs font-black text-slate-850">Codex Collaborative Workspaces</h4>
                       </div>
                       <span className="font-mono-origin text-xs font-black text-violet-600 bg-violet-50 px-2.5 py-0.5 rounded-full">
-                        {codex.workspaces.length} workspaces
+                        {(codex.workspaces || []).length} workspaces
                       </span>
                     </div>
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center select-none">
                       <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl">
                         <p className="text-[8.5px] uppercase tracking-wide font-extrabold text-slate-400">Git Commits</p>
-                        <p className="text-xs font-black text-slate-800 mt-1 font-mono-origin">{codex.gitCommits}</p>
+                        <p className="text-xs font-black text-slate-800 mt-1 font-mono-origin">{codex.gitCommits || 0}</p>
                       </div>
                       <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl">
                         <p className="text-[8.5px] uppercase tracking-wide font-extrabold text-slate-400">Tasks Completed</p>
-                        <p className="text-xs font-black text-slate-800 mt-1 font-mono-origin">{codex.tasksCompleted}</p>
+                        <p className="text-xs font-black text-slate-800 mt-1 font-mono-origin">{codex.tasksCompleted || 0}</p>
                       </div>
                       <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl">
                         <p className="text-[8.5px] uppercase tracking-wide font-extrabold text-slate-400">Pull Requests</p>
-                        <p className="text-xs font-black text-slate-800 mt-1 font-mono-origin">{codex.pullRequests}</p>
+                        <p className="text-xs font-black text-slate-800 mt-1 font-mono-origin">{codex.pullRequests || 0}</p>
                       </div>
                       <div className="p-2 bg-slate-50 border border-slate-100 rounded-xl">
                         <p className="text-[8.5px] uppercase tracking-wide font-extrabold text-slate-400">Issues</p>
-                        <p className="text-xs font-black text-slate-800 mt-1 font-mono-origin">{codex.issues}</p>
+                        <p className="text-xs font-black text-slate-800 mt-1 font-mono-origin">{codex.issues || 0}</p>
                       </div>
                     </div>
 
                     {/* Workspaces List */}
                     <div>
                       <h5 className="text-[10px] uppercase tracking-wider font-extrabold text-slate-400 mb-2 font-mono-origin">Active workspaces</h5>
-                      {codex.workspaces.length === 0 ? (
+                      {(!codex.workspaces || codex.workspaces.length === 0) ? (
                         <p className="text-[11px] text-slate-450 italic">No workspace instances detected.</p>
                       ) : (
                         <div className="flex flex-col gap-2">

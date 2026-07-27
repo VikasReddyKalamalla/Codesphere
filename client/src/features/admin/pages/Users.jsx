@@ -9,6 +9,8 @@ import {
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { socket } from '../../../socket/socket.js';
+
 export const Users = () => {
   const navigate = useNavigate();
 
@@ -86,42 +88,177 @@ export const Users = () => {
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm]);
 
-  // Export functions
-  const convertToCSV = (objArray) => {
-    const array = typeof objArray !== 'object' ? JSON.parse(objArray) : objArray;
-    let str = '';
-    const headers = ['fullName', 'username', 'email', 'role', 'plan', 'isActive', 'dayStreak', 'learningProgress', 'createdAt'];
-    str += headers.join(',') + '\r\n';
-
-    for (let i = 0; i < array.length; i++) {
-      let line = '';
-      for (const index in headers) {
-        if (line !== '') line += ',';
-        const val = array[i][headers[index]];
-        if (typeof val === 'undefined') line += '""';
-        else line += `"${val.toString().replace(/"/g, '""')}"`;
-      }
-      str += line + '\r\n';
+  // Socket.IO Real-time Synchronization
+  useEffect(() => {
+    if (!socket.connected) {
+      socket.connect();
     }
+
+    const handleRealtimeUpdate = () => {
+      fetchData(true);
+    };
+
+    socket.on('user_updated', handleRealtimeUpdate);
+    socket.on('user_created', handleRealtimeUpdate);
+    socket.on('user_deleted', handleRealtimeUpdate);
+    socket.on('presence_update', handleRealtimeUpdate);
+    socket.on('admin_sync', handleRealtimeUpdate);
+
+    return () => {
+      socket.off('user_updated', handleRealtimeUpdate);
+      socket.off('user_created', handleRealtimeUpdate);
+      socket.off('user_deleted', handleRealtimeUpdate);
+      socket.off('presence_update', handleRealtimeUpdate);
+      socket.off('admin_sync', handleRealtimeUpdate);
+    };
+  }, []);
+
+  // Real-time Database Sync Handler
+  const handleSyncDB = async () => {
+    const loader = toast.loading('Synchronizing database & telemetries in real-time...');
+    setRefreshing(true);
+    try {
+      if (socket.connected) {
+        socket.emit('admin_sync');
+      }
+      await fetchData(true);
+      toast.success('Database & telemetries synced in real-time', { id: loader });
+    } catch (err) {
+      toast.error('Sync failed: ' + err.message, { id: loader });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Helper XML escaper for Excel
+  const escapeXml = (str) => String(str).replace(/[<>&"']/g, (c) => {
+    switch (c) {
+      case '<': return '&lt;';
+      case '>': return '&gt;';
+      case '&': return '&amp;';
+      case '"': return '&quot;';
+      case "'": return '&apos;';
+      default: return c;
+    }
+  });
+
+  // Convert objects array to CSV string
+  const convertToCSV = (arr) => {
+    let str = 'Full Name,Username,Email,Role,Plan,Status,Day Streak,Progress %,Joined Date\r\n';
+    arr.forEach(u => {
+      const line = [
+        `"${(u.fullName || '').replace(/"/g, '""')}"`,
+        `"${(u.username || '').replace(/"/g, '""')}"`,
+        `"${(u.email || '').replace(/"/g, '""')}"`,
+        `"${(u.role || '').replace(/"/g, '""')}"`,
+        `"${(u.plan || '').replace(/"/g, '""')}"`,
+        `"${u.isActive ? 'Active' : 'Suspended'}"`,
+        `"${u.dayStreak || 0}"`,
+        `"${u.learningProgress || 0}%"`,
+        `"${new Date(u.createdAt).toLocaleDateString()}"`
+      ].join(',');
+      str += line + '\r\n';
+    });
     return str;
   };
 
-  const handleExport = (type) => {
-    if (users.length === 0) {
-      toast.error('No users to export');
-      return;
+  // Convert objects array to Excel XML format (.xls)
+  const convertToExcelXML = (arr) => {
+    let xml = `<?xml version="1.0"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
+<Styles>
+  <Style ss:ID="Header">
+    <Font ss:Bold="1" ss:Color="#FFFFFF"/>
+    <Interior ss:Color="#059669" ss:Pattern="Solid"/>
+    <Alignment ss:Horizontal="Center"/>
+  </Style>
+</Styles>
+<Worksheet ss:Name="Users Registry">
+  <Table>
+    <Row ss:StyleID="Header">
+      <Cell><Data ss:Type="String">Full Name</Data></Cell>
+      <Cell><Data ss:Type="String">Username</Data></Cell>
+      <Cell><Data ss:Type="String">Email</Data></Cell>
+      <Cell><Data ss:Type="String">Role</Data></Cell>
+      <Cell><Data ss:Type="String">Plan</Data></Cell>
+      <Cell><Data ss:Type="String">Status</Data></Cell>
+      <Cell><Data ss:Type="String">Day Streak</Data></Cell>
+      <Cell><Data ss:Type="String">Progress %</Data></Cell>
+      <Cell><Data ss:Type="String">Joined Date</Data></Cell>
+    </Row>`;
+
+    arr.forEach(u => {
+      xml += `
+    <Row>
+      <Cell><Data ss:Type="String">${escapeXml(u.fullName || '')}</Data></Cell>
+      <Cell><Data ss:Type="String">${escapeXml(u.username || '')}</Data></Cell>
+      <Cell><Data ss:Type="String">${escapeXml(u.email || '')}</Data></Cell>
+      <Cell><Data ss:Type="String">${escapeXml(u.role || '')}</Data></Cell>
+      <Cell><Data ss:Type="String">${escapeXml(u.plan || '')}</Data></Cell>
+      <Cell><Data ss:Type="String">${u.isActive ? 'Active' : 'Suspended'}</Data></Cell>
+      <Cell><Data ss:Type="Number">${u.dayStreak || 0}</Data></Cell>
+      <Cell><Data ss:Type="Number">${u.learningProgress || 0}</Data></Cell>
+      <Cell><Data ss:Type="String">${new Date(u.createdAt).toLocaleDateString()}</Data></Cell>
+    </Row>`;
+    });
+
+    xml += `
+  </Table>
+</Worksheet>
+</Workbook>`;
+    return xml;
+  };
+
+  const handleExport = async (type) => {
+    const loader = toast.loading(`Generating full ${type.toUpperCase()} dataset export...`);
+    try {
+      // Fetch all matching users across all pages for full export
+      const res = await apiClient.get('/admin/users', {
+        params: {
+          page: 1,
+          limit: 5000,
+          search: searchTerm,
+          role: selectedRole,
+          isActive: selectedStatus,
+          plan: selectedPlan,
+          sort: sortBy
+        }
+      });
+      const exportList = res.data?.data?.users || users;
+      if (exportList.length === 0) {
+        toast.error('No users to export', { id: loader });
+        return;
+      }
+
+      let blob;
+      let filename;
+      if (type === 'excel') {
+        const xmlContent = convertToExcelXML(exportList);
+        blob = new Blob([xmlContent], { type: 'application/vnd.ms-excel' });
+        filename = `codesphere_users_export_${Date.now()}.xls`;
+      } else {
+        const csvContent = convertToCSV(exportList);
+        blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        filename = `codesphere_users_export_${Date.now()}.csv`;
+      }
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.setAttribute('href', url);
+      link.setAttribute('download', filename);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(`Exported ${exportList.length} accounts as ${type.toUpperCase()}`, { id: loader });
+    } catch (err) {
+      toast.error('Export failed: ' + err.message, { id: loader });
     }
-    const csvContent = convertToCSV(users);
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `codesphere_users_${Date.now()}.${type === 'excel' ? 'xlsx' : 'csv'}`);
-    link.style.visibility = 'hidden';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success(`Exported successfully as ${type.toUpperCase()}`);
   };
 
   // Bulk Actions
@@ -208,6 +345,31 @@ export const Users = () => {
     }
   };
 
+  const handleStatCardClick = (filterType, filterValue, actionName) => {
+    setPage(1);
+    if (filterType === 'role') {
+      setSelectedRole(filterValue === selectedRole ? '' : filterValue);
+      setSelectedStatus('');
+      toast.success(filterValue === selectedRole ? 'Cleared role filter' : `Filtering by role: ${actionName}`);
+    } else if (filterType === 'status') {
+      setSelectedStatus(filterValue === selectedStatus ? '' : filterValue);
+      setSelectedRole('');
+      toast.success(filterValue === selectedStatus ? 'Cleared status filter' : `Filtering by status: ${actionName}`);
+    } else if (filterType === 'sort') {
+      setSortBy(filterValue);
+      toast.success(`Sorting by: ${actionName}`);
+    } else if (filterType === 'reset') {
+      setSelectedRole('');
+      setSelectedStatus('');
+      setSelectedPlan('');
+      setSearchTerm('');
+      setSortBy('newest');
+      toast.success('Reset all account filters');
+    } else {
+      toast.info(`Telemetry overview: ${actionName}`);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 w-full animate-fade-in text-slate-800">
       
@@ -219,9 +381,9 @@ export const Users = () => {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => fetchData()}
+            onClick={handleSyncDB}
             disabled={refreshing}
-            className="p-2 border border-slate-200 bg-white rounded-xl hover:bg-slate-50 text-slate-500 disabled:opacity-50 transition-all flex items-center gap-1.5 text-xs font-semibold"
+            className="p-2 border border-slate-200 bg-white rounded-xl hover:bg-slate-50 text-slate-700 active:scale-95 disabled:opacity-50 transition-all flex items-center gap-1.5 text-xs font-semibold shadow-xs"
           >
             <RefreshCw size={14} className={refreshing ? 'animate-spin' : ''} />
             <span>Sync DB</span>
@@ -243,28 +405,38 @@ export const Users = () => {
         </div>
       </div>
 
-      {/* Dynamic Statistics Carousel/Grid Grid */}
+      {/* Dynamic Interactive Statistics Cards Grid */}
       {stats && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3.5 select-none">
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3.5 select-none">
           {[
-            { label: 'Total Users', value: stats.totalUsers, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100' },
-            { label: 'Active Users', value: stats.activeUsers, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100' },
-            { label: 'Suspended Users', value: stats.inactiveUsers, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100' },
-            { label: 'Students', value: stats.students, color: 'text-sky-600', bg: 'bg-sky-50 border-sky-100' },
-            { label: 'Instructors', value: stats.instructors, color: 'text-rose-600', bg: 'bg-rose-50 border-rose-100' },
-            { label: 'Mentors', value: stats.mentors, color: 'text-orange-600', bg: 'bg-orange-50 border-orange-100' },
-            { label: 'Recruiters', value: stats.recruiters, color: 'text-purple-600', bg: 'bg-purple-50 border-purple-100' },
-            { label: 'Organizations', value: stats.organizations, color: 'text-pink-600', bg: 'bg-pink-50 border-pink-100' },
-            { label: 'Users Online', value: stats.usersCurrentlyOnline, color: 'text-teal-600 animate-pulse', bg: 'bg-teal-50 border-teal-100' },
-            { label: 'New Today', value: stats.newUsersToday, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100' },
-            { label: 'Avg Progress', value: `${stats.averageLearningProgress}%`, color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-100' },
-            { label: 'Streak Avg', value: `${stats.averageStreak} Days`, color: 'text-orange-700', bg: 'bg-orange-50 border-orange-100' },
-            { label: 'Certificates Issued', value: stats.certificatesIssued, color: 'text-yellow-600', bg: 'bg-yellow-50 border-yellow-100' },
-            { label: 'Sandbox Projects', value: stats.totalSandboxProjects, color: 'text-cyan-600', bg: 'bg-cyan-50 border-cyan-100' },
-            { label: 'Codex Workspaces', value: stats.totalCodexWorkspaces, color: 'text-violet-600', bg: 'bg-violet-50 border-violet-100' },
+            { label: 'Total Users', value: stats.totalUsers ?? 0, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100', filterType: 'reset', filterValue: '', active: !selectedRole && !selectedStatus && sortBy === 'newest' },
+            { label: 'Active Users', value: stats.activeUsers ?? 0, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100', filterType: 'status', filterValue: 'true', active: selectedStatus === 'true' },
+            { label: 'Suspended Users', value: stats.inactiveUsers ?? 0, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100', filterType: 'status', filterValue: 'false', active: selectedStatus === 'false' },
+            { label: 'Students', value: stats.students ?? 0, color: 'text-sky-600', bg: 'bg-sky-50 border-sky-100', filterType: 'role', filterValue: 'student', active: selectedRole === 'student' },
+            { label: 'Instructors', value: stats.instructors ?? 0, color: 'text-rose-600', bg: 'bg-rose-50 border-rose-100', filterType: 'role', filterValue: 'instructor', active: selectedRole === 'instructor' },
+            { label: 'Mentors', value: stats.mentors ?? 0, color: 'text-orange-600', bg: 'bg-orange-50 border-orange-100', filterType: 'role', filterValue: 'mentor', active: selectedRole === 'mentor' },
+            { label: 'Recruiters', value: stats.recruiters ?? 0, color: 'text-purple-600', bg: 'bg-purple-50 border-purple-100', filterType: 'role', filterValue: 'recruiter', active: selectedRole === 'recruiter' },
+            { label: 'Organizations', value: stats.organizations ?? 0, color: 'text-pink-600', bg: 'bg-pink-50 border-pink-100', filterType: 'role', filterValue: 'organization', active: selectedRole === 'organization' },
+            { label: 'Users Online', value: stats.usersCurrentlyOnline ?? 0, color: 'text-teal-600 animate-pulse', bg: 'bg-teal-50 border-teal-100', filterType: 'status', filterValue: 'true', active: false },
+            { label: 'New Today', value: stats.newUsersToday ?? 0, color: 'text-blue-600', bg: 'bg-blue-50 border-blue-100', filterType: 'sort', filterValue: 'newest', active: false },
+            { label: 'Avg Progress', value: `${stats.averageLearningProgress ?? 0}%`, color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-100', filterType: 'sort', filterValue: 'progress_desc', active: sortBy === 'progress_desc' },
+            { label: 'Streak Avg', value: `${stats.averageStreak ?? 0} Days`, color: 'text-orange-700', bg: 'bg-orange-50 border-orange-100', filterType: 'sort', filterValue: 'streak_desc', active: sortBy === 'streak_desc' },
+            { label: 'Certificates Issued', value: stats.certificatesIssued ?? 0, color: 'text-yellow-600', bg: 'bg-yellow-50 border-yellow-100', filterType: 'info', filterValue: '', active: false },
+            { label: 'Sandbox Projects', value: stats.totalSandboxProjects ?? 0, color: 'text-cyan-600', bg: 'bg-cyan-50 border-cyan-100', filterType: 'info', filterValue: '', active: false },
+            { label: 'Codex Workspaces', value: stats.totalCodexWorkspaces ?? 0, color: 'text-violet-600', bg: 'bg-violet-50 border-violet-100', filterType: 'info', filterValue: '', active: false },
           ].map((stat) => (
-            <div key={stat.label} className={`p-3.5 border rounded-2xl flex flex-col justify-between shadow-[0_1px_2px_0_rgba(0,0,0,0.01)] ${stat.bg}`}>
-              <span className="text-[8.5px] uppercase tracking-wider font-extrabold text-slate-400 font-mono-origin">{stat.label}</span>
+            <div
+              key={stat.label}
+              onClick={() => handleStatCardClick(stat.filterType, stat.filterValue, stat.label)}
+              title={`Click to filter or view ${stat.label}`}
+              className={`p-3.5 border rounded-2xl flex flex-col justify-between shadow-[0_1px_2px_0_rgba(0,0,0,0.01)] cursor-pointer hover:shadow-md hover:-translate-y-0.5 active:scale-98 transition-all ${stat.bg} ${
+                stat.active ? 'ring-2 ring-emerald-500 ring-offset-1 border-emerald-400 font-bold' : ''
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <span className="text-[8.5px] uppercase tracking-wider font-extrabold text-slate-400 font-mono-origin">{stat.label}</span>
+                <span className="text-[7.5px] uppercase tracking-wide text-slate-400 font-bold opacity-75">Click to view</span>
+              </div>
               <span className={`text-lg font-black mt-1 font-mono-origin ${stat.color}`}>{stat.value}</span>
             </div>
           ))}
@@ -335,6 +507,8 @@ export const Users = () => {
           >
             <option value="newest">Newest Joiners</option>
             <option value="oldest">Oldest Accounts</option>
+            <option value="progress_desc">Highest Progress</option>
+            <option value="streak_desc">Highest Streak</option>
           </select>
 
         </div>

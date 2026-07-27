@@ -1,21 +1,7 @@
 const bcrypt       = require('bcryptjs');
 const generateToken = require('../utils/generateToken');
 
-// Determine which database to use
-let User;
-const USE_MOCK_DB = process.env.NODE_ENV === 'development';
-
-if (USE_MOCK_DB) {
-  console.log('📝 Using in-memory mock database (development mode)');
-  User = require('./mockDatabase');
-} else {
-  try {
-    User = require('../models/User');
-  } catch (err) {
-    console.warn('⚠️  MongoDB not available, falling back to mock database');
-    User = require('./mockDatabase');
-  }
-}
+const User = require('../models/User');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -102,14 +88,7 @@ const login = async ({ email, password }) => {
   }
 
   // 2. Find user — explicitly select password since it's hidden by default
-  let user;
-  if (User.findOne.length === 1) {
-    // Mock database version
-    user = await User.findOne({ email: email.toLowerCase() });
-  } else {
-    // Mongoose version
-    user = await User.findOne({ email: email.toLowerCase() }).select('+password');
-  }
+  const user = await User.findOne({ email: email.toLowerCase() }).select('+password');
   
   if (!user) throw createError('Invalid email or password', 401);
 

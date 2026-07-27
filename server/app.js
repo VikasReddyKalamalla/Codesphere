@@ -123,6 +123,7 @@ app.use('/api/categories',    categoryRoutes);
 app.use('/api/bookmarks',     bookmarkRoutes);
 app.use('/api/downloads',     downloadRoutes);
 app.use('/api/community',     communityRoutes);
+app.use('/api/communities',   communityRoutes);
 app.use('/api/posts',         postRoutes);
 app.use('/api/post-comments', commentRoutes);
 app.use('/api/invites',       inviteRoutes);

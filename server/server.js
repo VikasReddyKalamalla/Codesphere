@@ -17,18 +17,13 @@ attachWsProxy(server);
 
 // Connect to MongoDB then start server
 connectDB().then(() => {
-  // Create database indexes on startup (if MongoDB is connected)
-  if (process.env.NODE_ENV !== 'development' || process.env.MONGO_URI) {
-    const { createIndexes } = require('./config/indexes');
-    createIndexes().catch((err) => console.error('Failed to create database indexes:', err));
-  }
+  const { createIndexes } = require('./config/indexes');
+  createIndexes().catch((err) => console.error('Failed to create database indexes:', err));
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`Server running on port ${PORT}`);
   });
 }).catch((err) => {
-  console.error('Database connection error, but starting server anyway:', err.message);
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT} (without database)`);
-  });
+  console.error('Database connection error:', err.message);
+  process.exit(1);
 });
