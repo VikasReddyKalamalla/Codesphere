@@ -3,7 +3,6 @@ const http = require('http');
 const app = require('./app');
 const connectDB = require('./config/db');
 const { initSocket } = require('./socket/socket');
-const { attachWsProxy } = require('./middlewares/vscodeProxy.middleware');
 
 const PORT = process.env.PORT || 5000;
 
@@ -11,9 +10,6 @@ const server = http.createServer(app);
 
 // Initialize Socket.io
 initSocket(server);
-
-// Attach VS Code Web WebSocket proxy (terminal, file-watch, hot-reload)
-attachWsProxy(server);
 
 // Connect to MongoDB then start server
 connectDB().then(() => {
