@@ -77,9 +77,11 @@ router.put   ('/moderation/:id/reject', moderationCtrl.rejectContent);
 router.delete('/moderation/:id',        moderationCtrl.deleteModerationItem);
 
 // ─── Reports ─────────────────────────────────────────────────────────────────
-router.get('/reports',     reportCtrl.getReports);
-router.get('/reports/:id', reportCtrl.getReportById);
-router.put('/reports/:id', reportCtrl.updateReport);
+router.get   ('/reports',     reportCtrl.getReports);
+router.post  ('/reports',     reportCtrl.createReport);
+router.get   ('/reports/:id', reportCtrl.getReportById);
+router.put   ('/reports/:id', reportCtrl.updateReport);
+router.delete('/reports/:id', reportCtrl.deleteReport);
 
 // ─── Platform Settings ────────────────────────────────────────────────────────
 router.get('/settings', settingCtrl.getSettings);

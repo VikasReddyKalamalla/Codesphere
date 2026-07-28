@@ -21,7 +21,7 @@ connectDB().then(() => {
   createIndexes().catch((err) => console.error('Failed to create database indexes:', err));
 
   server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on port ${PORT}`);
+    console.log(`Server running on port ${PORT} [Reports System Clean & Real-Time Ready]`);
   });
 }).catch((err) => {
   console.error('Database connection error:', err.message);

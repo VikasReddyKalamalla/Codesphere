@@ -7,7 +7,7 @@ export const useAdmin = () => {
   const state = useSelector(selectAdmin);
 
   useEffect(() => {
-    if (state.status === 'idle') {
+    if (state.status === 'idle' || state.status === 'failed') {
       dispatch(fetchAdminStatsThunk());
     }
   }, [dispatch, state.status]);

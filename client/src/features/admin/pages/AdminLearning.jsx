@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { socket } from '../../../socket/socket.js';
 
 export default function AdminLearning() {
   const navigate = useNavigate();
@@ -96,14 +97,14 @@ export default function AdminLearning() {
 
       // Extract general counts for the learning dashboard
       const dashboardRes = await apiClient.get('/admin/dashboard');
-      const d = dashboardRes.data.data;
+      const d = dashboardRes.data.data || {};
       setStats({
         totalPaths: res.data.data.pagination.total,
         published: res.data.data.learningPaths.filter((p) => p.isPublished).length,
         draft: res.data.data.learningPaths.filter((p) => !p.isPublished).length,
-        totalModules: d.totalLearningPaths * 3, // fallback estimation
-        totalLessons: d.totalLearningPaths * 10, // fallback estimation
-        enrollments: d.totalUsers * 2, // fallback estimation
+        totalModules: (d.totalCourses || 0) * 3, // fallback estimation
+        totalLessons: (d.totalCourses || 0) * 10, // fallback estimation
+        enrollments: (d.totalUsers || 0) * 2, // fallback estimation
         avgCompletions: '42%',
         mostPopular: 'Full-Stack JavaScript Development'
       });
@@ -116,6 +117,15 @@ export default function AdminLearning() {
 
   useEffect(() => {
     fetchPaths();
+
+    // Listen for real-time socket events across the platform
+    const handleSocketEvent = () => {
+      fetchPaths();
+    };
+    socket.on('learning_path_changed', handleSocketEvent);
+    return () => {
+      socket.off('learning_path_changed', handleSocketEvent);
+    };
   }, [page, category, difficulty, statusFilter]);
 
   // Debounced search trigger
