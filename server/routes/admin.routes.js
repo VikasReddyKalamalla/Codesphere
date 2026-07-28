@@ -92,8 +92,12 @@ router.get('/features',     featureCtrl.getFeatureToggles);
 router.put('/features/:id', featureCtrl.updateFeatureToggle);
 
 // ─── Platform Analytics ───────────────────────────────────────────────────────
-router.get ('/analytics',          analyticsCtrl.getAnalytics);
+router.get ('/analytics/realtime', analyticsCtrl.getRealtimeAnalytics);
+router.get ('/analytics/events',   analyticsCtrl.getAnalyticsEvents);
 router.post('/analytics/generate', analyticsCtrl.generateAnalytics);
+router.post('/analytics/simulate', analyticsCtrl.simulateTrafficEvent);
+router.post('/analytics/seed',     analyticsCtrl.seedAnalyticsData);
+router.get ('/analytics',          analyticsCtrl.getAnalytics);
 
 // ─── System Health ────────────────────────────────────────────────────────────
 router.get('/system-health',         healthCtrl.getSystemHealth);

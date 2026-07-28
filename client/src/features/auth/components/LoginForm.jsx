@@ -21,20 +21,25 @@ export const LoginForm = ({ onSuccess }) => {
       return;
     }
     setErrors({});
+
     try {
       await login(form);
-      toast.success('Logged in successfully!');
+      toast.success(`Signed in as ${form.email.trim()}!`, {
+        icon: '🚀',
+        style: { background: '#0f172a', color: '#10b981', border: '1px solid #059669' },
+      });
       onSuccess && onSuccess();
     } catch (err) {
-      toast.error('Invalid credentials');
+      const serverMsg = err.response?.data?.message || err.message || 'Login failed';
+      toast.error(serverMsg);
     }
   };
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <Input
-        label="Email Address"
-        placeholder="email@example.com"
+        label="Email Address or Username"
+        placeholder="email@example.com or username"
         value={form.email}
         onChange={(e) => setForm({ ...form, email: e.target.value })}
         error={errors.email}
@@ -49,6 +54,7 @@ export const LoginForm = ({ onSuccess }) => {
         />
         <RememberMe checked={remember} onChange={setRemember} />
       </div>
+
       <Button type="submit" variant="primary" className="w-full mt-2" isLoading={status === 'loading'}>
         Sign In
       </Button>
