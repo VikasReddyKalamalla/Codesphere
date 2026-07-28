@@ -15,12 +15,14 @@ import {
   addCommentAPI,
   deleteCommentAPI
 } from '../services/communityAPI.js';
+import { getUserId } from '../utils/communityHelpers.js';
 
 import { 
   fetchStart, 
   fetchSuccess, 
   fetchCommunitySuccess, 
   fetchFailure,
+  updateCommunityMembership,
   setPosts,
   addPost,
   updatePost,
@@ -81,23 +83,59 @@ export const updateCommunityThunk = (id, payload, onSuccess) => async (dispatch)
   }
 };
 
-export const joinCommunityThunk = (id) => async (dispatch) => {
+export const joinCommunityThunk = (id) => async (dispatch, getState) => {
   try {
+    const state = getState();
+    const user = state.auth?.user;
+    const userId = getUserId(user);
+
     const res = await joinCommunityAPI(id);
-    dispatch(fetchCommunityDetailsThunk(id));
+    const payloadData = res.data?.data || res.data || res;
+    dispatch(updateCommunityMembership({
+      ...payloadData,
+      communityId: id,
+      userId: payloadData.userId || userId,
+      action: 'joined'
+    }));
+    await dispatch(fetchCommunitiesThunk());
     toast.success('Joined community!');
   } catch (err) {
-    toast.error(err.response?.data?.message || 'Failed to join community');
+    const isAlreadyMember = err.response?.status === 409 || err.response?.data?.message?.toLowerCase().includes('already');
+    if (isAlreadyMember) {
+      const state = getState();
+      const user = state.auth?.user;
+      const userId = getUserId(user);
+      dispatch(updateCommunityMembership({
+        communityId: id,
+        userId,
+        action: 'joined'
+      }));
+      await dispatch(fetchCommunitiesThunk());
+      toast.success('Joined community!');
+    } else {
+      toast.error(err.response?.data?.message || err.message || 'Failed to join community');
+    }
   }
 };
 
-export const leaveCommunityThunk = (id) => async (dispatch) => {
+export const leaveCommunityThunk = (id) => async (dispatch, getState) => {
   try {
+    const state = getState();
+    const user = state.auth?.user;
+    const userId = getUserId(user);
+
     const res = await leaveCommunityAPI(id);
-    dispatch(fetchCommunityDetailsThunk(id));
+    const payloadData = res.data?.data || res.data || res;
+    dispatch(updateCommunityMembership({
+      ...payloadData,
+      communityId: id,
+      userId: payloadData.userId || userId,
+      action: 'left'
+    }));
+    await dispatch(fetchCommunitiesThunk());
     toast.success('Left community');
   } catch (err) {
-    toast.error(err.response?.data?.message || 'Failed to leave community');
+    toast.error(err.response?.data?.message || err.message || 'Failed to leave community');
   }
 };
 

@@ -32,15 +32,27 @@ const deleteCommunity = asyncHandler(async (req, res) => {
   return successResponse(res, 200, 'Community deleted successfully');
 });
 
+const { getIO }           = require('../socket/socket');
+
 // POST /api/communities/:id/join
 const joinCommunity = asyncHandler(async (req, res) => {
   const data = await communityService.joinCommunity(req.params.id, req.user._id);
+  try {
+    getIO().emit('community:membershipUpdated', data);
+  } catch (err) {
+    console.warn('[Socket] Could not emit membership update:', err.message);
+  }
   return successResponse(res, 200, 'Joined community successfully', data);
 });
 
 // DELETE /api/communities/:id/leave
 const leaveCommunity = asyncHandler(async (req, res) => {
   const data = await communityService.leaveCommunity(req.params.id, req.user._id);
+  try {
+    getIO().emit('community:membershipUpdated', data);
+  } catch (err) {
+    console.warn('[Socket] Could not emit membership update:', err.message);
+  }
   return successResponse(res, 200, 'Left community successfully', data);
 });
 

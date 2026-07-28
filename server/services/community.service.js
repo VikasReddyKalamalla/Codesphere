@@ -16,6 +16,8 @@ const getAllCommunities = async (query) => {
     category,
     visibility,
     search,
+    joinedBy,
+    notJoinedBy,
     sortBy = 'createdAt',
     order = 'desc',
   } = query;
@@ -25,6 +27,8 @@ const getAllCommunities = async (query) => {
   if (category)    filter.category   = category;
   if (visibility)  filter.visibility = visibility;
   if (search)      filter.$text = { $search: search };
+  if (joinedBy)    filter.members    = joinedBy;
+  if (notJoinedBy) filter.members    = { $ne: notJoinedBy };
 
   const total = await Community.countDocuments(filter);
   const { skip, ...meta } = getPagination(page, limit, total);
@@ -41,7 +45,7 @@ const getAllCommunities = async (query) => {
     .sort(sortOptions)
     .skip(skip)
     .limit(meta.limit)
-    .select('-members -posts'); // don't populate full arrays for list view
+    .select('-posts'); // don't populate full posts for list view
 
   return { ...meta, communities };
 };
@@ -116,15 +120,23 @@ const joinCommunity = async (communityId, userId) => {
   const community = await Community.findById(communityId);
   if (!community) throw createError('Community not found', 404);
 
-  if (community.members.includes(userId)) {
-    throw createError('You are already a member', 409);
+  const userIdStr = userId.toString();
+  const isAlreadyMember = community.members.some((m) => (m._id || m).toString() === userIdStr);
+
+  if (!isAlreadyMember) {
+    community.members.push(userId);
+    community.memberCount = community.members.length;
+    await community.save();
   }
 
-  community.members.push(userId);
-  community.memberCount = community.members.length;
-  await community.save();
-
-  return { message: 'Joined community successfully', memberCount: community.memberCount };
+  return {
+    message: 'Joined community successfully',
+    communityId: community._id.toString(),
+    memberCount: community.memberCount,
+    members: community.members,
+    userId: userIdStr,
+    action: 'joined'
+  };
 };
 
 // ─── LEAVE ────────────────────────────────────────────────────────────────────
@@ -136,15 +148,23 @@ const leaveCommunity = async (communityId, userId) => {
     throw createError('Owner cannot leave the community. Transfer ownership first.', 400);
   }
 
-  if (!community.members.includes(userId)) {
-    throw createError('You are not a member', 400);
+  const userIdStr = userId.toString();
+  const isMember = community.members.some((m) => (m._id || m).toString() === userIdStr);
+
+  if (isMember) {
+    community.members = community.members.filter((m) => (m._id || m).toString() !== userIdStr);
+    community.memberCount = community.members.length;
+    await community.save();
   }
 
-  community.members.pull(userId);
-  community.memberCount = community.members.length;
-  await community.save();
-
-  return { message: 'Left community successfully', memberCount: community.memberCount };
+  return {
+    message: 'Left community successfully',
+    communityId: community._id.toString(),
+    memberCount: community.memberCount,
+    members: community.members,
+    userId: userIdStr,
+    action: 'left'
+  };
 };
 
 // ─── GET MEMBERS ──────────────────────────────────────────────────────────────

@@ -19,9 +19,9 @@ const authSlice = createSlice({
     },
     authSuccess: (state, action) => {
       state.status = 'succeeded';
-      state.user = action.payload.user;
-      state.token = action.payload.token;
-      state.isAuthenticated = true;
+      if (action.payload.user !== undefined) state.user = action.payload.user;
+      if (action.payload.token !== undefined) state.token = action.payload.token;
+      state.isAuthenticated = !!state.token;
     },
     authFailure: (state, action) => {
       state.status = 'failed';

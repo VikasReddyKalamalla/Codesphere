@@ -266,22 +266,22 @@ async function seed() {
       name: 'JavaScript Developers',
       description: 'Everything about JavaScript — tips, projects, code reviews, and help.',
       category: 'Programming', tags: ['javascript', 'node', 'react'],
-      owner: sarah._id, members: [sarah._id, vikas._id, priya._id, alex._id],
-      moderators: [sarah._id], memberCount: 4, visibility: 'public', status: 'active',
+      owner: sarah._id, members: [sarah._id],
+      moderators: [sarah._id], memberCount: 1, visibility: 'public', status: 'active',
     },
     {
       name: 'Data Science & ML',
       description: 'Python, machine learning, data pipelines, and research papers.',
       category: 'Data Science', tags: ['python', 'ml', 'pandas', 'tensorflow'],
-      owner: james._id, members: [james._id, vikas._id, priya._id],
-      moderators: [james._id], memberCount: 3, visibility: 'public', status: 'active',
+      owner: james._id, members: [james._id],
+      moderators: [james._id], memberCount: 1, visibility: 'public', status: 'active',
     },
     {
       name: 'CodeSphere General',
       description: 'General discussion, announcements, and platform feedback.',
       category: 'General', tags: ['general', 'help', 'announcements'],
-      owner: admin._id, members: users.map(u => u._id),
-      moderators: [admin._id], memberCount: users.length, visibility: 'public', status: 'active',
+      owner: admin._id, members: [admin._id],
+      moderators: [admin._id], memberCount: 1, visibility: 'public', status: 'active',
     },
   ]);
 
