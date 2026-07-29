@@ -35,11 +35,8 @@ const sandboxProjectSchema = new mongoose.Schema(
     },
     category: {
       type:    String,
-      enum:    {
-        values:  ['frontend', 'backend', 'fullstack', 'ai_ml', 'devops', 'cybersecurity', 'mobile', 'blockchain', 'cloud'],
-        message: '{VALUE} is not a valid category',
-      },
       default: 'fullstack',
+      trim:    true,
     },
     technologyStack:  [{ type: String, trim: true }],
     prerequisites:    [{ type: String, trim: true }],

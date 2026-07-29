@@ -1,4 +1,4 @@
-// CodeSphere Realtime Server v1.0.2
+// CodeSphere Realtime Server v1.0.5 - Category preservation & regex search
 require('dotenv').config();
 const http = require('http');
 const app = require('./app');

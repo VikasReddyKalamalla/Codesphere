@@ -30,7 +30,10 @@ const getAllEvents = async (query) => {
     order = 'asc',
   } = query;
 
-  const filter = { isPublished: true };
+  const filter = {};
+  if (query.all !== 'true') {
+    filter.isPublished = true;
+  }
 
   // Search
   if (search) filter.$text = { $search: search };

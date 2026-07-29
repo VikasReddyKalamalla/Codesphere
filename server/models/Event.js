@@ -33,8 +33,7 @@ const eventSchema = new mongoose.Schema(
 
     // ─── Classification ───────────────────────────────────────────────────────
     category: {
-      type:    mongoose.Schema.Types.ObjectId,
-      ref:     'EventCategory',
+      type:    mongoose.Schema.Types.Mixed,
       default: null,
     },
     categoryName: { type: String, default: 'General' },

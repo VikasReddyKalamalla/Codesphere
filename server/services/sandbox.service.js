@@ -22,9 +22,20 @@ const getAllProjects = async (query) => {
     order  = 'desc',
   } = query;
 
-  const filter = { isPublished: true, status: 'published' };
+  const filter = {};
+  if (query.all !== 'true') {
+    filter.isPublished = true;
+    filter.status = 'published';
+  }
 
-  if (search)      filter.$text = { $search: search };
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+      { category: { $regex: search, $options: 'i' } },
+      { technologyStack: { $regex: search, $options: 'i' } },
+    ];
+  }
   if (difficulty)  filter.difficulty = difficulty;
   if (category)    filter.category   = category;
   if (instructor)  filter.instructor = instructor;
@@ -87,6 +98,20 @@ const createProject = async (body, userId) => {
     throw createError('A project with this title already exists', 400);
   }
 
+  if (!body.category || typeof body.category !== 'string') {
+    body.category = 'fullstack';
+  } else {
+    body.category = body.category.trim();
+  }
+
+  if (body.isPublished || body.isPublished === 'true') {
+    body.isPublished = true;
+    body.status = 'published';
+  } else {
+    body.status = body.status || 'published';
+    body.isPublished = true;
+  }
+
   return SandboxProject.create({ ...body, instructor: userId });
 };
 
@@ -101,6 +126,20 @@ const updateProject = async (id, body, userId, userRole) => {
   }
 
   delete body.instructor;
+
+  if (body.category && typeof body.category === 'string') {
+    body.category = body.category.trim();
+  }
+
+  if (typeof body.isPublished !== 'undefined') {
+    if (body.isPublished || body.isPublished === 'true') {
+      body.isPublished = true;
+      body.status = 'published';
+    } else {
+      body.isPublished = false;
+      body.status = 'draft';
+    }
+  }
 
   return SandboxProject.findByIdAndUpdate(id, body, { new: true, runValidators: true })
     .populate('instructor', 'fullName avatar');

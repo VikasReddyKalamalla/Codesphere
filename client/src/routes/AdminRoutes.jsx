@@ -41,7 +41,7 @@ const AdminRoutes = ({ isAuthenticated = false, user = null }) => (
     <Route path={ROUTES.ADMIN_USER_DETAIL}  element={<LoadingRoute><AdminUserDetail /></LoadingRoute>} />
     <Route path={ROUTES.ADMIN_INSTRUCTORS}  element={<LoadingRoute><AdminInstructors /></LoadingRoute>} />
     <Route path={ROUTES.ADMIN_CONTENT}      element={<LoadingRoute><AdminContent /></LoadingRoute>} />
-    <Route path={ROUTES.ADMIN_LEARNING}     element={<LoadingRoute><AdminLearning /></LoadingRoute>} />
+    <Route path={ROUTES.ADMIN_LEARNING}     element={<LoadingRoute><AdminFeatures defaultTab="learning" /></LoadingRoute>} />
     <Route path={ROUTES.ADMIN_REPORTS}      element={<LoadingRoute><AdminReports /></LoadingRoute>} />
     <Route path={ROUTES.ADMIN_MODERATION}   element={<LoadingRoute><AdminModeration /></LoadingRoute>} />
     <Route path={ROUTES.ADMIN_SETTINGS}     element={<LoadingRoute><AdminSettings /></LoadingRoute>} />

@@ -248,6 +248,16 @@ async function seed() {
       instructor: james._id, isPublished: true, status: 'published',
       stepCount: 6, enrolledCount: 76,
     },
+    {
+      title: 'Core Java & Spring Boot Microservices',
+      slug: 'core-java-spring-boot-microservices-' + (Date.now() + 3),
+      description: 'Master Core Java fundamentals, Object-Oriented Programming, Spring Boot REST APIs, and microservices architecture.',
+      difficulty: 'beginner', category: 'backend',
+      technologyStack: ['Java', 'Spring Boot', 'Maven', 'MySQL'],
+      estimatedDuration: '10 Hours', estimatedMinutes: 600,
+      instructor: james._id, isPublished: true, status: 'published',
+      stepCount: 5, enrolledCount: 115,
+    },
   ]);
 
   // Sandbox Steps for project 1
