@@ -18,8 +18,15 @@
 
 'use strict';
 
-const express          = require('express');
-const { createProxyMiddleware } = require('http-proxy-middleware');
+const express = require('express');
+
+let createProxyMiddleware;
+try {
+  const hpm = require('http-proxy-middleware');
+  createProxyMiddleware = hpm.createProxyMiddleware || hpm;
+} catch (e) {
+  createProxyMiddleware = null;
+}
 
 const MIN_PORT = 9888;
 const MAX_PORT = 9999;

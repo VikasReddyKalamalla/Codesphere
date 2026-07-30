@@ -1,6 +1,7 @@
 const asyncHandler        = require('../utils/asyncHandler');
 const { successResponse } = require('../utils/apiResponse');
 const resourceService     = require('../services/resource.service');
+const { broadcastDataChange } = require('../utils/realtimeBroadcast');
 
 // GET /api/resources
 const getAllResources = asyncHandler(async (req, res) => {
@@ -17,18 +18,21 @@ const getResourceById = asyncHandler(async (req, res) => {
 // POST /api/resources
 const createResource = asyncHandler(async (req, res) => {
   const data = await resourceService.createResource(req.body, req.file, req.user._id);
+  broadcastDataChange('resource', 'created', data);
   return successResponse(res, 201, 'Resource created successfully', data);
 });
 
 // PUT /api/resources/:id
 const updateResource = asyncHandler(async (req, res) => {
   const data = await resourceService.updateResource(req.params.id, req.body, req.user._id, req.user.role);
+  broadcastDataChange('resource', 'updated', data);
   return successResponse(res, 200, 'Resource updated successfully', data);
 });
 
 // DELETE /api/resources/:id
 const deleteResource = asyncHandler(async (req, res) => {
   await resourceService.deleteResource(req.params.id, req.user._id, req.user.role);
+  broadcastDataChange('resource', 'deleted', { id: req.params.id });
   return successResponse(res, 200, 'Resource deleted successfully');
 });
 

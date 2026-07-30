@@ -11,7 +11,7 @@ const createError = (message, statusCode) => {
 const getAllProjects = async (query) => {
   const {
     page = 1,
-    limit = 12,
+    limit = 50,
     search,
     difficulty,
     category,
@@ -23,27 +23,38 @@ const getAllProjects = async (query) => {
   } = query;
 
   const filter = {};
+  const andConditions = [];
+
   if (query.all !== 'true') {
-    filter.isPublished = true;
-    filter.status = 'published';
+    andConditions.push({
+      $or: [{ isPublished: true }, { status: 'published' }]
+    });
   }
 
   if (search) {
-    filter.$or = [
-      { title: { $regex: search, $options: 'i' } },
-      { description: { $regex: search, $options: 'i' } },
-      { category: { $regex: search, $options: 'i' } },
-      { technologyStack: { $regex: search, $options: 'i' } },
-    ];
+    andConditions.push({
+      $or: [
+        { title: { $regex: search, $options: 'i' } },
+        { description: { $regex: search, $options: 'i' } },
+        { category: { $regex: search, $options: 'i' } },
+        { technologyStack: { $regex: search, $options: 'i' } },
+      ]
+    });
   }
+
   if (difficulty)  filter.difficulty = difficulty;
   if (category)    filter.category   = category;
   if (instructor)  filter.instructor = instructor;
   if (technology)  filter.technologyStack = { $in: Array.isArray(technology) ? technology : [technology] };
   if (featured === 'true') filter.isFeatured = true;
 
+  if (andConditions.length > 0) {
+    filter.$and = andConditions;
+  }
+
+  const limitNum = parseInt(limit, 10) || 50;
   const total = await SandboxProject.countDocuments(filter);
-  const { skip, ...meta } = getPagination(page, limit, total);
+  const { skip, ...meta } = getPagination(page, limitNum, total);
 
   const sortOrder = order === 'desc' ? -1 : 1;
   const sortOptions = {};

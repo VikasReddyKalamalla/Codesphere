@@ -123,8 +123,14 @@ export default function AdminLearning() {
       fetchPaths();
     };
     socket.on('learning_path_changed', handleSocketEvent);
+    socket.on('learning:changed', handleSocketEvent);
+    socket.on('admin:data_changed', (evt) => {
+      if (!evt || evt.entity === 'learning') handleSocketEvent();
+    });
     return () => {
       socket.off('learning_path_changed', handleSocketEvent);
+      socket.off('learning:changed', handleSocketEvent);
+      socket.off('admin:data_changed');
     };
   }, [page, category, difficulty, statusFilter]);
 

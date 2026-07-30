@@ -11,6 +11,7 @@ import {
   fetchMySubmissionsAPI,
   fetchAllMyProgressAPI
 } from '../services/sandboxAPI.js';
+import { socket } from '../../../socket/socket.js';
 import toast from 'react-hot-toast';
 
 export const Sandbox = () => {
@@ -36,7 +37,7 @@ export const Sandbox = () => {
       .catch(err => console.error('Failed to load progress list:', err));
   }, []);
 
-  useEffect(() => {
+  const loadProjects = () => {
     setLoading(true);
     let fetchPromise;
     if (activeTab === 'explore') {
@@ -51,16 +52,16 @@ export const Sandbox = () => {
 
     fetchPromise
       .then((res) => {
-        if (res.success && res.data) {
-          // Normalize structure depending on tab response
+        if (res) {
+          const payloadData = res.data || res;
           if (activeTab === 'explore') {
-            setProjects(res.data.projects || []);
+            setProjects(payloadData.projects || (Array.isArray(payloadData) ? payloadData : []));
           } else if (activeTab === 'projects') {
-            setProjects(res.data.projects || res.data || []);
+            setProjects(payloadData.projects || (Array.isArray(payloadData) ? payloadData : []));
           } else if (activeTab === 'bookmarks') {
-            setProjects(res.data.projects || res.data.bookmarks || res.data || []);
+            setProjects(payloadData.projects || payloadData.bookmarks || (Array.isArray(payloadData) ? payloadData : []));
           } else {
-            setProjects(res.data.submissions || res.data || []);
+            setProjects(payloadData.submissions || (Array.isArray(payloadData) ? payloadData : []));
           }
         }
       })
@@ -69,6 +70,26 @@ export const Sandbox = () => {
         setProjects([]);
       })
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    loadProjects();
+  }, [activeTab]);
+
+  useEffect(() => {
+    const handleSandboxUpdate = (msg) => {
+      loadProjects();
+    };
+
+    socket.on('sandbox:changed', handleSandboxUpdate);
+    socket.on('admin:data_changed', (evt) => {
+      if (!evt || evt.entity === 'sandbox') loadProjects();
+    });
+
+    return () => {
+      socket.off('sandbox:changed', handleSandboxUpdate);
+      socket.off('admin:data_changed');
+    };
   }, [activeTab]);
 
   const tabs = [

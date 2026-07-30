@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { socket } from '../../../socket/socket.js';
 
 // Import existing Learning Path management component for full integration
 import AdminLearning from './AdminLearning.jsx';
@@ -434,6 +435,34 @@ export default function AdminFeaturesPage({ defaultTab }) {
     if (activeTab === 'events') fetchEvents();
     if (activeTab === 'resources') fetchResources();
     if (activeTab === 'toggles') fetchToggles();
+  }, [activeTab]);
+
+  // Real-time socket sync
+  useEffect(() => {
+    const handleDataChanged = (evt) => {
+      const entity = evt?.entity;
+      if (!entity || entity === 'sandbox' || activeTab === 'sandboxes') fetchSandboxes();
+      if (!entity || entity === 'test' || activeTab === 'tests') fetchTests();
+      if (!entity || entity === 'event' || activeTab === 'events') fetchEvents();
+      if (!entity || entity === 'resource' || activeTab === 'resources') fetchResources();
+      if (!entity || entity === 'feature' || activeTab === 'toggles') fetchToggles();
+    };
+
+    socket.on('admin:data_changed', handleDataChanged);
+    socket.on('sandbox:changed', fetchSandboxes);
+    socket.on('test:changed', fetchTests);
+    socket.on('event:changed', fetchEvents);
+    socket.on('resource:changed', fetchResources);
+    socket.on('feature:changed', fetchToggles);
+
+    return () => {
+      socket.off('admin:data_changed', handleDataChanged);
+      socket.off('sandbox:changed', fetchSandboxes);
+      socket.off('test:changed', fetchTests);
+      socket.off('event:changed', fetchEvents);
+      socket.off('resource:changed', fetchResources);
+      socket.off('feature:changed', fetchToggles);
+    };
   }, [activeTab]);
 
   const navTabs = [

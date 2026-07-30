@@ -1,11 +1,12 @@
 const asyncHandler = require('../utils/asyncHandler');
 const { successResponse } = require('../utils/apiResponse');
 const contentService = require('../services/adminContent.service');
-const { getIO } = require('../socket/socket');
+const { broadcastDataChange } = require('../utils/realtimeBroadcast');
 
-const emitContentChange = (action) => {
+const emitContentChange = (action, payload = {}) => {
   try {
     getIO().emit('learning_path_changed', { action, timestamp: Date.now() });
+    broadcastDataChange('learning', action, payload);
   } catch (err) {
     // ignore socket errors if disconnected
   }

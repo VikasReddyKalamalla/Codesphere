@@ -76,7 +76,7 @@ const sandboxProjectSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ─── Auto-generate slug before save ──────────────────────────────────────────
+// ─── Auto-generate slug and sync status before save ──────────────────────────
 sandboxProjectSchema.pre('save', function () {
   if (this.isModified('title') || !this.slug) {
     this.slug = this.title
@@ -85,6 +85,11 @@ sandboxProjectSchema.pre('save', function () {
       .trim()
       .replace(/\s+/g, '-')
       + '-' + Date.now();
+  }
+  if (this.isPublished) {
+    this.status = 'published';
+  } else if (this.status === 'published') {
+    this.isPublished = true;
   }
 });
 

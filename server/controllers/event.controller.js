@@ -1,6 +1,7 @@
 const asyncHandler        = require('../utils/asyncHandler');
 const { successResponse } = require('../utils/apiResponse');
 const eventService        = require('../services/event.service');
+const { broadcastDataChange } = require('../utils/realtimeBroadcast');
 
 // GET /api/events
 const getAllEvents = asyncHandler(async (req, res) => {
@@ -23,36 +24,42 @@ const getEventBySlug = asyncHandler(async (req, res) => {
 // POST /api/events
 const createEvent = asyncHandler(async (req, res) => {
   const data = await eventService.createEvent(req.body, req.user._id);
+  broadcastDataChange('event', 'created', data);
   return successResponse(res, 201, 'Event created successfully', data);
 });
 
 // PUT /api/events/:id
 const updateEvent = asyncHandler(async (req, res) => {
   const data = await eventService.updateEvent(req.params.id, req.body, req.user._id, req.user.role);
+  broadcastDataChange('event', 'updated', data);
   return successResponse(res, 200, 'Event updated successfully', data);
 });
 
 // DELETE /api/events/:id
 const deleteEvent = asyncHandler(async (req, res) => {
   await eventService.deleteEvent(req.params.id, req.user._id, req.user.role);
+  broadcastDataChange('event', 'deleted', { id: req.params.id });
   return successResponse(res, 200, 'Event deleted successfully');
 });
 
 // PATCH /api/events/:id/publish
 const publishEvent = asyncHandler(async (req, res) => {
   const data = await eventService.publishEvent(req.params.id, req.user._id, req.user.role);
+  broadcastDataChange('event', 'published', data);
   return successResponse(res, 200, 'Event published successfully', data);
 });
 
 // PATCH /api/events/:id/cancel
 const cancelEvent = asyncHandler(async (req, res) => {
   const data = await eventService.cancelEvent(req.params.id, req.user._id, req.user.role, req.body.reason);
+  broadcastDataChange('event', 'cancelled', data);
   return successResponse(res, 200, 'Event cancelled successfully', data);
 });
 
 // PATCH /api/events/:id/reschedule
 const rescheduleEvent = asyncHandler(async (req, res) => {
   const data = await eventService.rescheduleEvent(req.params.id, req.user._id, req.user.role, req.body);
+  broadcastDataChange('event', 'rescheduled', data);
   return successResponse(res, 200, 'Event rescheduled successfully', data);
 });
 
