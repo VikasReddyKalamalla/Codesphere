@@ -109,11 +109,13 @@ const getEvents = asyncHandler(async (req, res) => {
 
 const updateEvent = asyncHandler(async (req, res) => {
   const event = await contentService.updateEvent(req.params.id, req.body, req.user._id);
+  broadcastDataChange('event', 'updated', event);
   successResponse(res, 200, 'Event updated', { event });
 });
 
 const deleteEvent = asyncHandler(async (req, res) => {
   const result = await contentService.deleteEvent(req.params.id, req.user._id);
+  broadcastDataChange('event', 'deleted', { id: req.params.id });
   successResponse(res, 200, result.message, {});
 });
 

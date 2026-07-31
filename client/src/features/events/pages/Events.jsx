@@ -14,6 +14,8 @@ import { EventCalendarView } from '../components/EventCalendarView.jsx';
 import { EventAnalyticsDashboard } from '../components/EventAnalyticsDashboard.jsx';
 import { CreateEventModal } from '../components/CreateEventModal.jsx';
 
+import { socket } from '../../../socket/socket.js';
+
 import {
   fetchEventsThunk,
   fetchGlobeMarkersThunk,
@@ -71,6 +73,23 @@ export const Events = () => {
     dispatch(fetchGlobeMarkersThunk());
     dispatch(fetchUserMetadataThunk());
     dispatch(fetchAnalyticsSummaryThunk());
+
+    const handleEventChange = (evt) => {
+      const entity = evt?.entity;
+      if (!entity || entity === 'event') {
+        dispatch(fetchEventsThunk());
+        dispatch(fetchGlobeMarkersThunk());
+        dispatch(fetchAnalyticsSummaryThunk());
+      }
+    };
+
+    socket.on('admin:data_changed', handleEventChange);
+    socket.on('event:changed', handleEventChange);
+
+    return () => {
+      socket.off('admin:data_changed', handleEventChange);
+      socket.off('event:changed', handleEventChange);
+    };
   }, [dispatch]);
 
   const handleSelectEvent = (event) => {

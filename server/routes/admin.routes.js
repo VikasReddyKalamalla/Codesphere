@@ -86,6 +86,8 @@ router.delete('/reports/:id', reportCtrl.deleteReport);
 // ─── Platform Settings ────────────────────────────────────────────────────────
 router.get('/settings', settingCtrl.getSettings);
 router.put('/settings', settingCtrl.updateSettings);
+router.post('/settings/purge-cache', settingCtrl.purgeCache);
+router.post('/settings/backup', settingCtrl.triggerBackup);
 
 // ─── Feature Toggles ─────────────────────────────────────────────────────────
 router.get('/features',     featureCtrl.getFeatureToggles);

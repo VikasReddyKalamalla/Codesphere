@@ -114,21 +114,71 @@ const getEventBySlug = async (slug) => {
   return event;
 };
 
-// ─── CREATE EVENT ─────────────────────────────────────────────────────────────
-const createEvent = async (body, userId) => {
-  const { title, startDate, endDate, eventType } = body;
+// Preset global coordinates for quick lookup by city/country
+const PRESET_COORDINATES = {
+  'mountain view': { lat: 37.422, lng: -122.084, country: 'United States', city: 'Mountain View' },
+  'san francisco': { lat: 37.7749, lng: -122.4194, country: 'United States', city: 'San Francisco' },
+  'new york': { lat: 40.7128, lng: -74.0060, country: 'United States', city: 'New York' },
+  'london': { lat: 51.5074, lng: -0.1278, country: 'United Kingdom', city: 'London' },
+  'bengaluru': { lat: 12.9716, lng: 77.5946, country: 'India', city: 'Bengaluru' },
+  'bangalore': { lat: 12.9716, lng: 77.5946, country: 'India', city: 'Bengaluru' },
+  'tokyo': { lat: 35.6762, lng: 139.6503, country: 'Japan', city: 'Tokyo' },
+  'berlin': { lat: 52.5200, lng: 13.4050, country: 'Germany', city: 'Berlin' },
+  'paris': { lat: 48.8566, lng: 2.3522, country: 'France', city: 'Paris' },
+  'singapore': { lat: 1.3521, lng: 103.8198, country: 'Singapore', city: 'Singapore' },
+  'sydney': { lat: -33.8688, lng: 151.2093, country: 'Australia', city: 'Sydney' },
+  'dubai': { lat: 25.2048, lng: 55.2708, country: 'United Arab Emirates', city: 'Dubai' },
+  'toronto': { lat: 43.6532, lng: -79.3832, country: 'Canada', city: 'Toronto' },
+  'amsterdam': { lat: 52.3676, lng: 4.9041, country: 'Netherlands', city: 'Amsterdam' },
+  'sao paulo': { lat: -23.5505, lng: -46.6333, country: 'Brazil', city: 'São Paulo' },
+  'tel aviv': { lat: 32.0853, lng: 34.7818, country: 'Israel', city: 'Tel Aviv' },
+  'zurich': { lat: 47.3769, lng: 8.5417, country: 'Switzerland', city: 'Zurich' },
+  'cape town': { lat: -33.9249, lng: 18.4241, country: 'South Africa', city: 'Cape Town' },
+};
 
-  if (!title) throw createError('Event title is required', 400);
-  if (!startDate) throw createError('Start date is required', 400);
-  if (!endDate) throw createError('End date is required', 400);
-  if (!eventType) throw createError('Event type is required', 400);
+const resolveCoordinates = (city = '', country = '', title = '') => {
+  const cLower = (city || '').toLowerCase();
+  const cntLower = (country || '').toLowerCase();
 
-  // Validate dates
-  if (new Date(endDate) <= new Date(startDate)) {
-    throw createError('End date must be after start date', 400);
+  for (const [key, coords] of Object.entries(PRESET_COORDINATES)) {
+    if (cLower.includes(key) || cntLower.includes(key)) {
+      return coords;
+    }
   }
 
-  // Check if category exists if provided
+  // Deterministic fallback based on title string hash
+  let hash = 0;
+  const str = title + city + country;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const lat = (Math.abs(hash % 12000) / 100) - 60; // -60 to +60 lat
+  const lng = (Math.abs((hash * 31) % 36000) / 100) - 180; // -180 to +180 lng
+  return { lat: Number(lat.toFixed(4)), lng: Number(lng.toFixed(4)) };
+};
+
+// ─── CREATE EVENT ─────────────────────────────────────────────────────────────
+const createEvent = async (body, userId) => {
+  const { title, eventType } = body;
+
+  if (!title) throw createError('Event title is required', 400);
+
+  const startDate = body.startDate ? new Date(body.startDate) : new Date();
+  let endDate = body.endDate ? new Date(body.endDate) : new Date(Date.now() + 86400000);
+  if (endDate <= startDate) {
+    endDate = new Date(startDate.getTime() + 7200000); // 2 hours later
+  }
+
+  // Resolve lat/lng if missing
+  let latitude = Number(body.latitude);
+  let longitude = Number(body.longitude);
+  if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
+    const coords = resolveCoordinates(body.city, body.country, title);
+    latitude = coords.lat;
+    longitude = coords.lng;
+  }
+
+  // Check category if provided
   if (body.category) {
     const categoryExists = await EventCategory.findById(body.category);
     if (!categoryExists) throw createError('Category not found', 404);
@@ -136,12 +186,17 @@ const createEvent = async (body, userId) => {
 
   const event = await Event.create({
     ...body,
+    title,
+    eventType: eventType || 'workshop',
+    startDate,
+    endDate,
+    latitude,
+    longitude,
     organizer: userId,
-    isPublished: true,
-    source: 'user_created',
+    isPublished: typeof body.isPublished !== 'undefined' ? body.isPublished : true,
+    source: body.source || 'user_created',
   });
 
-  // Increment category event count if category is provided
   if (event.category) {
     await EventCategory.findByIdAndUpdate(event.category, { $inc: { eventCount: 1 } });
   }
@@ -159,10 +214,23 @@ const updateEvent = async (id, body, userId, userRole) => {
     throw createError('You are not authorized to update this event', 403);
   }
 
-  // Prevent changing organizer
   delete body.organizer;
 
-  // Handle category change
+  // Handle dates if updated
+  if (body.startDate) body.startDate = new Date(body.startDate);
+  if (body.endDate) body.endDate = new Date(body.endDate);
+
+  // Handle coordinates if updated or missing
+  if (typeof body.latitude !== 'undefined' || typeof body.longitude !== 'undefined') {
+    let lat = Number(body.latitude);
+    let lng = Number(body.longitude);
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+      const coords = resolveCoordinates(body.city || event.city, body.country || event.country, body.title || event.title);
+      body.latitude = coords.lat;
+      body.longitude = coords.lng;
+    }
+  }
+
   const oldCategory = event.category;
   const newCategory = body.category;
 
@@ -171,7 +239,6 @@ const updateEvent = async (id, body, userId, userRole) => {
     .populate('category', 'name icon color')
     .populate('community', 'name logo');
 
-  // Update category counts if category changed
   if (oldCategory && newCategory && oldCategory.toString() !== newCategory.toString()) {
     await EventCategory.findByIdAndUpdate(oldCategory, { $inc: { eventCount: -1 } });
     await EventCategory.findByIdAndUpdate(newCategory, { $inc: { eventCount: 1 } });
@@ -507,39 +574,46 @@ const SEED_GLOBAL_EVENTS = [
   }
 ];
 
-// ─── GET GLOBE EVENTS (Strictly Real Admin/Instructor Events from MongoDB) ──
+// ─── GET GLOBE EVENTS (All Published Admin & Community Events from MongoDB) ──
 const getGlobeEvents = async () => {
-  // Strictly query events manually published by admin/instructor (source: 'user_created')
-  const events = await Event.find({ 
-    isPublished: true, 
-    source: 'user_created' 
-  })
+  const events = await Event.find({ isPublished: true })
     .select('_id title slug eventType mode categoryName categoryColor country city latitude longitude startDate endDate registeredParticipants maxParticipants bannerImage thumbnail companyName organizer prizePool isFeatured')
     .populate('organizer', 'fullName avatar')
     .lean();
 
-  return events.map(ev => ({
-    id: ev._id,
-    title: ev.title,
-    slug: ev.slug,
-    eventType: ev.eventType,
-    mode: ev.mode,
-    categoryName: ev.categoryName,
-    categoryColor: ev.categoryColor || '#04AA6D',
-    country: ev.country || '',
-    city: ev.city || '',
-    lat: Number(ev.latitude || 0),
-    lng: Number(ev.longitude || 0),
-    startDate: ev.startDate,
-    endDate: ev.endDate,
-    registeredCount: ev.registeredParticipants || 0,
-    maxCapacity: ev.maxParticipants || 0,
-    bannerImage: ev.bannerImage || ev.thumbnail,
-    companyName: ev.companyName,
-    organizerName: ev.organizer?.fullName || 'CodeSphere Admin',
-    prizePool: ev.prizePool,
-    isFeatured: ev.isFeatured,
-  }));
+  return events.map(ev => {
+    let lat = Number(ev.latitude);
+    let lng = Number(ev.longitude);
+
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+      const coords = resolveCoordinates(ev.city, ev.country, ev.title);
+      lat = coords.lat;
+      lng = coords.lng;
+    }
+
+    return {
+      id: ev._id,
+      title: ev.title,
+      slug: ev.slug,
+      eventType: ev.eventType || 'workshop',
+      mode: ev.mode || 'online',
+      categoryName: ev.categoryName || 'General',
+      categoryColor: ev.categoryColor || '#04AA6D',
+      country: ev.country || '',
+      city: ev.city || '',
+      lat,
+      lng,
+      startDate: ev.startDate,
+      endDate: ev.endDate,
+      registeredCount: ev.registeredParticipants || 0,
+      maxCapacity: ev.maxParticipants || 100,
+      bannerImage: ev.bannerImage || ev.thumbnail || '',
+      companyName: ev.companyName || 'CodeSphere Partner',
+      organizerName: ev.organizer?.fullName || 'CodeSphere Admin',
+      prizePool: ev.prizePool || '$0',
+      isFeatured: Boolean(ev.isFeatured),
+    };
+  });
 };
 
 // ─── GET GLOBALLY AGGREGATED ANALYTICS SUMMARY ────────────────────────────────

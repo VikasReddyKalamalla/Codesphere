@@ -235,11 +235,17 @@ export default function AdminFeaturesPage({ defaultTab }) {
     title: '',
     description: '',
     eventType: 'workshop',
+    mode: 'online',
     startDate: '',
     endDate: '',
     meetingUrl: '',
     maxParticipants: 100,
     speakerName: 'Lead Tech Instructor',
+    country: 'United States',
+    city: 'San Francisco',
+    latitude: 37.7749,
+    longitude: -122.4194,
+    prizePool: '$0',
     banner: '',
     status: 'upcoming',
     isPublished: true,
@@ -1013,16 +1019,24 @@ export default function AdminFeaturesPage({ defaultTab }) {
             </div>
             <button
               onClick={() => {
+                const now = new Date();
+                const tomorrow = new Date(Date.now() + 86400000);
                 setEditingEvent(null);
                 setEventForm({
                   title: '',
                   description: '',
                   eventType: 'workshop',
-                  startDate: '',
-                  endDate: '',
+                  mode: 'online',
+                  startDate: now.toISOString().slice(0, 16),
+                  endDate: tomorrow.toISOString().slice(0, 16),
                   meetingUrl: '',
                   maxParticipants: 100,
                   speakerName: 'Lead Tech Instructor',
+                  country: 'United States',
+                  city: 'San Francisco',
+                  latitude: 37.7749,
+                  longitude: -122.4194,
+                  prizePool: '$0',
                   banner: '',
                   status: 'upcoming',
                   isPublished: true,
@@ -1051,8 +1065,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase font-bold tracking-wider">
                     <tr>
                       <th className="py-3.5 px-4">Event Details</th>
-                      <th className="py-3.5 px-4">Type</th>
-                      <th className="py-3.5 px-4">Date & Time</th>
+                      <th className="py-3.5 px-4">Type & Mode</th>
+                      <th className="py-3.5 px-4">Date & Location</th>
                       <th className="py-3.5 px-4">Speaker</th>
                       <th className="py-3.5 px-4">Cap</th>
                       <th className="py-3.5 px-4 text-right">Actions</th>
@@ -1070,15 +1084,17 @@ export default function AdminFeaturesPage({ defaultTab }) {
                             <p className="text-[10px] font-normal text-slate-400 truncate max-w-xs">{item.description}</p>
                           </div>
                         </td>
-                        <td className="py-3 px-4">
+                        <td className="py-3 px-4 space-y-1">
                           <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded uppercase border border-amber-200">
                             {item.eventType || 'Workshop'}
                           </span>
+                          <p className="text-[10px] font-mono uppercase text-slate-400">{item.mode || 'online'}</p>
                         </td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-mono text-[11px]">
-                          {item.startDate ? new Date(item.startDate).toLocaleDateString() : 'Scheduled'}
+                          <p>{item.startDate ? new Date(item.startDate).toLocaleDateString() : 'Scheduled'}</p>
+                          <p className="text-[10px] text-emerald-600 font-sans font-bold">{item.city || 'Remote'}, {item.country || 'Global'}</p>
                         </td>
-                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">{item.speakerName || 'Instructor'}</td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">{item.speakerName || item.speakers?.[0]?.name || 'Instructor'}</td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-mono">{item.maxParticipants || 100}</td>
                         <td className="py-3 px-4 text-right space-x-2">
                           <button
@@ -1088,12 +1104,18 @@ export default function AdminFeaturesPage({ defaultTab }) {
                                 title: item.title || '',
                                 description: item.description || '',
                                 eventType: item.eventType || 'workshop',
-                                startDate: item.startDate || '',
-                                endDate: item.endDate || '',
-                                meetingUrl: item.meetingUrl || '',
+                                mode: item.mode || 'online',
+                                startDate: item.startDate ? new Date(item.startDate).toISOString().slice(0, 16) : '',
+                                endDate: item.endDate ? new Date(item.endDate).toISOString().slice(0, 16) : '',
+                                meetingUrl: item.meetingUrl || item.meetingLink || '',
                                 maxParticipants: item.maxParticipants || 100,
-                                speakerName: item.speakerName || 'Instructor',
-                                banner: item.banner || '',
+                                speakerName: item.speakerName || item.speakers?.[0]?.name || 'Instructor',
+                                country: item.country || 'United States',
+                                city: item.city || 'San Francisco',
+                                latitude: item.latitude || 37.7749,
+                                longitude: item.longitude || -122.4194,
+                                prizePool: item.prizePool || '$0',
+                                banner: item.banner || item.bannerImage || '',
                                 status: item.status || 'upcoming',
                                 isPublished: item.isPublished ?? true,
                               });
@@ -1469,8 +1491,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
       {/* Event Modal */}
       <AnimatePresence>
         {isEventModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-xl p-6 space-y-4 my-8">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Calendar size={18} className="text-amber-600" />
@@ -1480,35 +1502,151 @@ export default function AdminFeaturesPage({ defaultTab }) {
               </div>
               <form onSubmit={handleSaveEvent} className="space-y-3 text-xs">
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Event Title</label>
-                  <input type="text" required value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Event Title *</label>
+                  <input type="text" required value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" placeholder="e.g. CodeSphere AI & Full-Stack World Summit" />
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Description</label>
-                  <textarea rows={2} value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                  <textarea rows={2} value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" placeholder="Brief overview of the event, tracks, and prerequisites..." />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+                
+                <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Event Type</label>
                     <select value={eventForm.eventType} onChange={(e) => setEventForm({ ...eventForm, eventType: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none">
                       <option value="workshop">Workshop</option>
                       <option value="webinar">Webinar</option>
                       <option value="hackathon">Hackathon</option>
-                      <option value="qna">Live Q&A</option>
+                      <option value="coding_contest">Coding Contest</option>
+                      <option value="conference">Conference</option>
+                      <option value="meetup">Meetup</option>
+                      <option value="ai_conference">AI Conference</option>
+                      <option value="cybersecurity_conf">Cybersecurity Conf</option>
+                      <option value="cloud_summit">Cloud Summit</option>
+                      <option value="gamedev_event">GameDev Event</option>
                     </select>
                   </div>
                   <div>
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Speaker / Host</label>
-                    <input type="text" value={eventForm.speakerName} onChange={(e) => setEventForm({ ...eventForm, speakerName: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Mode</label>
+                    <select value={eventForm.mode} onChange={(e) => setEventForm({ ...eventForm, mode: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none">
+                      <option value="online">Online</option>
+                      <option value="offline">Offline</option>
+                      <option value="hybrid">Hybrid</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Max Capacity</label>
+                    <input type="number" value={eventForm.maxParticipants} onChange={(e) => setEventForm({ ...eventForm, maxParticipants: Number(e.target.value) })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Start Date & Time</label>
+                    <input type="datetime-local" value={eventForm.startDate} onChange={(e) => setEventForm({ ...eventForm, startDate: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">End Date & Time</label>
+                    <input type="datetime-local" value={eventForm.endDate} onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                  </div>
+                </div>
+
+                {/* Location Presets & Coordinates */}
+                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl space-y-3 border border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-emerald-700 dark:text-emerald-400">3D Earth Globe Coordinates</span>
+                    <select
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        if (!val) return;
+                        const presets = [
+                          { label: 'San Francisco, CA', city: 'San Francisco', country: 'United States', lat: 37.7749, lng: -122.4194 },
+                          { label: 'Mountain View, CA', city: 'Mountain View', country: 'United States', lat: 37.422, lng: -122.084 },
+                          { label: 'New York, NY', city: 'New York', country: 'United States', lat: 40.7128, lng: -74.0060 },
+                          { label: 'London, UK', city: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278 },
+                          { label: 'Bengaluru, India', city: 'Bengaluru', country: 'India', lat: 12.9716, lng: 77.5946 },
+                          { label: 'Tokyo, Japan', city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 },
+                          { label: 'Berlin, Germany', city: 'Berlin', country: 'Germany', lat: 52.5200, lng: 13.4050 },
+                          { label: 'Paris, France', city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 },
+                          { label: 'Singapore', city: 'Singapore', country: 'Singapore', lat: 1.3521, lng: 103.8198 },
+                          { label: 'Sydney, Australia', city: 'Sydney', country: 'Australia', lat: -33.8688, lng: 151.2093 },
+                          { label: 'Dubai, UAE', city: 'Dubai', country: 'United Arab Emirates', lat: 25.2048, lng: 55.2708 },
+                          { label: 'Toronto, Canada', city: 'Toronto', country: 'Canada', lat: 43.6532, lng: -79.3832 },
+                          { label: 'Remote Global', city: 'Remote', country: 'Global', lat: 20.5937, lng: 78.9629 },
+                        ];
+                        const match = presets.find(p => p.label === val);
+                        if (match) {
+                          setEventForm(prev => ({
+                            ...prev,
+                            city: match.city,
+                            country: match.country,
+                            latitude: match.lat,
+                            longitude: match.lng,
+                          }));
+                        }
+                      }}
+                      className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-300 outline-none"
+                    >
+                      <option value="">-- Quick Select Globe Location --</option>
+                      <option value="San Francisco, CA">San Francisco, USA (37.77, -122.41)</option>
+                      <option value="Mountain View, CA">Mountain View, USA (37.42, -122.08)</option>
+                      <option value="New York, NY">New York, USA (40.71, -74.00)</option>
+                      <option value="London, UK">London, UK (51.50, -0.12)</option>
+                      <option value="Bengaluru, India">Bengaluru, India (12.97, 77.59)</option>
+                      <option value="Tokyo, Japan">Tokyo, Japan (35.67, 139.65)</option>
+                      <option value="Berlin, Germany">Berlin, Germany (52.52, 13.40)</option>
+                      <option value="Paris, France">Paris, France (48.85, 2.35)</option>
+                      <option value="Singapore">Singapore (1.35, 103.81)</option>
+                      <option value="Sydney, Australia">Sydney, Australia (-33.86, 151.20)</option>
+                      <option value="Dubai, UAE">Dubai, UAE (25.20, 55.27)</option>
+                      <option value="Toronto, Canada">Toronto, Canada (43.65, -79.38)</option>
+                      <option value="Remote Global">Remote Global (20.59, 78.96)</option>
+                    </select>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    <div>
+                      <label className="font-bold text-slate-600 dark:text-slate-400">City</label>
+                      <input type="text" value={eventForm.city} onChange={(e) => setEventForm({ ...eventForm, city: e.target.value })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none" />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-600 dark:text-slate-400">Country</label>
+                      <input type="text" value={eventForm.country} onChange={(e) => setEventForm({ ...eventForm, country: e.target.value })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none" />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-600 dark:text-slate-400">Latitude</label>
+                      <input type="number" step="any" value={eventForm.latitude} onChange={(e) => setEventForm({ ...eventForm, latitude: Number(e.target.value) })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-mono" />
+                    </div>
+                    <div>
+                      <label className="font-bold text-slate-600 dark:text-slate-400">Longitude</label>
+                      <input type="number" step="any" value={eventForm.longitude} onChange={(e) => setEventForm({ ...eventForm, longitude: Number(e.target.value) })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-mono" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Speaker / Host Name</label>
+                    <input type="text" value={eventForm.speakerName} onChange={(e) => setEventForm({ ...eventForm, speakerName: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Prize Pool / Reward</label>
+                    <input type="text" value={eventForm.prizePool} onChange={(e) => setEventForm({ ...eventForm, prizePool: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" placeholder="e.g. $10,000 Cash or Free Certificates" />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Meeting / Stream Link</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Meeting / Livestream URL</label>
                   <input type="url" value={eventForm.meetingUrl} onChange={(e) => setEventForm({ ...eventForm, meetingUrl: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" placeholder="https://meet.google.com/..." />
                 </div>
+
+                <div className="flex items-center gap-2 pt-2">
+                  <input type="checkbox" id="eventPub" checked={eventForm.isPublished} onChange={(e) => setEventForm({ ...eventForm, isPublished: e.target.checked })} />
+                  <label htmlFor="eventPub" className="font-bold text-slate-700 dark:text-slate-300">Publish Immediately on 3D Earth Globe & User Events Page</label>
+                </div>
+
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <button type="button" onClick={() => setIsEventModalOpen(false)} className="px-4 py-2 border rounded-xl text-slate-600 font-bold">Cancel</button>
-                  <button type="submit" className="px-4 py-2 bg-amber-600 text-white rounded-xl font-bold">Save Event</button>
+                  <button type="submit" className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold">Save Event</button>
                 </div>
               </form>
             </motion.div>
