@@ -12,6 +12,8 @@ import { ResourceRightSidebar } from '../components/ResourceRightSidebar.jsx';
 import { ResourceCard } from '../components/ResourceCard.jsx';
 import { CreateResourceModal } from '../components/CreateResourceModal.jsx';
 
+import { socket } from '../../../socket/socket.js';
+
 import {
   fetchResourcesThunk,
   fetchFeaturedResourcesThunk,
@@ -69,6 +71,23 @@ export const Resources = () => {
     dispatch(fetchResourcesThunk());
     dispatch(fetchFeaturedResourcesThunk());
     dispatch(fetchTrendingResourcesThunk());
+
+    const handleResourceChanged = (evt) => {
+      const entity = evt?.entity;
+      if (!entity || entity === 'resource' || entity === 'all') {
+        dispatch(fetchResourcesThunk());
+        dispatch(fetchFeaturedResourcesThunk());
+        dispatch(fetchTrendingResourcesThunk());
+      }
+    };
+
+    socket.on('admin:data_changed', handleResourceChanged);
+    socket.on('resource:changed', handleResourceChanged);
+
+    return () => {
+      socket.off('admin:data_changed', handleResourceChanged);
+      socket.off('resource:changed', handleResourceChanged);
+    };
   }, [dispatch]);
 
   const handleSelectResource = (resource) => {

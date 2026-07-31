@@ -8,6 +8,17 @@ const createError = (message, statusCode) => {
   return err;
 };
 
+const VALID_TYPES = ['pdf', 'notes', 'video', 'documentation', 'source_code', 'github', 'link', 'presentation', 'zip', 'other'];
+
+const normalizeResourceType = (typeStr) => {
+  if (!typeStr) return 'documentation';
+  const lower = String(typeStr).toLowerCase().trim();
+  if (VALID_TYPES.includes(lower)) return lower;
+  if (lower === 'article' || lower === 'article & docs') return 'documentation';
+  if (lower === 'cheatsheet' || lower === 'cheat sheet') return 'notes';
+  return 'other';
+};
+
 // ─── GET ALL RESOURCES (with search & filters) ────────────────────────────────
 const getAllResources = async (query) => {
   const {
@@ -16,17 +27,27 @@ const getAllResources = async (query) => {
     category,
     difficulty,
     resourceType,
+    type,
     tags,
     search,
+    all,
     sortBy = 'createdAt',
     order = 'desc',
   } = query;
 
-  const filter = { status: 'published' };
+  const filter = {};
+  if (all !== 'true') {
+    filter.status = 'published';
+  }
 
   if (category)      filter.category = category;
   if (difficulty)    filter.difficulty = difficulty;
-  if (resourceType)  filter.resourceType = resourceType;
+  
+  const targetType = resourceType || type;
+  if (targetType) {
+    filter.resourceType = normalizeResourceType(targetType);
+  }
+
   if (tags)          filter.tags = { $in: tags.split(',') };
   if (search)        filter.$text = { $search: search };
 
@@ -69,15 +90,23 @@ const getResourceById = async (id) => {
 
 // ─── CREATE ───────────────────────────────────────────────────────────────────
 const createResource = async (body, file, userId) => {
-  const { title, category, resourceType } = body;
+  const { title, category, resourceType, type, url, content } = body;
 
-  if (!title)        throw createError('Title is required', 400);
-  if (!category)     throw createError('Category is required', 400);
-  if (!resourceType) throw createError('Resource type is required', 400);
+  if (!title) throw createError('Title is required', 400);
+
+  const finalResourceType = normalizeResourceType(resourceType || type || 'documentation');
+  const finalCategory = category || 'Documentation';
 
   const data = {
     ...body,
+    title: title.trim(),
+    category: finalCategory,
+    resourceType: finalResourceType,
+    status: body.status || 'published',
     uploadedBy: userId,
+    fileUrl: body.fileUrl || url || '',
+    externalUrl: body.externalUrl || url || '',
+    markdownContent: body.markdownContent || content || '',
   };
 
   if (file) {
@@ -100,7 +129,19 @@ const updateResource = async (id, body, userId, userRole) => {
   // Prevent changing uploader
   delete body.uploadedBy;
 
-  return Resource.findByIdAndUpdate(id, body, { new: true, runValidators: true });
+  const updateData = { ...body };
+  if (body.type || body.resourceType) {
+    updateData.resourceType = normalizeResourceType(body.resourceType || body.type);
+  }
+  if (body.url) {
+    if (!body.externalUrl) updateData.externalUrl = body.url;
+    if (!body.fileUrl) updateData.fileUrl = body.url;
+  }
+  if (body.content) {
+    if (!body.markdownContent) updateData.markdownContent = body.content;
+  }
+
+  return Resource.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
 };
 
 // ─── DELETE ───────────────────────────────────────────────────────────────────

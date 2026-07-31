@@ -321,12 +321,14 @@ export default function AdminFeaturesPage({ defaultTab }) {
   const [resourceForm, setResourceForm] = useState({
     title: '',
     description: '',
-    type: 'article',
+    type: 'documentation',
     category: 'Documentation',
     url: '',
     content: '',
+    difficulty: 'beginner',
     author: 'Platform Admin',
     isFeatured: false,
+    status: 'published',
   });
 
   const fetchResources = async () => {
@@ -336,6 +338,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
         params: {
           search: resourceSearch || undefined,
           type: resourceTypeFilter || undefined,
+          all: 'true',
         },
       });
       const root = res.data?.data;
@@ -362,12 +365,21 @@ export default function AdminFeaturesPage({ defaultTab }) {
     if (!resourceForm.title) return toast.error('Resource title is required');
     const loader = toast.loading('Saving resource...');
     try {
+      const payload = {
+        ...resourceForm,
+        resourceType: resourceForm.type || resourceForm.resourceType || 'documentation',
+        category: resourceForm.category || 'Documentation',
+        externalUrl: resourceForm.url || resourceForm.externalUrl || '',
+        fileUrl: resourceForm.url || resourceForm.fileUrl || '',
+        markdownContent: resourceForm.content || resourceForm.markdownContent || '',
+        status: 'published',
+      };
       if (editingResource) {
-        await apiClient.put(`/resources/${editingResource._id}`, resourceForm);
-        toast.success('Resource updated', { id: loader });
+        await apiClient.put(`/resources/${editingResource._id}`, payload);
+        toast.success('Resource updated & synchronized live!', { id: loader });
       } else {
-        await apiClient.post('/resources', resourceForm);
-        toast.success('Resource created', { id: loader });
+        await apiClient.post('/resources', payload);
+        toast.success('Resource created & published live to CodeSphere!', { id: loader });
       }
       setIsResourceModalOpen(false);
       fetchResources();
@@ -1152,7 +1164,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Resources</span>
-                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
                   <BookOpen size={18} />
                 </div>
               </div>
@@ -1161,29 +1173,35 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Articles & Docs</span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <FileText size={18} />
                 </div>
               </div>
               <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
-                {resources.filter((r) => r.type === 'article' || r.type === 'documentation').length}
+                {resources.filter((r) => {
+                  const t = (r.resourceType || r.type || '').toLowerCase();
+                  return t === 'documentation' || t === 'article' || t === 'pdf';
+                }).length}
               </p>
             </div>
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Cheat Sheets</span>
-                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center">
                   <Layers size={18} />
                 </div>
               </div>
               <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
-                {resources.filter((r) => r.type === 'cheatsheet').length}
+                {resources.filter((r) => {
+                  const t = (r.resourceType || r.type || '').toLowerCase();
+                  return t === 'notes' || t === 'cheatsheet' || t === 'cheat sheet' || t === 'source_code';
+                }).length}
               </p>
             </div>
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Featured Assets</span>
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
                   <Sparkles size={18} />
                 </div>
               </div>
@@ -1204,7 +1222,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   value={resourceSearch}
                   onChange={(e) => setResourceSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && fetchResources()}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-indigo-500"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-[#04AA6D]"
                 />
               </div>
               <select
@@ -1213,10 +1231,11 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 className="py-2 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium outline-none"
               >
                 <option value="">All Types</option>
-                <option value="article">Article</option>
                 <option value="documentation">Documentation</option>
-                <option value="cheatsheet">Cheat Sheet</option>
-                <option value="video">Video</option>
+                <option value="notes">Cheat Sheets & Notes</option>
+                <option value="pdf">PDF Manuals</option>
+                <option value="video">Video Tutorials</option>
+                <option value="source_code">Source Code</option>
               </select>
             </div>
             <button
@@ -1225,16 +1244,18 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 setResourceForm({
                   title: '',
                   description: '',
-                  type: 'article',
+                  type: 'documentation',
                   category: 'Documentation',
                   url: '',
                   content: '',
+                  difficulty: 'beginner',
                   author: 'Platform Admin',
                   isFeatured: false,
+                  status: 'published',
                 });
                 setIsResourceModalOpen(true);
               }}
-              className="w-full sm:w-auto px-4 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+              className="w-full sm:w-auto px-4 py-2.5 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
             >
               <Plus size={16} /> Create Resource
             </button>
@@ -1244,7 +1265,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
             {resourceLoading ? (
               <div className="p-12 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-                <RefreshCw size={16} className="animate-spin text-indigo-500" /> Loading resources...
+                <RefreshCw size={16} className="animate-spin text-[#04AA6D]" /> Loading resources...
               </div>
             ) : resources.length === 0 ? (
               <div className="p-12 text-center text-slate-400 text-xs">
@@ -1266,7 +1287,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                     {resources.map((item) => (
                       <tr key={item._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
                         <td className="py-3 px-4 font-bold text-slate-800 dark:text-white flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] flex items-center justify-center shrink-0">
                             <BookOpen size={16} />
                           </div>
                           <div>
@@ -1275,12 +1296,14 @@ export default function AdminFeaturesPage({ defaultTab }) {
                           </div>
                         </td>
                         <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 bg-indigo-50 text-indigo-700 text-[10px] font-bold rounded uppercase border border-indigo-200">
-                            {item.type || 'article'}
+                          <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/50 text-[#04AA6D] dark:text-emerald-400 text-[10px] font-bold rounded uppercase border border-emerald-200 dark:border-emerald-800">
+                            {item.resourceType || item.type || 'documentation'}
                           </span>
                         </td>
-                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">{item.category || 'General'}</td>
-                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{item.author || 'Admin'}</td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">
+                          {item.category?.name || item.categoryName || (typeof item.category === 'string' && !item.category.match(/^[0-9a-fA-F]{24}$/) ? item.category : 'Documentation')}
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{item.uploadedBy?.fullName || item.instructor || item.author || 'Admin'}</td>
                         <td className="py-3 px-4 text-right space-x-2">
                           <button
                             onClick={() => {
@@ -1288,23 +1311,25 @@ export default function AdminFeaturesPage({ defaultTab }) {
                               setResourceForm({
                                 title: item.title || '',
                                 description: item.description || '',
-                                type: item.type || 'article',
-                                category: item.category || 'Documentation',
-                                url: item.url || '',
-                                content: item.content || '',
-                                author: item.author || 'Platform Admin',
+                                type: item.resourceType || item.type || 'documentation',
+                                category: item.category?.name || (typeof item.category === 'string' && !item.category.match(/^[0-9a-fA-F]{24}$/) ? item.category : 'Documentation'),
+                                url: item.externalUrl || item.fileUrl || item.url || '',
+                                content: item.markdownContent || item.content || '',
+                                difficulty: item.difficulty || 'beginner',
+                                author: item.uploadedBy?.fullName || item.author || 'Platform Admin',
                                 isFeatured: item.isFeatured ?? false,
+                                status: 'published',
                               });
                               setIsResourceModalOpen(true);
                             }}
-                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-900"
+                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer"
                             title="Edit Resource"
                           >
                             <Edit size={15} />
                           </button>
                           <button
                             onClick={() => handleDeleteResource(item._id)}
-                            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg text-slate-400 hover:text-rose-600"
+                            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
                             title="Delete Resource"
                           >
                             <Trash2 size={15} />
@@ -1658,45 +1683,70 @@ export default function AdminFeaturesPage({ defaultTab }) {
       <AnimatePresence>
         {isResourceModalOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-xl p-6 space-y-4 font-sans max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <BookOpen size={18} className="text-indigo-600" />
-                  {editingResource ? 'Edit Resource' : 'Create Knowledge Resource'}
+                  <BookOpen size={18} className="text-[#04AA6D]" />
+                  {editingResource ? 'Edit Knowledge Resource' : 'Create Knowledge Resource'}
                 </h3>
-                <button onClick={() => setIsResourceModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100"><X size={16} /></button>
+                <button onClick={() => setIsResourceModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><X size={16} /></button>
               </div>
-              <form onSubmit={handleSaveResource} className="space-y-3 text-xs">
+              <form onSubmit={handleSaveResource} className="space-y-3.5 text-xs">
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Title</label>
-                  <input type="text" required value={resourceForm.title} onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Resource Title *</label>
+                  <input type="text" required placeholder="e.g., JavaScript ES6+ Modern Syntax & Best Practices" value={resourceForm.title} onChange={(e) => setResourceForm({ ...resourceForm, title: e.target.value })} className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Description</label>
-                  <textarea rows={2} value={resourceForm.description} onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                  <textarea rows={2} placeholder="Brief summary of the knowledge resource..." value={resourceForm.description} onChange={(e) => setResourceForm({ ...resourceForm, description: e.target.value })} className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                 </div>
-                <div className="grid grid-cols-2 gap-3">
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div>
-                    <label className="font-bold text-slate-700 dark:text-slate-300">Type</label>
-                    <select value={resourceForm.type} onChange={(e) => setResourceForm({ ...resourceForm, type: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none">
-                      <option value="article">Article</option>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Resource Type</label>
+                    <select value={resourceForm.type} onChange={(e) => setResourceForm({ ...resourceForm, type: e.target.value })} className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]">
                       <option value="documentation">Documentation</option>
-                      <option value="cheatsheet">Cheat Sheet</option>
-                      <option value="video">Video</option>
+                      <option value="notes">Cheat Sheet & Notes</option>
+                      <option value="pdf">PDF Document</option>
+                      <option value="video">Video Lecture</option>
+                      <option value="source_code">Source Code</option>
+                      <option value="github">GitHub Repo</option>
+                      <option value="link">External Resource Link</option>
+                      <option value="zip">Downloadable Archive (.zip)</option>
                     </select>
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Category</label>
-                    <input type="text" value={resourceForm.category} onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                    <input type="text" placeholder="e.g. Documentation, Web Dev" value={resourceForm.category} onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value })} className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Difficulty</label>
+                    <select value={resourceForm.difficulty || 'beginner'} onChange={(e) => setResourceForm({ ...resourceForm, difficulty: e.target.value })} className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]">
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
                   </div>
                 </div>
+
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">External URL / File Link</label>
-                  <input type="url" value={resourceForm.url} onChange={(e) => setResourceForm({ ...resourceForm, url: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" placeholder="https://..." />
+                  <input type="url" value={resourceForm.url} onChange={(e) => setResourceForm({ ...resourceForm, url: e.target.value })} className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-mono focus:border-[#04AA6D]" placeholder="https://raw.githubusercontent.com/... or https://..." />
                 </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Detailed Article / Markdown Snippet</label>
+                  <textarea rows={3} value={resourceForm.content} onChange={(e) => setResourceForm({ ...resourceForm, content: e.target.value })} className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-mono focus:border-[#04AA6D]" placeholder="# Overview&#10;Write comprehensive article or cheat sheet content here..." />
+                </div>
+
+                <div className="flex items-center gap-2 pt-1">
+                  <input type="checkbox" id="resFeatured" checked={resourceForm.isFeatured} onChange={(e) => setResourceForm({ ...resourceForm, isFeatured: e.target.checked })} className="w-4 h-4 accent-[#04AA6D] cursor-pointer" />
+                  <label htmlFor="resFeatured" className="font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Feature on User Resources Home Banner</label>
+                </div>
+
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <button type="button" onClick={() => setIsResourceModalOpen(false)} className="px-4 py-2 border rounded-xl text-slate-600 font-bold">Cancel</button>
-                  <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-xl font-bold">Save Resource</button>
+                  <button type="button" onClick={() => setIsResourceModalOpen(false)} className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-bold cursor-pointer">Cancel</button>
+                  <button type="submit" className="px-4 py-2 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl font-bold cursor-pointer">Save Resource</button>
                 </div>
               </form>
             </motion.div>
