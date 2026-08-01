@@ -4,9 +4,12 @@ import { useDispatch, useSelector } from 'react-redux';
 import {
   FileText, Code, Video, Download, Eye, Bookmark, Star, Sparkles, Share2,
   ArrowLeft, CheckCircle2, MessageSquare, Send, Copy, ExternalLink, ShieldCheck,
-  Layers, GitBranch, UserCheck, Calendar, Clock
+  Layers, GitBranch, UserCheck, Calendar, Clock, Play, BookOpen, X
 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { motion, AnimatePresence } from 'framer-motion';
+import apiClient from '@services/axios.js';
+import { socket } from '../../../socket/socket.js';
 
 import {
   fetchResourceByIdThunk
@@ -25,21 +28,51 @@ export const ResourceDetails = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
-  const resource = useSelector(selectSelectedResource);
+  const rawResource = useSelector(selectSelectedResource);
   const userBookmarks = useSelector(selectUserBookmarks);
 
-  const [activeTab, setActiveTab] = useState('preview'); // preview, description, discussion, author
+  // Normalize target resource object only if it matches current route param `id`
+  const rawUnwrapped = rawResource?.data?.resource || rawResource?.data?.data || (rawResource?._id ? rawResource : rawResource?.data) || rawResource;
+  const resource = (rawUnwrapped && (String(rawUnwrapped._id) === String(id) || String(rawUnwrapped.id) === String(id))) ? rawUnwrapped : null;
+
+  const [activeTab, setActiveTab] = useState('preview'); // preview, description, discussion
   const [commentText, setCommentText] = useState('');
-  const [commentsList, setCommentsList] = useState([
-    { id: 1, name: 'Alex Rivera', role: 'Senior Dev', text: 'This cheat sheet and code starter saved me hours during system design review!', time: '2 hours ago' },
-    { id: 2, name: 'Elena Rostova', role: 'Full Stack Student', text: 'Clean code examples and PDF notes. Highly recommended!', time: '5 hours ago' }
-  ]);
-  const [userRating, setUserRating] = useState(5);
+  const [submittingComment, setSubmittingComment] = useState(false);
+  const [isFetching, setIsFetching] = useState(true);
+  const [isPreviewModalOpen, setIsPreviewModalOpen] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      dispatch(fetchResourceByIdThunk(id));
-    }
+    let isMounted = true;
+    const loadResourceData = async () => {
+      if (id) {
+        setIsFetching(true);
+        try {
+          await dispatch(fetchResourceByIdThunk(id));
+        } catch (err) {
+          console.error('Resource details fetch error:', err);
+        } finally {
+          if (isMounted) setIsFetching(false);
+        }
+      }
+    };
+
+    loadResourceData();
+
+    const handleResourceChanged = (evt) => {
+      const entity = evt?.entity;
+      if (!entity || entity === 'resource' || entity === 'all') {
+        if (id) dispatch(fetchResourceByIdThunk(id));
+      }
+    };
+
+    socket.on('admin:data_changed', handleResourceChanged);
+    socket.on('resource:changed', handleResourceChanged);
+
+    return () => {
+      isMounted = false;
+      socket.off('admin:data_changed', handleResourceChanged);
+      socket.off('resource:changed', handleResourceChanged);
+    };
   }, [id, dispatch]);
 
   const isBookmarked = userBookmarks.includes(id || resource?._id);
@@ -54,22 +87,77 @@ export const ResourceDetails = () => {
     toast.success('Resource link copied to clipboard!');
   };
 
-  const handleDownload = () => {
-    toast.success(`Downloading ${resource?.title || 'resource'}...`);
+  const handleDownload = async () => {
+    if (!resource) return;
+    const targetUrl = resource.fileUrl || resource.externalUrl || resource.url;
+    if (!targetUrl) {
+      toast.error('No downloadable file or asset link associated with this resource');
+      return;
+    }
+
+    const loader = toast.loading(`Downloading ${resource.title}...`);
+    try {
+      await apiClient.post(`/resources/${resource._id || resource.id}/download`);
+    } catch (err) {
+      // Continue download even if analytics call fails
+    }
+
+    const fullUrl = targetUrl.startsWith('http') || targetUrl.startsWith('data:')
+      ? targetUrl
+      : `http://localhost:5000${targetUrl.startsWith('/') ? '' : '/'}${targetUrl}`;
+
+    try {
+      const response = await fetch(fullUrl);
+      if (!response.ok) throw new Error('File download failed');
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const extName = targetUrl.split('.').pop()?.split('?')[0] || '';
+      const filename = targetUrl.split('/').pop() || `${resource.title}.${extName || 'file'}`;
+
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
+      toast.success(`Successfully downloaded ${resource.title}!`, { id: loader });
+    } catch (err) {
+      const link = document.createElement('a');
+      link.href = fullUrl;
+      link.target = '_blank';
+      link.download = resource.title || 'resource-file';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(`Download started for ${resource.title}!`, { id: loader });
+    }
   };
 
-  const handleAddComment = (e) => {
+  const handleAddComment = async (e) => {
     e.preventDefault();
     if (!commentText.trim()) return;
-    setCommentsList([
-      ...commentsList,
-      { id: Date.now(), name: 'You', role: 'Developer', text: commentText.trim(), time: 'Just now' }
-    ]);
-    setCommentText('');
-    toast.success('Comment posted successfully!');
+    const targetId = id || resource?._id;
+    if (!targetId) return;
+
+    setSubmittingComment(true);
+    const loader = toast.loading('Posting comment...');
+    try {
+      await apiClient.post(`/resources/${targetId}/comments`, { text: commentText.trim() });
+      toast.success('Comment posted successfully!', { id: loader });
+      setCommentText('');
+      dispatch(fetchResourceByIdThunk(targetId));
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to post comment', { id: loader });
+    } finally {
+      setSubmittingComment(false);
+    }
   };
 
-  if (!resource) {
+  if (isFetching && !resource?._id) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-slate-500 font-mono text-xs">
         <Sparkles className="w-8 h-8 text-[#04AA6D] animate-spin" />
@@ -77,6 +165,31 @@ export const ResourceDetails = () => {
       </div>
     );
   }
+
+  if (!resource || !resource._id) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center p-6">
+        <Layers className="w-12 h-12 text-slate-400" />
+        <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200">Knowledge Resource Not Found</h2>
+        <p className="text-xs text-slate-500 max-w-md">The resource you requested may have been removed or updated by an administrator.</p>
+        <BackButton fallbackPath="/resources" />
+      </div>
+    );
+  }
+
+  // Construct absolute file URL
+  const rawUrl = resource.fileUrl || resource.externalUrl || resource.url || '';
+  const fullFileUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:')
+    ? rawUrl
+    : `http://localhost:5000${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+
+  const ext = rawUrl.toLowerCase().split('.').pop()?.split('?')[0] || '';
+  const isPdf = ext === 'pdf';
+  const isVideo = resource.resourceType === 'video' || ['mp4', 'webm', 'ogg'].includes(ext) || rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be');
+  const isImage = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(ext);
+  const isCode = resource.codeContent || resource.resourceType === 'source_code' || ['js', 'py', 'java', 'cpp', 'c', 'html', 'css', 'json'].includes(ext);
+
+  const commentsCount = (resource.comments && resource.comments.length) || 0;
 
   return (
     <div className="flex flex-col gap-6 w-full min-h-screen text-slate-900 dark:text-slate-100 bg-white dark:bg-[#070a13] p-6 rounded-3xl border border-slate-200 dark:border-slate-900 shadow-sm dark:shadow-2xl relative overflow-hidden font-sans transition-colors duration-200 animate-fade-in">
@@ -86,51 +199,61 @@ export const ResourceDetails = () => {
       {/* Back Button */}
       <BackButton fallbackPath="/resources" className="self-start" />
 
-      {/* Top Banner Header */}
-      <div className="relative w-full bg-gradient-to-r from-emerald-950 via-[#0b2b1d] to-emerald-950 border border-[#04AA6D]/30 rounded-3xl p-6 md:p-8 overflow-hidden shadow-xl text-white">
+      {/* Top Banner Header - CodeSphere Signature Design System */}
+      <div className="relative w-full bg-slate-50/90 dark:bg-slate-900/90 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 md:p-8 overflow-hidden shadow-sm dark:shadow-xl text-slate-900 dark:text-white transition-all">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-[#04AA6D]/15 via-teal-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
+
         <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="flex flex-col gap-3 max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-[#04AA6D]/20 text-emerald-300 border border-[#04AA6D]/40 font-mono">
+              <span className="text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full bg-[#04AA6D]/15 text-[#04AA6D] dark:text-emerald-400 border border-[#04AA6D]/30 font-mono">
                 {resource.resourceType || 'Resource'}
               </span>
-              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-900/80 border border-slate-700 text-slate-300 font-mono">
+              <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full bg-slate-200/70 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-mono">
                 {resource.difficulty || 'Beginner'}
               </span>
               {resource.isPremium && (
-                <span className="text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 px-2.5 py-1 rounded-full font-mono flex items-center gap-1">
-                  <Sparkles className="w-3 h-3 text-amber-300" />
+                <span className="text-[10px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-300 border border-amber-500/30 px-2.5 py-1 rounded-full font-mono flex items-center gap-1">
+                  <Sparkles className="w-3 h-3 text-amber-500" />
                   PREMIUM
                 </span>
               )}
             </div>
 
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight leading-tight">
+            <h1 className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
               {resource.title}
             </h1>
 
-            <p className="text-xs md:text-sm text-slate-300 leading-relaxed">
+            <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
               {resource.description}
             </p>
 
-            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-300 font-sans pt-1">
-              <span>Author: <strong className="text-emerald-400">{resource.instructor || resource.uploadedBy?.fullName || 'CodeSphere Alliance'}</strong></span>
+            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-300 font-sans pt-1">
+              <span>Author: <strong className="text-[#04AA6D] dark:text-emerald-400 font-bold">{resource.instructor || resource.uploadedBy?.fullName || 'CodeSphere Author'}</strong></span>
               <span>·</span>
-              <span className="flex items-center gap-1 text-amber-400 font-bold font-mono">
-                <Star className="w-3.5 h-3.5 fill-amber-400" />
+              <span className="flex items-center gap-1 text-amber-500 font-bold font-mono">
+                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                 {resource.averageRating || 4.9} (128 reviews)
               </span>
             </div>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-3 shrink-0">
+          <div className="flex flex-wrap items-center gap-3 shrink-0">
+            <button
+              onClick={() => setIsPreviewModalOpen(true)}
+              className="px-4 py-2.5 rounded-2xl bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900 font-extrabold text-xs transition-all cursor-pointer flex items-center gap-2 shadow-md hover:bg-slate-800 dark:hover:bg-white"
+            >
+              <Eye className="w-4 h-4 text-[#04AA6D]" />
+              Preview Notes
+            </button>
+
             <button
               onClick={() => dispatch(toggleBookmark(id || resource._id))}
               className={`p-3 rounded-2xl border transition-all cursor-pointer backdrop-blur-md ${
                 isBookmarked
                   ? 'bg-[#04AA6D] border-emerald-500 text-white shadow-lg shadow-emerald-500/30'
-                  : 'bg-slate-900/80 hover:bg-slate-800 border-slate-700 text-slate-300'
+                  : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
               }`}
               title="Bookmark Resource"
             >
@@ -139,7 +262,7 @@ export const ResourceDetails = () => {
 
             <button
               onClick={handleShare}
-              className="p-3 rounded-2xl bg-slate-900/80 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-all cursor-pointer"
+              className="p-3 rounded-2xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-all cursor-pointer"
               title="Share Resource"
             >
               <Share2 className="w-4 h-4" />
@@ -147,10 +270,10 @@ export const ResourceDetails = () => {
 
             <button
               onClick={handleDownload}
-              className="px-6 py-3 rounded-2xl bg-[#04AA6D] hover:bg-emerald-600 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-emerald-900/30 border border-emerald-400/30 transition-all cursor-pointer flex items-center gap-2"
+              className="px-5 py-3 rounded-2xl bg-[#04AA6D] hover:bg-emerald-600 active:scale-95 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 border border-emerald-500/30 transition-all cursor-pointer flex items-center gap-2"
             >
               <Download className="w-4 h-4" />
-              Download Resource
+              Download
             </button>
           </div>
         </div>
@@ -164,7 +287,7 @@ export const ResourceDetails = () => {
             {[
               { id: 'preview', label: 'Interactive Preview & Code' },
               { id: 'description', label: 'Detailed Overview & Notes' },
-              { id: 'discussion', label: `Community Discussion (${commentsList.length})` },
+              { id: 'discussion', label: `Community Discussion (${commentsCount})` },
             ].map(t => (
               <button
                 key={t.id}
@@ -180,66 +303,162 @@ export const ResourceDetails = () => {
             ))}
           </div>
 
-          {/* Interactive Preview Container */}
+          {/* TAB 1: INTERACTIVE PREVIEW CONTAINER */}
           {activeTab === 'preview' && (
-            <div className="flex flex-col gap-4">
-              {resource.codeContent || resource.resourceType === 'source_code' ? (
-                <div className="rounded-3xl border border-slate-800 bg-slate-950 overflow-hidden shadow-xl">
-                  <div className="flex justify-between items-center px-5 py-3 bg-slate-900 border-b border-slate-800 font-mono text-xs text-slate-300">
-                    <span className="flex items-center gap-2 text-emerald-400 font-bold">
-                      <Code className="w-4 h-4" />
-                      {resource.codeLanguage || 'javascript'} snippet
+            <div className="flex flex-col gap-5">
+              {/* PDF Document Preview (Only for native PDFs) */}
+              {isPdf && rawUrl && (
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="flex justify-between items-center px-5 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200">
+                    <span className="flex items-center gap-2 text-[#04AA6D] dark:text-emerald-400 font-bold">
+                      <FileText className="w-4 h-4" />
+                      Live Embedded PDF Viewer
                     </span>
-                    <button
-                      onClick={() => handleCopyCode(resource.codeContent || '// Sample code')}
-                      className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg flex items-center gap-1.5 cursor-pointer text-[11px]"
-                    >
-                      <Copy className="w-3.5 h-3.5" />
-                      Copy Code
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={fullFileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Full Window
+                      </a>
+                      <button
+                        onClick={handleDownload}
+                        className="px-3 py-1.5 bg-[#04AA6D] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Download PDF Asset
+                      </button>
+                    </div>
                   </div>
-                  <pre className="p-5 text-xs text-emerald-300 font-mono overflow-x-auto leading-relaxed select-text">
-                    {resource.codeContent || `// CodeSphere Starter Template\nimport { useState } from 'react';\n\nexport const CodeSnippet = () => {\n  return (\n    <div className="p-4 bg-emerald-500 text-white rounded-xl">\n      <h1>CodeSphere Resource Hub</h1>\n    </div>\n  );\n};`}
-                  </pre>
-                </div>
-              ) : resource.externalUrl ? (
-                <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col items-center gap-4 text-center">
-                  <ExternalLink className="w-10 h-10 text-[#04AA6D]" />
-                  <div className="flex flex-col gap-1">
-                    <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">External Link / Video Source Available</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{resource.externalUrl}</p>
+                  <div className="w-full h-[550px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-slate-900">
+                    <iframe
+                      src={fullFileUrl}
+                      title="Live PDF Viewer"
+                      className="w-full h-full border-0"
+                    />
                   </div>
-                  <a
-                    href={resource.externalUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="px-5 py-2.5 bg-[#04AA6D] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl flex items-center gap-2"
-                  >
-                    Open Link in New Tab
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                </div>
-              ) : (
-                <div className="p-8 rounded-3xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col items-center gap-3 text-center">
-                  <FileText className="w-12 h-12 text-[#04AA6D]" />
-                  <h3 className="font-extrabold text-base text-slate-900 dark:text-white">Document & PDF Preview Available</h3>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Click download below to access the full PDF notes file.</p>
                 </div>
               )}
+
+              {/* Video Player Preview */}
+              {isVideo && rawUrl && (
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="flex justify-between items-center px-5 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200">
+                    <span className="flex items-center gap-2 text-blue-400 font-bold">
+                      <Video className="w-4 h-4" />
+                      Live Stream Video Lecture Player
+                    </span>
+                  </div>
+                  <div className="w-full rounded-3xl overflow-hidden border border-slate-800 shadow-2xl bg-black flex items-center justify-center">
+                    {rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be') ? (
+                      <iframe
+                        src={rawUrl.replace('watch?v=', 'embed/')}
+                        title="Video Player"
+                        className="w-full h-[450px] border-0"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video src={fullFileUrl} controls className="w-full max-h-[480px] object-contain" />
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Live Interactive Document Reader & Preview Card */}
+              <div className="p-6 md:p-8 rounded-3xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex flex-col gap-5">
+                <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-500">
+                  <span className="text-[#04AA6D] font-bold uppercase tracking-wider flex items-center gap-2">
+                    <BookOpen className="w-4 h-4" />
+                    Interactive Resource Reader & Overview
+                  </span>
+                  <span className="bg-[#04AA6D]/10 text-[#04AA6D] px-3 py-1 rounded-full font-extrabold uppercase text-[10px]">
+                    {resource.category || 'Documentation'}
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2">
+                  <h2 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
+                    {resource.title}
+                  </h2>
+                  <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
+                    {resource.description}
+                  </p>
+                </div>
+
+                {/* Code / Markdown Content Snippet Container */}
+                {resource.markdownContent || resource.codeContent ? (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-xl mt-1">
+                    <div className="flex justify-between items-center px-4 py-2.5 bg-slate-900 border-b border-slate-800 font-mono text-xs text-slate-300">
+                      <span className="flex items-center gap-2 text-emerald-400 font-bold">
+                        <Code className="w-4 h-4" />
+                        Source Code & Reference Snippets
+                      </span>
+                      <button
+                        onClick={() => handleCopyCode(resource.markdownContent || resource.codeContent)}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg flex items-center gap-1.5 cursor-pointer text-[11px]"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        Copy
+                      </button>
+                    </div>
+                    <pre className="p-4 text-xs text-emerald-300 font-mono overflow-x-auto leading-relaxed select-text max-h-[350px]">
+                      {resource.markdownContent || resource.codeContent}
+                    </pre>
+                  </div>
+                ) : null}
+
+                {/* Explicit Download Action Box */}
+                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-[#04AA6D]/30 mt-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2.5 rounded-xl bg-[#04AA6D] text-white">
+                      <FileText className="w-5 h-5" />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="font-extrabold text-xs text-slate-900 dark:text-white">
+                        {rawUrl ? `Knowledge File (${ext.toUpperCase() || 'DOCUMENT'}) Ready` : 'Complete Knowledge Package'}
+                      </span>
+                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
+                        Preview verified. Click the button to download the full asset to your device.
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={handleDownload}
+                    className="px-5 py-2.5 bg-[#04AA6D] hover:bg-emerald-600 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download Asset
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* Description & Overview */}
+          {/* TAB 2: DETAILED OVERVIEW & NOTES */}
           {activeTab === 'description' && (
-            <div className="flex flex-col gap-4 p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800">
-              <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400 font-mono">Detailed Knowledge Notes</h3>
-              <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line">
-                {resource.markdownContent || resource.description || 'This resource includes complete code examples, architecture diagrams, and step-by-step cheat sheets verified by CodeSphere instructors.'}
-              </p>
+            <div className="flex flex-col gap-4 p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 shadow-sm">
+              <h3 className="text-xs font-black uppercase tracking-widest text-[#04AA6D] dark:text-emerald-400 font-mono">Detailed Knowledge Notes & Architecture Body</h3>
+              <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-sans space-y-2">
+                <p className="font-semibold text-sm text-slate-900 dark:text-white">{resource.description}</p>
+                {resource.markdownContent && (
+                  <div className="mt-4 p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-slate-800 dark:text-slate-200">
+                    {resource.markdownContent}
+                  </div>
+                )}
+                {!resource.markdownContent && (
+                  <p className="text-slate-500 italic mt-2">
+                    This verified CodeSphere resource provides comprehensive reference documentation, step-by-step guides, and reusable implementation patterns.
+                  </p>
+                )}
+              </div>
             </div>
           )}
 
-          {/* Discussion */}
+          {/* TAB 3: COMMUNITY DISCUSSION */}
           {activeTab === 'discussion' && (
             <div className="flex flex-col gap-6">
               <form onSubmit={handleAddComment} className="flex gap-2">
@@ -250,22 +469,32 @@ export const ResourceDetails = () => {
                   onChange={(e) => setCommentText(e.target.value)}
                   className="flex-1 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-slate-200 focus:outline-none focus:border-[#04AA6D]"
                 />
-                <button type="submit" className="px-5 py-2.5 bg-[#04AA6D] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5">
+                <button
+                  type="submit"
+                  disabled={submittingComment}
+                  className="px-5 py-2.5 bg-[#04AA6D] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                >
                   <Send className="w-3.5 h-3.5" />
-                  Post
+                  {submittingComment ? 'Posting...' : 'Post'}
                 </button>
               </form>
 
               <div className="flex flex-col gap-3">
-                {commentsList.map(c => (
-                  <div key={c.id} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col gap-1">
-                    <div className="flex justify-between items-center">
-                      <span className="font-bold text-xs text-[#04AA6D]">{c.name} <span className="text-[10px] text-slate-500">({c.role})</span></span>
-                      <span className="text-[9px] text-slate-500 font-mono">{c.time}</span>
+                {resource.comments && resource.comments.length > 0 ? (
+                  resource.comments.map((c, idx) => (
+                    <div key={c._id || idx} className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 flex flex-col gap-1">
+                      <div className="flex justify-between items-center">
+                        <span className="font-bold text-xs text-[#04AA6D]">{c.fullName || 'Developer'}</span>
+                        <span className="text-[9px] text-slate-500 font-mono">{new Date(c.createdAt || Date.now()).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-xs text-slate-700 dark:text-slate-300 font-sans leading-relaxed mt-1">{c.text}</p>
                     </div>
-                    <p className="text-xs text-slate-700 dark:text-slate-300 font-sans leading-relaxed mt-1">{c.text}</p>
+                  ))
+                ) : (
+                  <div className="p-8 text-center text-xs text-slate-400 font-mono bg-slate-50 dark:bg-slate-900/40 rounded-2xl border border-slate-200 dark:border-slate-800">
+                    No community comments yet. Be the first to leave feedback!
                   </div>
-                ))}
+                )}
               </div>
             </div>
           )}
@@ -302,6 +531,144 @@ export const ResourceDetails = () => {
           </div>
         </div>
       </div>
+
+      {/* Live Interactive Notes & Document Preview Modal */}
+      <AnimatePresence>
+        {isPreviewModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="relative w-full max-w-4xl max-h-[85vh] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl flex flex-col overflow-hidden text-slate-900 dark:text-slate-100"
+            >
+              {/* Modal Header */}
+              <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 rounded-xl bg-[#04AA6D]/15 text-[#04AA6D]">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div className="flex flex-col">
+                    <h3 className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight">
+                      Live Notes & Document Preview
+                    </h3>
+                    <span className="text-[10px] text-slate-500 font-mono">
+                      {resource.title} · {resource.category || 'Documentation'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  {rawUrl && (
+                    <a
+                      href={fullFileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all"
+                      title="Open Asset in New Tab"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      Full Window
+                    </a>
+                  )}
+
+                  <button
+                    onClick={() => setIsPreviewModalOpen(false)}
+                    className="p-2 rounded-xl bg-slate-200/70 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-all cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Modal Content Reader */}
+              <div className="p-6 md:p-8 overflow-y-auto flex flex-col gap-6 no-scrollbar">
+                <div className="flex flex-col gap-2">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-[#04AA6D] font-mono">
+                    {resource.resourceType || 'DOCUMENT'} PREVIEW
+                  </span>
+                  <h1 className="text-2xl font-black text-slate-900 dark:text-white leading-snug">
+                    {resource.title}
+                  </h1>
+                  <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans border-l-2 border-[#04AA6D] pl-3 py-1 bg-emerald-500/5 rounded-r-xl">
+                    {resource.description}
+                  </p>
+                </div>
+
+                {/* Markdown or Code content */}
+                {resource.markdownContent || resource.codeContent ? (
+                  <div className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-xl">
+                    <div className="flex justify-between items-center px-4 py-2.5 bg-slate-900 border-b border-slate-800 font-mono text-xs text-slate-300">
+                      <span className="flex items-center gap-2 text-emerald-400 font-bold">
+                        <Code className="w-4 h-4" />
+                        Code & Reference Notes
+                      </span>
+                      <button
+                        onClick={() => handleCopyCode(resource.markdownContent || resource.codeContent)}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg flex items-center gap-1.5 cursor-pointer text-[11px]"
+                      >
+                        <Copy className="w-3.5 h-3.5" />
+                        Copy Code
+                      </button>
+                    </div>
+                    <pre className="p-5 text-xs text-emerald-300 font-mono overflow-x-auto leading-relaxed select-text max-h-[350px]">
+                      {resource.markdownContent || resource.codeContent}
+                    </pre>
+                  </div>
+                ) : null}
+
+                {/* Key Takeaways Checklist */}
+                <div className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 flex flex-col gap-3">
+                  <h4 className="font-extrabold text-xs text-slate-900 dark:text-white uppercase tracking-wider font-mono flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-[#04AA6D]" />
+                    Key Notes & Learning Highlights
+                  </h4>
+                  <ul className="flex flex-col gap-2 text-xs text-slate-600 dark:text-slate-300 font-sans">
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#04AA6D]" />
+                      Comprehensive reference material structured for rapid comprehension and application.
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#04AA6D]" />
+                      Verified by CodeSphere instructors for accuracy and production readiness.
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#04AA6D]" />
+                      Includes downloadable source code and full offline reference archive.
+                    </li>
+                  </ul>
+                </div>
+              </div>
+
+              {/* Modal Footer */}
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 px-6 py-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900">
+                <span className="text-xs text-slate-500 font-sans">
+                  Satisfied with the preview? Download the complete asset file to your device.
+                </span>
+
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setIsPreviewModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 font-bold text-xs cursor-pointer"
+                  >
+                    Close Preview
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsPreviewModalOpen(false);
+                      handleDownload();
+                    }}
+                    className="px-5 py-2 rounded-xl bg-[#04AA6D] hover:bg-emerald-600 text-white font-extrabold text-xs uppercase tracking-wider shadow-md flex items-center gap-2 cursor-pointer"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download File
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

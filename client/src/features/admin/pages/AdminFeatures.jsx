@@ -6,7 +6,7 @@ import {
   Plus, Edit, Trash2, Search, Filter, Check, X, Eye, RefreshCw,
   BarChart2, FileText, Layers, ShieldCheck, Sparkles, Activity,
   ChevronRight, ExternalLink, Play, Lock, Globe, ToggleLeft, ToggleRight,
-  Clock, Award, Users, AlertCircle, CheckCircle2
+  Clock, Award, Users, AlertCircle, CheckCircle2, Upload
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -331,6 +331,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
     status: 'published',
   });
 
+  const [selectedResourceFile, setSelectedResourceFile] = useState(null);
+
   const fetchResources = async () => {
     setResourceLoading(true);
     try {
@@ -363,24 +365,48 @@ export default function AdminFeaturesPage({ defaultTab }) {
   const handleSaveResource = async (e) => {
     e.preventDefault();
     if (!resourceForm.title) return toast.error('Resource title is required');
-    const loader = toast.loading('Saving resource...');
+    const loader = toast.loading(selectedResourceFile ? 'Uploading file asset & saving resource...' : 'Saving resource...');
     try {
-      const payload = {
-        ...resourceForm,
-        resourceType: resourceForm.type || resourceForm.resourceType || 'documentation',
-        category: resourceForm.category || 'Documentation',
-        externalUrl: resourceForm.url || resourceForm.externalUrl || '',
-        fileUrl: resourceForm.url || resourceForm.fileUrl || '',
-        markdownContent: resourceForm.content || resourceForm.markdownContent || '',
-        status: 'published',
-      };
-      if (editingResource) {
-        await apiClient.put(`/resources/${editingResource._id}`, payload);
-        toast.success('Resource updated & synchronized live!', { id: loader });
+      if (selectedResourceFile) {
+        const formData = new FormData();
+        formData.append('title', resourceForm.title);
+        if (resourceForm.description) formData.append('description', resourceForm.description);
+        formData.append('resourceType', resourceForm.type || resourceForm.resourceType || 'documentation');
+        formData.append('category', resourceForm.category || 'Documentation');
+        formData.append('difficulty', resourceForm.difficulty || 'beginner');
+        if (resourceForm.url) formData.append('externalUrl', resourceForm.url);
+        if (resourceForm.content) formData.append('markdownContent', resourceForm.content);
+        formData.append('isFeatured', resourceForm.isFeatured);
+        formData.append('status', 'published');
+        formData.append('file', selectedResourceFile);
+
+        const config = { headers: { 'Content-Type': 'multipart/form-data' } };
+        if (editingResource) {
+          await apiClient.put(`/resources/${editingResource._id}`, formData, config);
+          toast.success('Resource file uploaded & updated live!', { id: loader });
+        } else {
+          await apiClient.post('/resources', formData, config);
+          toast.success('Resource file uploaded & published live!', { id: loader });
+        }
       } else {
-        await apiClient.post('/resources', payload);
-        toast.success('Resource created & published live to CodeSphere!', { id: loader });
+        const payload = {
+          ...resourceForm,
+          resourceType: resourceForm.type || resourceForm.resourceType || 'documentation',
+          category: resourceForm.category || 'Documentation',
+          externalUrl: resourceForm.url || resourceForm.externalUrl || '',
+          fileUrl: resourceForm.url || resourceForm.fileUrl || '',
+          markdownContent: resourceForm.content || resourceForm.markdownContent || '',
+          status: 'published',
+        };
+        if (editingResource) {
+          await apiClient.put(`/resources/${editingResource._id}`, payload);
+          toast.success('Resource updated & synchronized live!', { id: loader });
+        } else {
+          await apiClient.post('/resources', payload);
+          toast.success('Resource created & published live to CodeSphere!', { id: loader });
+        }
       }
+      setSelectedResourceFile(null);
       setIsResourceModalOpen(false);
       fetchResources();
     } catch (err) {
@@ -1234,8 +1260,11 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 <option value="documentation">Documentation</option>
                 <option value="notes">Cheat Sheets & Notes</option>
                 <option value="pdf">PDF Manuals</option>
+                <option value="ppt">PowerPoint Presentations</option>
+                <option value="word">Word Documents</option>
                 <option value="video">Video Tutorials</option>
                 <option value="source_code">Source Code</option>
+                <option value="zip">ZIP Archives</option>
               </select>
             </div>
             <button
@@ -1708,6 +1737,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
                       <option value="documentation">Documentation</option>
                       <option value="notes">Cheat Sheet & Notes</option>
                       <option value="pdf">PDF Document</option>
+                      <option value="ppt">PowerPoint Presentation (.ppt, .pptx)</option>
+                      <option value="word">Word Document (.doc, .docx)</option>
                       <option value="video">Video Lecture</option>
                       <option value="source_code">Source Code</option>
                       <option value="github">GitHub Repo</option>
@@ -1717,7 +1748,24 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Category</label>
-                    <input type="text" placeholder="e.g. Documentation, Web Dev" value={resourceForm.category} onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value })} className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
+                    <select
+                      value={resourceForm.category || 'Documentation'}
+                      onChange={(e) => setResourceForm({ ...resourceForm, category: e.target.value })}
+                      className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]"
+                    >
+                      <option value="Documentation">Documentation</option>
+                      <option value="PowerPoint Presentation">PowerPoint Presentation</option>
+                      <option value="Word Document">Word Document</option>
+                      <option value="Web Development">Web Development</option>
+                      <option value="Full Stack & Web Dev">Full Stack & Web Dev</option>
+                      <option value="DSA & Algorithms">DSA & Algorithms</option>
+                      <option value="AI & Data Science">AI & Data Science</option>
+                      <option value="System Design">System Design</option>
+                      <option value="Cloud & DevOps">Cloud & DevOps</option>
+                      <option value="Cyber Security">Cyber Security</option>
+                      <option value="Placement & Interviews">Placement & Interviews</option>
+                      <option value="Cheat Sheets & Notes">Cheat Sheets & Notes</option>
+                    </select>
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Difficulty</label>
@@ -1730,8 +1778,41 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 </div>
 
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300">External URL / File Link</label>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">External URL / Web Link</label>
                   <input type="url" value={resourceForm.url} onChange={(e) => setResourceForm({ ...resourceForm, url: e.target.value })} className="w-full mt-1 p-2.5 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-mono focus:border-[#04AA6D]" placeholder="https://raw.githubusercontent.com/... or https://..." />
+                </div>
+
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
+                    <span>Upload File or Zipped Folder Archive (.pdf, .ppt, .pptx, .zip, .mp4, .docx, code)</span>
+                    <span className="text-[10px] text-[#04AA6D] font-mono">Max 100 MB</span>
+                  </label>
+                  <div className="mt-1 flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/80 border border-dashed border-slate-300 dark:border-slate-700 rounded-xl">
+                    <Upload size={20} className="text-[#04AA6D] shrink-0" />
+                    <div className="flex-1 overflow-hidden">
+                      <input
+                        type="file"
+                        id="resFileInput"
+                        onChange={(e) => setSelectedResourceFile(e.target.files[0] || null)}
+                        className="hidden"
+                      />
+                      <label htmlFor="resFileInput" className="cursor-pointer text-xs font-bold text-[#04AA6D] hover:underline block truncate">
+                        {selectedResourceFile ? selectedResourceFile.name : (editingResource?.fileUrl ? 'Replace existing file...' : 'Choose file or folder archive (.pptx, .ppt, .pdf, .zip, .mp4, .doc)...')}
+                      </label>
+                      <p className="text-[10px] text-slate-400">
+                        {selectedResourceFile ? `${(selectedResourceFile.size / (1024 * 1024)).toFixed(2)} MB` : 'Supports PPT/PPTX, PDF, ZIP, RAR, TAR, MP4, DOCX, & code files'}
+                      </p>
+                    </div>
+                    {selectedResourceFile && (
+                      <button
+                        type="button"
+                        onClick={() => setSelectedResourceFile(null)}
+                        className="text-xs text-rose-500 font-bold hover:underline cursor-pointer"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div>

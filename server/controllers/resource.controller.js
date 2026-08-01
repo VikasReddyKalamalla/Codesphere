@@ -24,7 +24,7 @@ const createResource = asyncHandler(async (req, res) => {
 
 // PUT /api/resources/:id
 const updateResource = asyncHandler(async (req, res) => {
-  const data = await resourceService.updateResource(req.params.id, req.body, req.user._id, req.user.role);
+  const data = await resourceService.updateResource(req.params.id, req.body, req.file, req.user._id, req.user.role);
   broadcastDataChange('resource', 'updated', data);
   return successResponse(res, 200, 'Resource updated successfully', data);
 });

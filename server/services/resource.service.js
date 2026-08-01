@@ -8,7 +8,7 @@ const createError = (message, statusCode) => {
   return err;
 };
 
-const VALID_TYPES = ['pdf', 'notes', 'video', 'documentation', 'source_code', 'github', 'link', 'presentation', 'zip', 'other'];
+const VALID_TYPES = ['pdf', 'notes', 'video', 'documentation', 'source_code', 'github', 'link', 'presentation', 'ppt', 'word', 'doc', 'zip', 'other'];
 
 const normalizeResourceType = (typeStr) => {
   if (!typeStr) return 'documentation';
@@ -16,6 +16,8 @@ const normalizeResourceType = (typeStr) => {
   if (VALID_TYPES.includes(lower)) return lower;
   if (lower === 'article' || lower === 'article & docs') return 'documentation';
   if (lower === 'cheatsheet' || lower === 'cheat sheet') return 'notes';
+  if (lower.includes('powerpoint') || lower.includes('presentation') || lower === 'ppt' || lower === 'pptx') return 'ppt';
+  if (lower.includes('word') || lower === 'doc' || lower === 'docx') return 'word';
   return 'other';
 };
 
@@ -117,7 +119,7 @@ const createResource = async (body, file, userId) => {
 };
 
 // ─── UPDATE ───────────────────────────────────────────────────────────────────
-const updateResource = async (id, body, userId, userRole) => {
+const updateResource = async (id, body, file, userId, userRole) => {
   const resource = await Resource.findById(id);
   if (!resource) throw createError('Resource not found', 404);
 
@@ -139,6 +141,9 @@ const updateResource = async (id, body, userId, userRole) => {
   }
   if (body.content) {
     if (!body.markdownContent) updateData.markdownContent = body.content;
+  }
+  if (file) {
+    updateData.fileUrl = `/${file.path.replace(/\\/g, '/')}`;
   }
 
   return Resource.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });

@@ -83,10 +83,11 @@ export const createResourceThunk = (payload) => async (dispatch) => {
 export const fetchResourceByIdThunk = (id) => async (dispatch) => {
   try {
     const res = await fetchResourceByIdAPI(id);
-    const resource = res.data || res;
+    const resource = res?.data?.resource || res?.data?.data || (res?.data && res?.data._id ? res.data : null) || res?.data || res;
     dispatch(setSelectedResource(resource));
     return resource;
   } catch (err) {
     console.error('Error fetching resource by id:', err);
+    dispatch(setSelectedResource(null));
   }
 };

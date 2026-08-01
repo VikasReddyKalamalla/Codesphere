@@ -21,15 +21,20 @@ const CATEGORIES = [
   { id: 'cloud', label: 'Cloud & DevOps', icon: Globe },
   { id: 'cybersecurity', label: 'Cyber Security', icon: ShieldCheck },
   { id: 'placements', label: 'Interview & Placement', icon: Trophy },
+  { id: 'presentation', label: 'PowerPoint & Presentations', icon: FileText },
+  { id: 'word_docs', label: 'Word Documents & Reports', icon: FileText },
 ];
 
 const RESOURCE_TYPES = [
   { id: 'all', label: 'All Types' },
   { id: 'pdf', label: 'PDF Notes' },
+  { id: 'ppt', label: 'PowerPoint (.ppt)' },
+  { id: 'word', label: 'Word Document (.doc)' },
   { id: 'source_code', label: 'Code & Starters' },
   { id: 'notes', label: 'Cheat Sheets' },
   { id: 'video', label: 'Video Tutorials' },
   { id: 'documentation', label: 'Docs & API' },
+  { id: 'zip', label: 'ZIP Archives' },
 ];
 
 export const ResourceSidebar = ({

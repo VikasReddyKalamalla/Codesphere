@@ -40,7 +40,7 @@ router.post('/:id/comments', protect, addComment);
 
 // ─── Create / Update / Delete ─────────────────────────────────────────────────
 router.post  ('/', protect, restrictTo('instructor', 'admin'), uploadResource.single('file'), createResource);
-router.put   ('/:id', protect, restrictTo('instructor', 'admin'), updateResource);
+router.put   ('/:id', protect, restrictTo('instructor', 'admin'), uploadResource.single('file'), updateResource);
 router.delete('/:id', protect, restrictTo('instructor', 'admin', 'admin'), deleteResource);
 
 // ─── Interactions ─────────────────────────────────────────────────────────────
