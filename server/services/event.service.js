@@ -585,6 +585,46 @@ const SEED_GLOBAL_EVENTS = [
   }
 ];
 
+const GLOBAL_REMOTE_HUBS = [
+  { city: 'San Francisco', country: 'United States', lat: 37.7749, lng: -122.4194 },
+  { city: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278 },
+  { city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 },
+  { city: 'New York', country: 'United States', lat: 40.7128, lng: -74.0060 },
+  { city: 'Berlin', country: 'Germany', lat: 52.5200, lng: 13.4050 },
+  { city: 'Singapore', country: 'Singapore', lat: 1.3521, lng: 103.8198 },
+  { city: 'Sydney', country: 'Australia', lat: -33.8688, lng: 151.2093 },
+  { city: 'Toronto', country: 'Canada', lat: 43.6532, lng: -79.3832 },
+];
+
+const resolveCoordinates = (city = '', country = '', title = '', id = '') => {
+  const cLower = (city || '').toLowerCase().trim();
+  const cntLower = (country || '').toLowerCase().trim();
+
+  // If specific physical city is entered, resolve to exact city coordinates
+  for (const [key, coords] of Object.entries(PRESET_COORDINATES)) {
+    if (key !== 'remote' && (cLower.includes(key) || cntLower.includes(key))) {
+      return { lat: coords.lat, lng: coords.lng };
+    }
+  }
+
+  // If remote / global, pick a distinct global tech hub from around the world
+  if (cLower === 'remote' || cntLower === 'global' || !city) {
+    let hash = 0;
+    const str = (title || '') + (id || '');
+    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    const hubIndex = Math.abs(hash) % GLOBAL_REMOTE_HUBS.length;
+    return { lat: GLOBAL_REMOTE_HUBS[hubIndex].lat, lng: GLOBAL_REMOTE_HUBS[hubIndex].lng };
+  }
+
+  // Fallback hash
+  let hash = 0;
+  const str = (title || '') + (city || '') + (country || '');
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  const lat = (Math.abs(hash % 9000) / 100) - 45;
+  const lng = (Math.abs((hash * 31) % 32000) / 100) - 160;
+  return { lat: Number(lat.toFixed(4)), lng: Number(lng.toFixed(4)) };
+};
+
 // ─── GET GLOBE EVENTS (All Published Admin & Community Events from MongoDB) ──
 const getGlobeEvents = async () => {
   const events = await Event.find({ isPublished: true })
@@ -592,15 +632,19 @@ const getGlobeEvents = async () => {
     .populate('organizer', 'fullName avatar')
     .lean();
 
-  return events.map(ev => {
+  return events.map((ev, idx) => {
     let lat = Number(ev.latitude);
     let lng = Number(ev.longitude);
 
-    const cityLower = (ev.city || '').toLowerCase();
-    const isDefaultSF = Math.abs(lat - 37.7749) < 0.01 && Math.abs(lng - (-122.4194)) < 0.01;
+    const cityLower = (ev.city || '').toLowerCase().trim();
+    const countryLower = (ev.country || '').toLowerCase().trim();
 
-    if (!lat || !lng || isNaN(lat) || isNaN(lng) || (isDefaultSF && !cityLower.includes('san francisco'))) {
-      const coords = resolveCoordinates(ev.city, ev.country, ev.title);
+    // Check if city matches preset (e.g., Hyderabad)
+    if (PRESET_COORDINATES[cityLower]) {
+      lat = PRESET_COORDINATES[cityLower].lat;
+      lng = PRESET_COORDINATES[cityLower].lng;
+    } else if (cityLower === 'remote' || countryLower === 'global' || !lat || !lng || isNaN(lat) || isNaN(lng)) {
+      const coords = resolveCoordinates(ev.city, ev.country, ev.title, ev._id.toString());
       lat = coords.lat;
       lng = coords.lng;
     }
