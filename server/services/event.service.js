@@ -195,6 +195,11 @@ const createEvent = async (body, userId) => {
     if (!categoryExists) throw createError('Category not found', 404);
   }
 
+  // Auto-migrate legacy document source value if needed
+  if (!body.source || body.source === 'user_created') {
+    body.source = 'internal';
+  }
+
   const event = await Event.create({
     ...body,
     title,
@@ -204,8 +209,8 @@ const createEvent = async (body, userId) => {
     latitude,
     longitude,
     organizer: userId,
-    source: body.source || body.registrationSource || 'internal',
-    registrationSource: body.registrationSource || body.source || 'official',
+    source: body.source || 'internal',
+    registrationSource: body.registrationSource || 'official',
     registrationUrl: body.registrationUrl || body.externalUrl || '',
     externalUrl: body.externalUrl || body.registrationUrl || '',
   });
@@ -219,6 +224,9 @@ const createEvent = async (body, userId) => {
 
 // ─── UPDATE EVENT ─────────────────────────────────────────────────────────────
 const updateEvent = async (id, body, userId, userRole) => {
+  // One-time auto-migration for legacy DB records with source 'user_created'
+  await Event.updateMany({ source: 'user_created' }, { $set: { source: 'internal' } });
+
   const event = await Event.findById(id);
   if (!event) throw createError('Event not found', 404);
 
@@ -228,6 +236,11 @@ const updateEvent = async (id, body, userId, userRole) => {
   }
 
   delete body.organizer;
+
+  // Sanitize source field
+  if (!body.source || body.source === 'user_created') {
+    body.source = 'internal';
+  }
 
   // Handle dates if updated
   if (body.startDate) body.startDate = new Date(body.startDate);
