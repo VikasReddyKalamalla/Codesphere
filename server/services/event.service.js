@@ -143,26 +143,6 @@ const PRESET_COORDINATES = {
   'cape town': { lat: -33.9249, lng: 18.4241, country: 'South Africa', city: 'Cape Town' },
 };
 
-const resolveCoordinates = (city = '', country = '', title = '') => {
-  const cLower = (city || '').toLowerCase().trim();
-  const cntLower = (country || '').toLowerCase().trim();
-
-  for (const [key, coords] of Object.entries(PRESET_COORDINATES)) {
-    if (cLower.includes(key) || cntLower.includes(key)) {
-      return coords;
-    }
-  }
-
-  // Deterministic fallback based on title string hash
-  let hash = 0;
-  const str = (title || '') + (city || '') + (country || '');
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const lat = (Math.abs(hash % 9000) / 100) - 45;
-  const lng = (Math.abs((hash * 31) % 32000) / 100) - 160;
-  return { lat: Number(lat.toFixed(4)), lng: Number(lng.toFixed(4)) };
-};
 
 // ─── CREATE EVENT ─────────────────────────────────────────────────────────────
 const createEvent = async (body, userId) => {
