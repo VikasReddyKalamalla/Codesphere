@@ -260,7 +260,7 @@ const updateEvent = async (id, body, userId, userRole) => {
   const oldCategory = event.category;
   const newCategory = body.category;
 
-  const updated = await Event.findByIdAndUpdate(id, body, { new: true, runValidators: true })
+  const updated = await Event.findByIdAndUpdate(id, body, { new: true, runValidators: false })
     .populate('organizer', 'fullName avatar')
     .populate('category', 'name icon color')
     .populate('community', 'name logo');

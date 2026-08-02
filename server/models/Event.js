@@ -28,7 +28,7 @@ const eventSchema = new mongoose.Schema(
     },
     companyName: { type: String, default: 'CodeSphere Partner', trim: true },
     companyLogo: { type: String, default: '' },
-    source:      { type: String, default: 'internal' },
+    source:      { type: String, default: 'internal', enum: ['internal', 'user_created', 'github', 'devpost', 'mlh', 'unstop', 'hackerearth', 'meetup', 'eventbrite', 'google', 'microsoft', 'aws', 'meta', 'apple', 'official', 'other'] },
     externalUrl: { type: String, default: '' },
     registrationUrl: { type: String, default: '', trim: true },
     registrationSource: { type: String, default: 'official', trim: true },

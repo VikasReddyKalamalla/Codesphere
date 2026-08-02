@@ -1,4 +1,4 @@
-// CodeSphere Realtime Server v1.0.5 - Category preservation & regex search
+// CodeSphere Realtime Server v1.0.6 - Event source enum fix & schema auto-reload
 require('dotenv').config();
 const http = require('http');
 const app = require('./app');
