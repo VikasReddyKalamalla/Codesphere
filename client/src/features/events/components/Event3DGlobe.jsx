@@ -15,6 +15,33 @@ const MARKER_COLORS = {
   default: '#04AA6D'
 };
 
+const CITY_COORDINATES = {
+  'hyderabad': { lat: 17.3850, lng: 78.4867 },
+  'bengaluru': { lat: 12.9716, lng: 77.5946 },
+  'bangalore': { lat: 12.9716, lng: 77.5946 },
+  'mumbai': { lat: 19.0760, lng: 72.8777 },
+  'delhi': { lat: 28.6139, lng: 77.2090 },
+  'new delhi': { lat: 28.6139, lng: 77.2090 },
+  'chennai': { lat: 13.0827, lng: 80.2707 },
+  'pune': { lat: 18.5204, lng: 73.8567 },
+  'kolkata': { lat: 22.5726, lng: 88.3639 },
+  'san francisco': { lat: 37.7749, lng: -122.4194 },
+  'mountain view': { lat: 37.4220, lng: -122.0840 },
+  'new york': { lat: 40.7128, lng: -74.0060 },
+  'london': { lat: 51.5074, lng: -0.1278 },
+  'tokyo': { lat: 35.6762, lng: 139.6503 },
+  'berlin': { lat: 52.5200, lng: 13.4050 },
+  'paris': { lat: 48.8566, lng: 2.3522 },
+  'singapore': { lat: 1.3521, lng: 103.8198 },
+  'sydney': { lat: -33.8688, lng: 151.2093 },
+  'dubai': { lat: 25.2048, lng: 55.2708 },
+  'toronto': { lat: 43.6532, lng: -79.3832 },
+  'seattle': { lat: 47.6062, lng: -122.3321 },
+  'austin': { lat: 30.2672, lng: -97.7431 },
+  'chicago': { lat: 41.8781, lng: -87.6298 },
+  'remote': { lat: 20.5937, lng: 78.9629 },
+};
+
 export const Event3DGlobe = ({ markers = [], onSelectEvent }) => {
   const globeContainerRef = useRef();
   const globeEl = useRef();
@@ -55,17 +82,56 @@ export const Event3DGlobe = ({ markers = [], onSelectEvent }) => {
   const processedMarkers = useMemo(() => {
     if (!Array.isArray(markers) || markers.length === 0) return [];
 
-    return markers.map(m => {
+    const coordMap = {};
+
+    return markers.map((m, idx) => {
       const color = m.categoryColor || MARKER_COLORS[m.eventType] || MARKER_COLORS.default;
       const displayLocation = (m.city && m.city !== 'Remote') 
         ? m.city 
         : (m.country && m.country !== 'Global' ? m.country : (m.title ? m.title.split(' ')[0] : 'EVENT'));
 
+      let lat = Number(m.lat || m.latitude || 0);
+      let lng = Number(m.lng || m.longitude || 0);
+
+      // Check if city/country matches known location lookup
+      const cityKey = (m.city || '').toLowerCase().trim();
+      const countryKey = (m.country || '').toLowerCase().trim();
+
+      if (CITY_COORDINATES[cityKey]) {
+        lat = CITY_COORDINATES[cityKey].lat;
+        lng = CITY_COORDINATES[cityKey].lng;
+      } else if (CITY_COORDINATES[countryKey]) {
+        lat = CITY_COORDINATES[countryKey].lat;
+        lng = CITY_COORDINATES[countryKey].lng;
+      }
+
+      // If lat/lng are still 0 or unassigned, generate hash-based coordinates
+      if (!lat && !lng) {
+        let hash = 0;
+        const str = (m.title || '') + (m.city || '') + idx;
+        for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+        lat = (Math.abs(hash % 9000) / 100) - 45;
+        lng = (Math.abs((hash * 31) % 32000) / 100) - 160;
+      }
+
+      // Prevent overlapping pins: if another marker has coordinates within 1.0 degree, apply radial offset
+      const key = `${lat.toFixed(1)},${lng.toFixed(1)}`;
+      if (coordMap[key]) {
+        const count = coordMap[key];
+        coordMap[key] += 1;
+        const angle = count * 2.2;
+        const offset = 2.0 * Math.sqrt(count);
+        lat += offset * Math.cos(angle);
+        lng += offset * Math.sin(angle);
+      } else {
+        coordMap[key] = 1;
+      }
+
       return {
         ...m,
         id: m.id || m._id,
-        lat: Number(m.lat || m.latitude || 0),
-        lng: Number(m.lng || m.longitude || 0),
+        lat: Number(lat.toFixed(4)),
+        lng: Number(lng.toFixed(4)),
         size: m.isFeatured ? 0.6 : 0.45,
         color: color,
         displayLocation,
@@ -86,10 +152,16 @@ export const Event3DGlobe = ({ markers = [], onSelectEvent }) => {
       controls.minDistance = 150;
       controls.maxDistance = 480;
 
-      // Initial POV centered smoothly
-      globeEl.current.pointOfView({ lat: 20, lng: 10, altitude: 2.1 }, 1000);
+      // Auto-center POV around published markers if available
+      if (processedMarkers.length > 0) {
+        const avgLat = processedMarkers.reduce((acc, curr) => acc + curr.lat, 0) / processedMarkers.length;
+        const avgLng = processedMarkers.reduce((acc, curr) => acc + curr.lng, 0) / processedMarkers.length;
+        globeEl.current.pointOfView({ lat: avgLat || 20, lng: avgLng || 78, altitude: 2.1 }, 1200);
+      } else {
+        globeEl.current.pointOfView({ lat: 20, lng: 10, altitude: 2.1 }, 1000);
+      }
     }
-  }, []);
+  }, [processedMarkers]);
 
   const handlePointHover = (point) => {
     setHoveredPoint(point);

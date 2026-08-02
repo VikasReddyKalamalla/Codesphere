@@ -1614,11 +1614,14 @@ export default function AdminFeaturesPage({ defaultTab }) {
                         const val = e.target.value;
                         if (!val) return;
                         const presets = [
+                          { label: 'Hyderabad, India', city: 'Hyderabad', country: 'India', lat: 17.3850, lng: 78.4867 },
+                          { label: 'Bengaluru, India', city: 'Bengaluru', country: 'India', lat: 12.9716, lng: 77.5946 },
+                          { label: 'Mumbai, India', city: 'Mumbai', country: 'India', lat: 19.0760, lng: 72.8777 },
+                          { label: 'New Delhi, India', city: 'New Delhi', country: 'India', lat: 28.6139, lng: 77.2090 },
                           { label: 'San Francisco, CA', city: 'San Francisco', country: 'United States', lat: 37.7749, lng: -122.4194 },
                           { label: 'Mountain View, CA', city: 'Mountain View', country: 'United States', lat: 37.422, lng: -122.084 },
                           { label: 'New York, NY', city: 'New York', country: 'United States', lat: 40.7128, lng: -74.0060 },
                           { label: 'London, UK', city: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278 },
-                          { label: 'Bengaluru, India', city: 'Bengaluru', country: 'India', lat: 12.9716, lng: 77.5946 },
                           { label: 'Tokyo, Japan', city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 },
                           { label: 'Berlin, Germany', city: 'Berlin', country: 'Germany', lat: 52.5200, lng: 13.4050 },
                           { label: 'Paris, France', city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 },
@@ -1642,11 +1645,14 @@ export default function AdminFeaturesPage({ defaultTab }) {
                       className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-[#04AA6D]"
                     >
                       <option value="">-- Quick Select Globe Location --</option>
+                      <option value="Hyderabad, India">Hyderabad, India (17.38, 78.48)</option>
+                      <option value="Bengaluru, India">Bengaluru, India (12.97, 77.59)</option>
+                      <option value="Mumbai, India">Mumbai, India (19.07, 72.87)</option>
+                      <option value="New Delhi, India">New Delhi, India (28.61, 77.20)</option>
                       <option value="San Francisco, CA">San Francisco, USA (37.77, -122.41)</option>
                       <option value="Mountain View, CA">Mountain View, USA (37.42, -122.08)</option>
                       <option value="New York, NY">New York, USA (40.71, -74.00)</option>
                       <option value="London, UK">London, UK (51.50, -0.12)</option>
-                      <option value="Bengaluru, India">Bengaluru, India (12.97, 77.59)</option>
                       <option value="Tokyo, Japan">Tokyo, Japan (35.67, 139.65)</option>
                       <option value="Berlin, Germany">Berlin, Germany (52.52, 13.40)</option>
                       <option value="Paris, France">Paris, France (48.85, 2.35)</option>

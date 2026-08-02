@@ -122,6 +122,13 @@ const PRESET_COORDINATES = {
   'london': { lat: 51.5074, lng: -0.1278, country: 'United Kingdom', city: 'London' },
   'bengaluru': { lat: 12.9716, lng: 77.5946, country: 'India', city: 'Bengaluru' },
   'bangalore': { lat: 12.9716, lng: 77.5946, country: 'India', city: 'Bengaluru' },
+  'hyderabad': { lat: 17.3850, lng: 78.4867, country: 'India', city: 'Hyderabad' },
+  'mumbai': { lat: 19.0760, lng: 72.8777, country: 'India', city: 'Mumbai' },
+  'delhi': { lat: 28.6139, lng: 77.2090, country: 'India', city: 'New Delhi' },
+  'new delhi': { lat: 28.6139, lng: 77.2090, country: 'India', city: 'New Delhi' },
+  'chennai': { lat: 13.0827, lng: 80.2707, country: 'India', city: 'Chennai' },
+  'pune': { lat: 18.5204, lng: 73.8567, country: 'India', city: 'Pune' },
+  'kolkata': { lat: 22.5726, lng: 88.3639, country: 'India', city: 'Kolkata' },
   'tokyo': { lat: 35.6762, lng: 139.6503, country: 'Japan', city: 'Tokyo' },
   'berlin': { lat: 52.5200, lng: 13.4050, country: 'Germany', city: 'Berlin' },
   'paris': { lat: 48.8566, lng: 2.3522, country: 'France', city: 'Paris' },
@@ -137,8 +144,8 @@ const PRESET_COORDINATES = {
 };
 
 const resolveCoordinates = (city = '', country = '', title = '') => {
-  const cLower = (city || '').toLowerCase();
-  const cntLower = (country || '').toLowerCase();
+  const cLower = (city || '').toLowerCase().trim();
+  const cntLower = (country || '').toLowerCase().trim();
 
   for (const [key, coords] of Object.entries(PRESET_COORDINATES)) {
     if (cLower.includes(key) || cntLower.includes(key)) {
@@ -148,12 +155,12 @@ const resolveCoordinates = (city = '', country = '', title = '') => {
 
   // Deterministic fallback based on title string hash
   let hash = 0;
-  const str = title + city + country;
+  const str = (title || '') + (city || '') + (country || '');
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const lat = (Math.abs(hash % 12000) / 100) - 60; // -60 to +60 lat
-  const lng = (Math.abs((hash * 31) % 36000) / 100) - 180; // -180 to +180 lng
+  const lat = (Math.abs(hash % 9000) / 100) - 45;
+  const lng = (Math.abs((hash * 31) % 32000) / 100) - 160;
   return { lat: Number(lat.toFixed(4)), lng: Number(lng.toFixed(4)) };
 };
 
@@ -169,10 +176,14 @@ const createEvent = async (body, userId) => {
     endDate = new Date(startDate.getTime() + 7200000); // 2 hours later
   }
 
-  // Resolve lat/lng if missing
+  // Resolve lat/lng if missing or if default values were passed for non-SF locations
   let latitude = Number(body.latitude);
   let longitude = Number(body.longitude);
-  if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude)) {
+
+  const cityLower = (body.city || '').toLowerCase();
+  const isDefaultSF = Math.abs(latitude - 37.7749) < 0.01 && Math.abs(longitude - (-122.4194)) < 0.01;
+
+  if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude) || (isDefaultSF && !cityLower.includes('san francisco'))) {
     const coords = resolveCoordinates(body.city, body.country, title);
     latitude = coords.lat;
     longitude = coords.lng;
@@ -585,7 +596,10 @@ const getGlobeEvents = async () => {
     let lat = Number(ev.latitude);
     let lng = Number(ev.longitude);
 
-    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+    const cityLower = (ev.city || '').toLowerCase();
+    const isDefaultSF = Math.abs(lat - 37.7749) < 0.01 && Math.abs(lng - (-122.4194)) < 0.01;
+
+    if (!lat || !lng || isNaN(lat) || isNaN(lng) || (isDefaultSF && !cityLower.includes('san francisco'))) {
       const coords = resolveCoordinates(ev.city, ev.country, ev.title);
       lat = coords.lat;
       lng = coords.lng;
