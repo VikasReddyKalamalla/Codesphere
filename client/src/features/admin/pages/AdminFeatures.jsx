@@ -511,10 +511,10 @@ export default function AdminFeaturesPage({ defaultTab }) {
 
   const navTabs = [
     { key: 'learning', label: 'Learning Paths', icon: GraduationCap, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    { key: 'sandboxes', label: 'Sandboxes & Projects', icon: Code2, badgeColor: 'bg-blue-100 text-blue-700 border-blue-200' },
-    { key: 'tests', label: 'Practice Tests', icon: HelpCircle, badgeColor: 'bg-purple-100 text-purple-700 border-purple-200' },
-    { key: 'events', label: 'Events & Workshops', icon: Calendar, badgeColor: 'bg-amber-100 text-amber-700 border-amber-200' },
-    { key: 'resources', label: 'Knowledge Resources', icon: BookOpen, badgeColor: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
+    { key: 'sandboxes', label: 'Sandboxes & Projects', icon: Code2, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    { key: 'tests', label: 'Practice Tests', icon: HelpCircle, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    { key: 'events', label: 'Events & Workshops', icon: Calendar, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    { key: 'resources', label: 'Knowledge Resources', icon: BookOpen, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
     { key: 'toggles', label: 'Feature Toggles', icon: Sliders, badgeColor: 'bg-slate-100 text-slate-700 border-slate-200' },
   ];
 
@@ -591,7 +591,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Sandboxes</span>
-                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center">
                   <Code2 size={18} />
                 </div>
               </div>
@@ -600,7 +600,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Published</span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <CheckCircle2 size={18} />
                 </div>
               </div>
@@ -611,7 +611,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Draft / Private</span>
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center">
                   <Clock size={18} />
                 </div>
               </div>
@@ -622,7 +622,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active Templates</span>
-                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center">
                   <Layers size={18} />
                 </div>
               </div>
@@ -641,7 +641,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   value={sandboxSearch}
                   onChange={(e) => setSandboxSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && fetchSandboxes()}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-emerald-500"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-[#04AA6D]"
                 />
               </div>
               <select
@@ -688,7 +688,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 });
                 setIsSandboxModalOpen(true);
               }}
-              className="w-full sm:w-auto px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+              className="w-full sm:w-auto px-4 py-2.5 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
             >
               <Plus size={16} /> Create Sandbox Project
             </button>
@@ -698,7 +698,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
             {sandboxLoading ? (
               <div className="p-12 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-                <RefreshCw size={16} className="animate-spin text-emerald-500" /> Loading sandboxes...
+                <RefreshCw size={16} className="animate-spin text-[#04AA6D]" /> Loading sandboxes...
               </div>
             ) : sandboxes.length === 0 ? (
               <div className="p-12 text-center text-slate-400 text-xs">
@@ -721,7 +721,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                     {sandboxes.map((item) => (
                       <tr key={item._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
                         <td className="py-3 px-4 font-bold text-slate-800 dark:text-white flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-900/30 text-blue-600 flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] flex items-center justify-center shrink-0">
                             <Code2 size={16} />
                           </div>
                           <div>
@@ -808,7 +808,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Tests</span>
-                <div className="w-8 h-8 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center">
                   <HelpCircle size={18} />
                 </div>
               </div>
@@ -817,7 +817,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Published</span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <CheckCircle2 size={18} />
                 </div>
               </div>
@@ -828,7 +828,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Avg Pass Percentage</span>
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center">
                   <Award size={18} />
                 </div>
               </div>
@@ -837,7 +837,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Draft Tests</span>
-                <div className="w-8 h-8 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 flex items-center justify-center">
                   <Clock size={18} />
                 </div>
               </div>
@@ -858,7 +858,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   value={testSearch}
                   onChange={(e) => setTestSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && fetchTests()}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-purple-500"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-[#04AA6D]"
                 />
               </div>
               <select
@@ -887,7 +887,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 });
                 setIsTestModalOpen(true);
               }}
-              className="w-full sm:w-auto px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+              className="w-full sm:w-auto px-4 py-2.5 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
             >
               <Plus size={16} /> Create Practice Test
             </button>
@@ -897,7 +897,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
             {testLoading ? (
               <div className="p-12 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-                <RefreshCw size={16} className="animate-spin text-purple-500" /> Loading practice tests...
+                <RefreshCw size={16} className="animate-spin text-[#04AA6D]" /> Loading practice tests...
               </div>
             ) : tests.length === 0 ? (
               <div className="p-12 text-center text-slate-400 text-xs">
@@ -920,7 +920,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                     {tests.map((item) => (
                       <tr key={item._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
                         <td className="py-3 px-4 font-bold text-slate-800 dark:text-white flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center shrink-0">
                             <HelpCircle size={16} />
                           </div>
                           <div>
@@ -930,7 +930,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                         </td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">{item.category || item.technology || 'General'}</td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-mono">{item.duration || 30} mins</td>
-                        <td className="py-3 px-4 font-bold text-purple-600">{item.passScorePercentage || 70}%</td>
+                        <td className="py-3 px-4 font-bold text-[#04AA6D]">{item.passScorePercentage || 70}%</td>
                         <td className="py-3 px-4">
                           <button
                             onClick={() => handleToggleTestStatus(item)}
@@ -959,14 +959,14 @@ export default function AdminFeaturesPage({ defaultTab }) {
                               });
                               setIsTestModalOpen(true);
                             }}
-                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-900"
+                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer"
                             title="Edit Test"
                           >
                             <Edit size={15} />
                           </button>
                           <button
                             onClick={() => handleDeleteTest(item._id)}
-                            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg text-slate-400 hover:text-rose-600"
+                            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
                             title="Delete Test"
                           >
                             <Trash2 size={15} />
@@ -990,7 +990,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Events</span>
-                <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center">
                   <Calendar size={18} />
                 </div>
               </div>
@@ -999,7 +999,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Workshops</span>
-                <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
                   <Sparkles size={18} />
                 </div>
               </div>
@@ -1010,7 +1010,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Webinars</span>
-                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center">
                   <Globe size={18} />
                 </div>
               </div>
@@ -1021,7 +1021,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Enrolled</span>
-                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center">
                   <Users size={18} />
                 </div>
               </div>
@@ -1040,7 +1040,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   value={eventSearch}
                   onChange={(e) => setEventSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && fetchEvents()}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-amber-500"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-[#04AA6D]"
                 />
               </div>
               <select
@@ -1081,7 +1081,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 });
                 setIsEventModalOpen(true);
               }}
-              className="w-full sm:w-auto px-4 py-2.5 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all"
+              className="w-full sm:w-auto px-4 py-2.5 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
             >
               <Plus size={16} /> Create Live Event
             </button>
@@ -1091,7 +1091,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
             {eventLoading ? (
               <div className="p-12 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-                <RefreshCw size={16} className="animate-spin text-amber-500" /> Loading live events...
+                <RefreshCw size={16} className="animate-spin text-[#04AA6D]" /> Loading live events...
               </div>
             ) : events.length === 0 ? (
               <div className="p-12 text-center text-slate-400 text-xs">
@@ -1114,7 +1114,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                     {events.map((item) => (
                       <tr key={item._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
                         <td className="py-3 px-4 font-bold text-slate-800 dark:text-white flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-xl bg-amber-100 dark:bg-amber-900/30 text-amber-600 flex items-center justify-center shrink-0">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center shrink-0">
                             <Calendar size={16} />
                           </div>
                           <div>
@@ -1123,14 +1123,14 @@ export default function AdminFeaturesPage({ defaultTab }) {
                           </div>
                         </td>
                         <td className="py-3 px-4 space-y-1">
-                          <span className="px-2 py-0.5 bg-amber-50 text-amber-700 text-[10px] font-bold rounded uppercase border border-amber-200">
+                          <span className="px-2 py-0.5 bg-emerald-50 dark:bg-emerald-950/50 text-[#04AA6D] dark:text-emerald-400 text-[10px] font-bold rounded uppercase border border-emerald-200 dark:border-emerald-800">
                             {item.eventType || 'Workshop'}
                           </span>
                           <p className="text-[10px] font-mono uppercase text-slate-400">{item.mode || 'online'}</p>
                         </td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-mono text-[11px]">
                           <p>{item.startDate ? new Date(item.startDate).toLocaleDateString() : 'Scheduled'}</p>
-                          <p className="text-[10px] text-emerald-600 font-sans font-bold">{item.city || 'Remote'}, {item.country || 'Global'}</p>
+                          <p className="text-[10px] text-[#04AA6D] font-sans font-bold">{item.city || 'Remote'}, {item.country || 'Global'}</p>
                         </td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">{item.speakerName || item.speakers?.[0]?.name || 'Instructor'}</td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-mono">{item.maxParticipants || 100}</td>
@@ -1159,14 +1159,14 @@ export default function AdminFeaturesPage({ defaultTab }) {
                               });
                               setIsEventModalOpen(true);
                             }}
-                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-900"
+                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer"
                             title="Edit Event"
                           >
                             <Edit size={15} />
                           </button>
                           <button
                             onClick={() => handleDeleteEvent(item._id)}
-                            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg text-slate-400 hover:text-rose-600"
+                            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
                             title="Delete Event"
                           >
                             <Trash2 size={15} />
@@ -1434,19 +1434,19 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Code2 size={18} className="text-blue-600" />
+                  <Code2 size={18} className="text-[#04AA6D]" />
                   {editingSandbox ? 'Edit Sandbox Project' : 'Create Sandbox Project'}
                 </h3>
-                <button onClick={() => setIsSandboxModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100"><X size={16} /></button>
+                <button onClick={() => setIsSandboxModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"><X size={16} /></button>
               </div>
               <form onSubmit={handleSaveSandbox} className="space-y-3 text-xs">
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Project Title</label>
-                  <input type="text" required value={sandboxForm.title} onChange={(e) => setSandboxForm({ ...sandboxForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                  <input type="text" required value={sandboxForm.title} onChange={(e) => setSandboxForm({ ...sandboxForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Description</label>
-                  <textarea rows={2} value={sandboxForm.description} onChange={(e) => setSandboxForm({ ...sandboxForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                  <textarea rows={2} value={sandboxForm.description} onChange={(e) => setSandboxForm({ ...sandboxForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -1454,7 +1454,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                     <select
                       value={sandboxForm.category}
                       onChange={(e) => setSandboxForm({ ...sandboxForm, category: e.target.value })}
-                      className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs"
+                      className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs focus:border-[#04AA6D]"
                     >
                       <option value="Java / Core Java">Java / Core Java</option>
                       <option value="App & Mobile Development">App & Mobile Development</option>
@@ -1472,7 +1472,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Difficulty</label>
-                    <select value={sandboxForm.difficulty} onChange={(e) => setSandboxForm({ ...sandboxForm, difficulty: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none">
+                    <select value={sandboxForm.difficulty} onChange={(e) => setSandboxForm({ ...sandboxForm, difficulty: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]">
                       <option value="beginner">Beginner</option>
                       <option value="intermediate">Intermediate</option>
                       <option value="advanced">Advanced</option>
@@ -1481,15 +1481,15 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Tech Stack (comma separated)</label>
-                  <input type="text" value={sandboxForm.technologyStack} onChange={(e) => setSandboxForm({ ...sandboxForm, technologyStack: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" placeholder="React, Node.js, MongoDB" />
+                  <input type="text" value={sandboxForm.technologyStack} onChange={(e) => setSandboxForm({ ...sandboxForm, technologyStack: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="React, Node.js, MongoDB" />
                 </div>
                 <div className="flex items-center gap-2 pt-2">
-                  <input type="checkbox" id="sandPub" checked={sandboxForm.isPublished} onChange={(e) => setSandboxForm({ ...sandboxForm, isPublished: e.target.checked })} />
-                  <label htmlFor="sandPub" className="font-bold text-slate-700 dark:text-slate-300">Publish Immediately</label>
+                  <input type="checkbox" id="sandPub" checked={sandboxForm.isPublished} onChange={(e) => setSandboxForm({ ...sandboxForm, isPublished: e.target.checked })} className="accent-[#04AA6D] cursor-pointer" />
+                  <label htmlFor="sandPub" className="font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Publish Immediately</label>
                 </div>
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <button type="button" onClick={() => setIsSandboxModalOpen(false)} className="px-4 py-2 border rounded-xl text-slate-600 font-bold">Cancel</button>
-                  <button type="submit" className="px-4 py-2 bg-emerald-600 text-white rounded-xl font-bold">Save Sandbox</button>
+                  <button type="button" onClick={() => setIsSandboxModalOpen(false)} className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-bold cursor-pointer">Cancel</button>
+                  <button type="submit" className="px-4 py-2 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl font-bold cursor-pointer">Save Sandbox</button>
                 </div>
               </form>
             </motion.div>
@@ -1504,37 +1504,37 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <HelpCircle size={18} className="text-purple-600" />
+                  <HelpCircle size={18} className="text-[#04AA6D]" />
                   {editingTest ? 'Edit Practice Test' : 'Create Practice Test'}
                 </h3>
-                <button onClick={() => setIsTestModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100"><X size={16} /></button>
+                <button onClick={() => setIsTestModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"><X size={16} /></button>
               </div>
               <form onSubmit={handleSaveTest} className="space-y-3 text-xs">
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Test Title</label>
-                  <input type="text" required value={testForm.title} onChange={(e) => setTestForm({ ...testForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                  <input type="text" required value={testForm.title} onChange={(e) => setTestForm({ ...testForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Description</label>
-                  <textarea rows={2} value={testForm.description} onChange={(e) => setTestForm({ ...testForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                  <textarea rows={2} value={testForm.description} onChange={(e) => setTestForm({ ...testForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Duration (Minutes)</label>
-                    <input type="number" value={testForm.duration} onChange={(e) => setTestForm({ ...testForm, duration: Number(e.target.value) })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                    <input type="number" value={testForm.duration} onChange={(e) => setTestForm({ ...testForm, duration: Number(e.target.value) })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Passing Score (%)</label>
-                    <input type="number" value={testForm.passScorePercentage} onChange={(e) => setTestForm({ ...testForm, passScorePercentage: Number(e.target.value) })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                    <input type="number" value={testForm.passScorePercentage} onChange={(e) => setTestForm({ ...testForm, passScorePercentage: Number(e.target.value) })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                   </div>
                 </div>
                 <div className="flex items-center gap-2 pt-2">
-                  <input type="checkbox" id="testPub" checked={testForm.isPublished} onChange={(e) => setTestForm({ ...testForm, isPublished: e.target.checked })} />
-                  <label htmlFor="testPub" className="font-bold text-slate-700 dark:text-slate-300">Publish Immediately</label>
+                  <input type="checkbox" id="testPub" checked={testForm.isPublished} onChange={(e) => setTestForm({ ...testForm, isPublished: e.target.checked })} className="accent-[#04AA6D] cursor-pointer" />
+                  <label htmlFor="testPub" className="font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Publish Immediately</label>
                 </div>
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <button type="button" onClick={() => setIsTestModalOpen(false)} className="px-4 py-2 border rounded-xl text-slate-600 font-bold">Cancel</button>
-                  <button type="submit" className="px-4 py-2 bg-purple-600 text-white rounded-xl font-bold">Save Assessment</button>
+                  <button type="button" onClick={() => setIsTestModalOpen(false)} className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-bold cursor-pointer">Cancel</button>
+                  <button type="submit" className="px-4 py-2 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl font-bold cursor-pointer">Save Assessment</button>
                 </div>
               </form>
             </motion.div>
@@ -1549,25 +1549,25 @@ export default function AdminFeaturesPage({ defaultTab }) {
             <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-xl p-6 space-y-4 my-8">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                  <Calendar size={18} className="text-amber-600" />
+                  <Calendar size={18} className="text-[#04AA6D]" />
                   {editingEvent ? 'Edit Event' : 'Create Event'}
                 </h3>
-                <button onClick={() => setIsEventModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100"><X size={16} /></button>
+                <button onClick={() => setIsEventModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"><X size={16} /></button>
               </div>
               <form onSubmit={handleSaveEvent} className="space-y-3 text-xs">
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Event Title *</label>
-                  <input type="text" required value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" placeholder="e.g. CodeSphere AI & Full-Stack World Summit" />
+                  <input type="text" required value={eventForm.title} onChange={(e) => setEventForm({ ...eventForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="e.g. CodeSphere AI & Full-Stack World Summit" />
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Description</label>
-                  <textarea rows={2} value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" placeholder="Brief overview of the event, tracks, and prerequisites..." />
+                  <textarea rows={2} value={eventForm.description} onChange={(e) => setEventForm({ ...eventForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="Brief overview of the event, tracks, and prerequisites..." />
                 </div>
                 
                 <div className="grid grid-cols-3 gap-3">
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Event Type</label>
-                    <select value={eventForm.eventType} onChange={(e) => setEventForm({ ...eventForm, eventType: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none">
+                    <select value={eventForm.eventType} onChange={(e) => setEventForm({ ...eventForm, eventType: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]">
                       <option value="workshop">Workshop</option>
                       <option value="webinar">Webinar</option>
                       <option value="hackathon">Hackathon</option>
@@ -1582,7 +1582,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Mode</label>
-                    <select value={eventForm.mode} onChange={(e) => setEventForm({ ...eventForm, mode: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none">
+                    <select value={eventForm.mode} onChange={(e) => setEventForm({ ...eventForm, mode: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]">
                       <option value="online">Online</option>
                       <option value="offline">Offline</option>
                       <option value="hybrid">Hybrid</option>
@@ -1590,25 +1590,25 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Max Capacity</label>
-                    <input type="number" value={eventForm.maxParticipants} onChange={(e) => setEventForm({ ...eventForm, maxParticipants: Number(e.target.value) })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                    <input type="number" value={eventForm.maxParticipants} onChange={(e) => setEventForm({ ...eventForm, maxParticipants: Number(e.target.value) })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Start Date & Time</label>
-                    <input type="datetime-local" value={eventForm.startDate} onChange={(e) => setEventForm({ ...eventForm, startDate: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                    <input type="datetime-local" value={eventForm.startDate} onChange={(e) => setEventForm({ ...eventForm, startDate: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">End Date & Time</label>
-                    <input type="datetime-local" value={eventForm.endDate} onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                    <input type="datetime-local" value={eventForm.endDate} onChange={(e) => setEventForm({ ...eventForm, endDate: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                   </div>
                 </div>
 
                 {/* Location Presets & Coordinates */}
                 <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl space-y-3 border border-slate-200 dark:border-slate-700">
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-emerald-700 dark:text-emerald-400">3D Earth Globe Coordinates</span>
+                    <span className="font-bold text-[#04AA6D] dark:text-emerald-400">3D Earth Globe Coordinates</span>
                     <select
                       onChange={(e) => {
                         const val = e.target.value;
@@ -1639,7 +1639,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                           }));
                         }
                       }}
-                      className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-300 outline-none"
+                      className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-[#04AA6D]"
                     >
                       <option value="">-- Quick Select Globe Location --</option>
                       <option value="San Francisco, CA">San Francisco, USA (37.77, -122.41)</option>
@@ -1660,19 +1660,19 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   <div className="grid grid-cols-4 gap-2">
                     <div>
                       <label className="font-bold text-slate-600 dark:text-slate-400">City</label>
-                      <input type="text" value={eventForm.city} onChange={(e) => setEventForm({ ...eventForm, city: e.target.value })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none" />
+                      <input type="text" value={eventForm.city} onChange={(e) => setEventForm({ ...eventForm, city: e.target.value })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-[#04AA6D]" />
                     </div>
                     <div>
                       <label className="font-bold text-slate-600 dark:text-slate-400">Country</label>
-                      <input type="text" value={eventForm.country} onChange={(e) => setEventForm({ ...eventForm, country: e.target.value })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none" />
+                      <input type="text" value={eventForm.country} onChange={(e) => setEventForm({ ...eventForm, country: e.target.value })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-[#04AA6D]" />
                     </div>
                     <div>
                       <label className="font-bold text-slate-600 dark:text-slate-400">Latitude</label>
-                      <input type="number" step="any" value={eventForm.latitude} onChange={(e) => setEventForm({ ...eventForm, latitude: Number(e.target.value) })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-mono" />
+                      <input type="number" step="any" value={eventForm.latitude} onChange={(e) => setEventForm({ ...eventForm, latitude: Number(e.target.value) })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-mono focus:border-[#04AA6D]" />
                     </div>
                     <div>
                       <label className="font-bold text-slate-600 dark:text-slate-400">Longitude</label>
-                      <input type="number" step="any" value={eventForm.longitude} onChange={(e) => setEventForm({ ...eventForm, longitude: Number(e.target.value) })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-mono" />
+                      <input type="number" step="any" value={eventForm.longitude} onChange={(e) => setEventForm({ ...eventForm, longitude: Number(e.target.value) })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-mono focus:border-[#04AA6D]" />
                     </div>
                   </div>
                 </div>
@@ -1680,27 +1680,27 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Speaker / Host Name</label>
-                    <input type="text" value={eventForm.speakerName} onChange={(e) => setEventForm({ ...eventForm, speakerName: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" />
+                    <input type="text" value={eventForm.speakerName} onChange={(e) => setEventForm({ ...eventForm, speakerName: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
                   </div>
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Prize Pool / Reward</label>
-                    <input type="text" value={eventForm.prizePool} onChange={(e) => setEventForm({ ...eventForm, prizePool: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" placeholder="e.g. $10,000 Cash or Free Certificates" />
+                    <input type="text" value={eventForm.prizePool} onChange={(e) => setEventForm({ ...eventForm, prizePool: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="e.g. $10,000 Cash or Free Certificates" />
                   </div>
                 </div>
 
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Meeting / Livestream URL</label>
-                  <input type="url" value={eventForm.meetingUrl} onChange={(e) => setEventForm({ ...eventForm, meetingUrl: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none" placeholder="https://meet.google.com/..." />
+                  <input type="url" value={eventForm.meetingUrl} onChange={(e) => setEventForm({ ...eventForm, meetingUrl: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="https://meet.google.com/..." />
                 </div>
 
                 <div className="flex items-center gap-2 pt-2">
-                  <input type="checkbox" id="eventPub" checked={eventForm.isPublished} onChange={(e) => setEventForm({ ...eventForm, isPublished: e.target.checked })} />
-                  <label htmlFor="eventPub" className="font-bold text-slate-700 dark:text-slate-300">Publish Immediately on 3D Earth Globe & User Events Page</label>
+                  <input type="checkbox" id="eventPub" checked={eventForm.isPublished} onChange={(e) => setEventForm({ ...eventForm, isPublished: e.target.checked })} className="accent-[#04AA6D] cursor-pointer" />
+                  <label htmlFor="eventPub" className="font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Publish Immediately on 3D Earth Globe & User Events Page</label>
                 </div>
 
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
-                  <button type="button" onClick={() => setIsEventModalOpen(false)} className="px-4 py-2 border rounded-xl text-slate-600 font-bold">Cancel</button>
-                  <button type="submit" className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl font-bold">Save Event</button>
+                  <button type="button" onClick={() => setIsEventModalOpen(false)} className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-bold cursor-pointer">Cancel</button>
+                  <button type="submit" className="px-4 py-2 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl font-bold cursor-pointer">Save Event</button>
                 </div>
               </form>
             </motion.div>
