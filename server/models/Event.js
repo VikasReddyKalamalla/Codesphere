@@ -243,4 +243,4 @@ eventSchema.index({ latitude: 1, longitude: 1 });
 eventSchema.index({ isFeatured: 1, isTrending: 1 });
 eventSchema.index({ title: 'text', description: 'text', tags: 'text', companyName: 'text', location: 'text' });
 
-module.exports = mongoose.model('Event', eventSchema);
+module.exports = mongoose.models.Event || mongoose.model('Event', eventSchema);

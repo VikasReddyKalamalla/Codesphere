@@ -204,8 +204,10 @@ const createEvent = async (body, userId) => {
     latitude,
     longitude,
     organizer: userId,
-    isPublished: typeof body.isPublished !== 'undefined' ? body.isPublished : true,
-    source: body.source || 'user_created',
+    source: body.source || body.registrationSource || 'internal',
+    registrationSource: body.registrationSource || body.source || 'official',
+    registrationUrl: body.registrationUrl || body.externalUrl || '',
+    externalUrl: body.externalUrl || body.registrationUrl || '',
   });
 
   if (event.category) {
