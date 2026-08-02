@@ -1,3 +1,4 @@
+// CodeSphere Express Core App v1.0.7 - Auto sanitize event source & schema reload
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
