@@ -628,7 +628,7 @@ const resolveCoordinates = (city = '', country = '', title = '', id = '') => {
 // ─── GET GLOBE EVENTS (All Published Admin & Community Events from MongoDB) ──
 const getGlobeEvents = async () => {
   const events = await Event.find({ isPublished: true })
-    .select('_id title slug eventType mode categoryName categoryColor country city latitude longitude startDate endDate registeredParticipants maxParticipants bannerImage thumbnail companyName organizer prizePool isFeatured')
+    .select('_id title slug eventType mode categoryName categoryColor country city latitude longitude startDate endDate registeredParticipants maxParticipants bannerImage thumbnail companyName organizer prizePool isFeatured registrationUrl externalUrl registrationSource meetingUrl source')
     .populate('organizer', 'fullName avatar')
     .lean();
 
@@ -670,6 +670,10 @@ const getGlobeEvents = async () => {
       organizerName: ev.organizer?.fullName || 'CodeSphere Admin',
       prizePool: ev.prizePool || '$0',
       isFeatured: Boolean(ev.isFeatured),
+      registrationUrl: ev.registrationUrl || ev.externalUrl || '',
+      externalUrl: ev.externalUrl || ev.registrationUrl || '',
+      registrationSource: ev.registrationSource || ev.source || 'official',
+      meetingUrl: ev.meetingUrl || '',
     };
   });
 };

@@ -104,6 +104,17 @@ export const Events = () => {
   const handleRegister = (event) => {
     const isRegistered = userRegistrations.includes(event._id || event.id);
     dispatch(toggleRegistrationThunk(event._id || event.id, isRegistered));
+
+    const targetUrl = event.registrationUrl || event.externalUrl || event.url || event.registrationLink;
+    if (targetUrl) {
+      const sourceName = (event.registrationSource || event.source || 'official').toUpperCase();
+      toast.success(`Redirecting to ${sourceName} official registration portal...`);
+      setTimeout(() => {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      }, 500);
+    } else {
+      toast.success(isRegistered ? 'Registration cancelled' : 'Successfully registered on CodeSphere!');
+    }
   };
 
   const handleCreateSubmit = (newEventData) => {

@@ -238,6 +238,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
     mode: 'online',
     startDate: '',
     endDate: '',
+    registrationUrl: '',
+    registrationSource: 'unstop',
     meetingUrl: '',
     maxParticipants: 100,
     speakerName: 'Lead Tech Instructor',
@@ -1145,6 +1147,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
                                 mode: item.mode || 'online',
                                 startDate: item.startDate ? new Date(item.startDate).toISOString().slice(0, 16) : '',
                                 endDate: item.endDate ? new Date(item.endDate).toISOString().slice(0, 16) : '',
+                                registrationUrl: item.registrationUrl || item.externalUrl || item.registrationLink || '',
+                                registrationSource: item.registrationSource || item.source || 'unstop',
                                 meetingUrl: item.meetingUrl || item.meetingLink || '',
                                 maxParticipants: item.maxParticipants || 100,
                                 speakerName: item.speakerName || item.speakers?.[0]?.name || 'Instructor',
@@ -1691,6 +1695,34 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Prize Pool / Reward</label>
                     <input type="text" value={eventForm.prizePool} onChange={(e) => setEventForm({ ...eventForm, prizePool: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="e.g. $10,000 Cash or Free Certificates" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="md:col-span-2">
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Official Registration / Unstop / Website Link *</label>
+                    <input
+                      type="url"
+                      value={eventForm.registrationUrl}
+                      onChange={(e) => setEventForm({ ...eventForm, registrationUrl: e.target.value })}
+                      className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]"
+                      placeholder="e.g. https://unstop.com/hackathons/... or https://official-event.com/register"
+                    />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Platform Provider</label>
+                    <select
+                      value={eventForm.registrationSource}
+                      onChange={(e) => setEventForm({ ...eventForm, registrationSource: e.target.value })}
+                      className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]"
+                    >
+                      <option value="unstop">Unstop</option>
+                      <option value="official">Official Website</option>
+                      <option value="devpost">Devpost</option>
+                      <option value="eventbrite">Eventbrite</option>
+                      <option value="google_forms">Google Forms</option>
+                      <option value="internal">CodeSphere Direct</option>
+                    </select>
                   </div>
                 </div>
 

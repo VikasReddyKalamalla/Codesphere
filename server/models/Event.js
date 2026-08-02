@@ -28,8 +28,11 @@ const eventSchema = new mongoose.Schema(
     },
     companyName: { type: String, default: 'CodeSphere Partner', trim: true },
     companyLogo: { type: String, default: '' },
-    source:      { type: String, default: 'internal', enum: ['internal', 'github', 'devpost', 'mlh', 'unstop', 'hackerearth', 'meetup', 'eventbrite', 'google', 'microsoft', 'aws', 'meta', 'apple'] },
+    source:      { type: String, default: 'internal' },
     externalUrl: { type: String, default: '' },
+    registrationUrl: { type: String, default: '', trim: true },
+    registrationSource: { type: String, default: 'official', trim: true },
+    meetingUrl:  { type: String, default: '', trim: true },
 
     // ─── Classification ───────────────────────────────────────────────────────
     category: {

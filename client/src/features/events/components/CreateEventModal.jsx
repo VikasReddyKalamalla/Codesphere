@@ -24,6 +24,8 @@ export const CreateEventModal = ({ onClose, onSubmit }) => {
     bannerImage: 'https://images.unsplash.com/photo-1515187029135-18ee286d815b?w=1200',
     tags: 'react, ai, cloud, hackathon',
     companyName: 'CodeSphere Partner',
+    registrationUrl: '',
+    registrationSource: 'unstop',
   });
 
   const handleChange = (e) => {
@@ -193,6 +195,36 @@ export const CreateEventModal = ({ onClose, onSubmit }) => {
                   onChange={handleChange}
                   className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#04AA6D] font-mono"
                 />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="md:col-span-2 flex flex-col gap-1.5">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Official Registration / Unstop / Website Link *</label>
+                <input
+                  type="url"
+                  name="registrationUrl"
+                  placeholder="e.g., https://unstop.com/hackathons/... or https://official-event.com/register"
+                  value={formData.registrationUrl}
+                  onChange={handleChange}
+                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#04AA6D]"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="font-bold text-slate-700 dark:text-slate-300">Platform Provider</label>
+                <select
+                  name="registrationSource"
+                  value={formData.registrationSource}
+                  onChange={handleChange}
+                  className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-slate-900 dark:text-slate-100 focus:outline-none focus:border-[#04AA6D]"
+                >
+                  <option value="unstop">Unstop</option>
+                  <option value="official">Official Website</option>
+                  <option value="devpost">Devpost</option>
+                  <option value="eventbrite">Eventbrite</option>
+                  <option value="google_forms">Google Forms</option>
+                  <option value="internal">CodeSphere Direct</option>
+                </select>
               </div>
             </div>
 
