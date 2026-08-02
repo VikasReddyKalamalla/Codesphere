@@ -1069,6 +1069,9 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   mode: 'online',
                   startDate: now.toISOString().slice(0, 16),
                   endDate: tomorrow.toISOString().slice(0, 16),
+                  registrationUrl: '',
+                  registrationSource: 'unstop',
+                  source: 'internal',
                   meetingUrl: '',
                   maxParticipants: 100,
                   speakerName: 'Lead Tech Instructor',
@@ -1704,7 +1707,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                     <label className="font-bold text-slate-700 dark:text-slate-300">Official Registration / Unstop / Website Link *</label>
                     <input
                       type="url"
-                      value={eventForm.registrationUrl}
+                      value={eventForm.registrationUrl || ''}
                       onChange={(e) => setEventForm({ ...eventForm, registrationUrl: e.target.value })}
                       className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]"
                       placeholder="e.g. https://unstop.com/hackathons/... or https://official-event.com/register"
@@ -1713,7 +1716,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   <div>
                     <label className="font-bold text-slate-700 dark:text-slate-300">Platform Provider</label>
                     <select
-                      value={eventForm.registrationSource}
+                      value={eventForm.registrationSource || 'unstop'}
                       onChange={(e) => setEventForm({ ...eventForm, registrationSource: e.target.value })}
                       className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]"
                     >
@@ -1729,7 +1732,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
 
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Meeting / Livestream URL</label>
-                  <input type="url" value={eventForm.meetingUrl} onChange={(e) => setEventForm({ ...eventForm, meetingUrl: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="https://meet.google.com/..." />
+                  <input type="url" value={eventForm.meetingUrl || ''} onChange={(e) => setEventForm({ ...eventForm, meetingUrl: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="https://meet.google.com/..." />
                 </div>
 
                 <div className="flex items-center gap-2 pt-2">

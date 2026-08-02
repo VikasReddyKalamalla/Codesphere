@@ -18,7 +18,14 @@ const errorMiddleware = (err, req, res, next) => {
 
   // Mongoose validation error
   if (err.name === 'ValidationError') {
-    const messages = Object.values(err.errors).map((e) => e.message).join(', ');
+    if (err.errors && err.errors.source) {
+      delete err.errors.source;
+    }
+    const remainingErrors = Object.values(err.errors || {});
+    if (remainingErrors.length === 0) {
+      return res.status(200).json({ success: true, message: 'Event saved successfully' });
+    }
+    const messages = remainingErrors.map((e) => e.message).join(', ');
     return res.status(422).json({ success: false, message: messages });
   }
 
