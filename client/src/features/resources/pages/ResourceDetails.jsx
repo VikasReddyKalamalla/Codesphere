@@ -277,7 +277,6 @@ export const ResourceDetails = () => {
           <div className="flex border-b border-slate-200 dark:border-slate-800 gap-2 no-scrollbar overflow-x-auto">
             {[
               { id: 'preview', label: 'Interactive Preview & Code' },
-              { id: 'description', label: 'Detailed Overview & Notes' },
               { id: 'discussion', label: `Community Discussion (${commentsCount})` },
             ].map(t => (
               <button
@@ -429,25 +428,7 @@ export const ResourceDetails = () => {
             </div>
           )}
 
-          {/* TAB 2: DETAILED OVERVIEW & NOTES */}
-          {activeTab === 'description' && (
-            <div className="flex flex-col gap-4 p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 shadow-sm">
-              <h3 className="text-xs font-black uppercase tracking-widest text-[#04AA6D] dark:text-emerald-400 font-mono">Detailed Knowledge Notes & Architecture Body</h3>
-              <div className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-line font-sans space-y-2">
-                <p className="font-semibold text-sm text-slate-900 dark:text-white">{resource.description}</p>
-                {resource.markdownContent && (
-                  <div className="mt-4 p-4 rounded-2xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-slate-800 dark:text-slate-200">
-                    {resource.markdownContent}
-                  </div>
-                )}
-                {!resource.markdownContent && (
-                  <p className="text-slate-500 italic mt-2">
-                    This verified CodeSphere resource provides comprehensive reference documentation, step-by-step guides, and reusable implementation patterns.
-                  </p>
-                )}
-              </div>
-            </div>
-          )}
+
 
           {/* TAB 3: COMMUNITY DISCUSSION */}
           {activeTab === 'discussion' && (
