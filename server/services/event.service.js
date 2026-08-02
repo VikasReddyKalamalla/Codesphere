@@ -175,10 +175,9 @@ const createEvent = async (body, userId) => {
     if (!categoryExists) throw createError('Category not found', 404);
   }
 
-  // Auto-migrate legacy document source value if needed
-  if (!body.source || body.source === 'user_created') {
-    body.source = 'internal';
-  }
+  // Force sanitize source field and remove legacy key
+  delete body.source;
+  const cleanSource = 'internal';
 
   const event = await Event.create({
     ...body,
@@ -189,7 +188,7 @@ const createEvent = async (body, userId) => {
     latitude,
     longitude,
     organizer: userId,
-    source: body.source || 'internal',
+    source: cleanSource,
     registrationSource: body.registrationSource || 'official',
     registrationUrl: body.registrationUrl || body.externalUrl || '',
     externalUrl: body.externalUrl || body.registrationUrl || '',
@@ -216,11 +215,8 @@ const updateEvent = async (id, body, userId, userRole) => {
   }
 
   delete body.organizer;
-
-  // Sanitize source field
-  if (!body.source || body.source === 'user_created') {
-    body.source = 'internal';
-  }
+  delete body.source;
+  body.source = 'internal';
 
   // Handle dates if updated
   if (body.startDate) body.startDate = new Date(body.startDate);
