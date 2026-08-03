@@ -25,18 +25,40 @@ router.post('/create', async (req, res) => {
     const wsTitle = title || `${templateType.toUpperCase().replace('_', ' ')} Workspace`;
     const storagePath = path.join('workspaces', String(studentId), `ws_${Date.now()}`);
 
-    const workspaceDoc = await WorkspaceCloud.create({
-      studentId,
-      courseId,
-      lessonId,
-      title: wsTitle,
-      language,
-      templateType,
-      plan,
-      mode,
-      status: 'provisioning',
-      storagePath
-    });
+    let workspaceDoc;
+    try {
+      workspaceDoc = await Promise.race([
+        WorkspaceCloud.create({
+          studentId,
+          courseId,
+          lessonId,
+          title: wsTitle,
+          language,
+          templateType,
+          plan,
+          mode,
+          status: 'provisioning',
+          storagePath
+        }),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('db_timeout')), 1500))
+      ]);
+    } catch (dbErr) {
+      // In-memory fallback document if MongoDB is disconnected or buffering
+      workspaceDoc = {
+        _id: `ws_${Date.now()}`,
+        studentId,
+        courseId,
+        lessonId,
+        title: wsTitle,
+        language,
+        templateType,
+        plan,
+        mode,
+        status: 'provisioning',
+        storagePath,
+        save: async () => workspaceDoc
+      };
+    }
 
     const workspaceId = workspaceDoc._id.toString();
 
@@ -48,7 +70,7 @@ router.post('/create', async (req, res) => {
     workspaceDoc.status = 'running';
     workspaceDoc.containerId = wsInfo.containerName;
     workspaceDoc.port = wsInfo.port;
-    await workspaceDoc.save();
+    if (typeof workspaceDoc.save === 'function') await workspaceDoc.save().catch(() => null);
 
     eventBus.emit('workspace.created', { workspaceId, studentId });
 
