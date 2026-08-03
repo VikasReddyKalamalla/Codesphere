@@ -58,9 +58,9 @@ const CreateWorkspacePage = lazy(() => import('@features/codex/pages/CreateWorks
 const WorkspacePage      = lazy(() => import('@features/codex/pages/WorkspacePage.jsx'));
 const SandboxPage        = lazy(() => import('@features/sandbox/pages/SandboxPage.jsx'));
 const SandboxProjectPage = lazy(() => import('@features/sandbox/pages/SandboxProjectPage.jsx'));
-const VSCodeWebIDE       = lazy(() => import('@features/workspace/pages/CloudWorkspaceView.jsx'));
+import CloudWorkspaceView from '@features/workspace/pages/CloudWorkspaceView.jsx';
+const VSCodeWebIDE       = CloudWorkspaceView;
 const WebIDEPage         = lazy(() => import('@features/ide/WebIDE.jsx'));
-const CloudWorkspaceView = lazy(() => import('@features/workspace/pages/CloudWorkspaceView.jsx'));
 const TestsPage          = lazy(() => import('@features/tests/pages/TestsPage.jsx'));
 const TestDetailPage     = lazy(() => import('@features/tests/pages/TestDetailPage.jsx'));
 const TestAttemptPage    = lazy(() => import('@features/tests/pages/TestAttemptPage.jsx'));
