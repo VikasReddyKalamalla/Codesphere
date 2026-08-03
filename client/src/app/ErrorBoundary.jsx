@@ -8,11 +8,16 @@ export class ErrorBoundary extends Component {
   }
 
   componentDidCatch(error, errorInfo) {
-    console.error('ErrorBoundary caught a runtime crash:', error, errorInfo);
+    const safeErrorMsg = error?.message ? String(error.message) : (typeof error === 'object' ? JSON.stringify(error) : String(error));
+    console.error('ErrorBoundary caught a runtime crash:', safeErrorMsg);
   }
 
   render() {
     if (this.state.hasError) {
+      const errorText = this.state.error?.message 
+        ? String(this.state.error.message) 
+        : (typeof this.state.error === 'object' ? (JSON.stringify(this.state.error) || 'Application Error') : String(this.state.error || 'Something went wrong.'));
+
       return (
         <div className="min-h-screen flex flex-col justify-center items-center p-6 bg-slate-950 text-white select-none">
           <div className="w-16 h-16 rounded-2xl bg-rose-500/10 border border-rose-500/25 flex items-center justify-center text-rose-500 mb-6">
@@ -21,7 +26,7 @@ export class ErrorBoundary extends Component {
             </svg>
           </div>
           <h2 className="text-lg font-black tracking-tight text-white">Application Crash Caught</h2>
-          <p className="text-xs text-slate-400 mt-2 max-w-sm text-center leading-relaxed">{this.state.error?.message || 'Something went wrong.'}</p>
+          <p className="text-xs text-slate-400 mt-2 max-w-sm text-center leading-relaxed font-mono bg-slate-900 p-2 rounded border border-slate-800 break-words">{errorText}</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-6 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-indigo-600/10"
