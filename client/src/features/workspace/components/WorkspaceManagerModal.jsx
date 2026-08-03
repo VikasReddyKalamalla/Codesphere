@@ -25,7 +25,7 @@ export const WorkspaceManagerModal = ({ isOpen, onClose, currentWorkspaceId, onS
         setWorkspaces(res.data);
       }
     } catch (err) {
-      console.error('Failed to load workspaces:', err);
+      console.error('Failed to load workspaces:', err?.message || String(err));
     } finally {
       setLoading(false);
     }

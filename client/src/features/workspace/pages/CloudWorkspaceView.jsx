@@ -80,7 +80,7 @@ export const CloudWorkspaceView = () => {
           const lData = res.data?.data || res.data;
           if (lData) setLesson(lData);
         })
-        .catch(err => console.error('Failed to fetch lesson:', err));
+        .catch(err => console.error('Failed to fetch lesson:', err?.message || String(err)));
     }
   }, [lessonId]);
 
@@ -123,7 +123,7 @@ export const CloudWorkspaceView = () => {
         setStatus('error');
       }
     } catch (err) {
-      console.error('Workspace init error:', err);
+      console.error('Workspace init error:', err?.message || String(err));
       setWorkspaceData({
         workspace: { _id: wsId, language: 'javascript', plan: 'free', mode: 'learning' },
         proxyUrl: `/workspace-proxy/${wsId}/`
