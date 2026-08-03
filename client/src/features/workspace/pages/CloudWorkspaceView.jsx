@@ -630,16 +630,38 @@ export const CloudWorkspaceView = () => {
             </div>
           )}
 
-          {/* VS Code Proxy Iframe Tab */}
-          {activeTab === 'ide' && ideProxySrc && (
-            <div className="flex-1 flex flex-col h-full relative">
-              <iframe
-                ref={iframeRef}
-                src={ideProxySrc}
-                className="w-full h-full border-0 bg-black"
-                title="VS Code Proxy"
-                allow="clipboard-read; clipboard-write; microphone; camera"
-              />
+          {/* VS Code Proxy Tab */}
+          {activeTab === 'ide' && (
+            <div className="flex-1 flex flex-col items-center justify-center p-8 bg-black text-center select-none">
+              <div className="max-w-md w-full bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-2xl space-y-4">
+                <div className="w-12 h-12 rounded-xl bg-white text-black flex items-center justify-center mx-auto">
+                  <Code2 className="w-6 h-6" />
+                </div>
+
+                <div>
+                  <h3 className="text-base font-extrabold text-white">Native VS Code Proxy Experience</h3>
+                  <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
+                    To use native VS Code inside this browser tab, install <code className="bg-black px-1.5 py-0.5 rounded text-white font-mono">code-server</code> on your Mac host.
+                  </p>
+                </div>
+
+                <div className="bg-black border border-zinc-800 rounded-lg p-3 text-left font-mono text-[11px] space-y-2">
+                  <div className="text-zinc-400 text-[10px] uppercase font-bold">1-Click Mac Terminal Command:</div>
+                  <code className="block text-zinc-100 select-all bg-zinc-950 p-2 rounded border border-zinc-800">
+                    brew install code-server && code-server --port 8100 --auth none
+                  </code>
+                </div>
+
+                <div className="pt-2 flex flex-col gap-2">
+                  <button
+                    onClick={() => setActiveTab('monaco')}
+                    className="w-full py-2 bg-white hover:bg-zinc-200 text-black rounded-md text-xs font-bold transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Monitor className="w-4 h-4" />
+                    <span>Switch to Built-in Monaco Cloud Editor (Instant)</span>
+                  </button>
+                </div>
+              </div>
             </div>
           )}
 
