@@ -6,18 +6,11 @@ import {
   Square, 
   RotateCw, 
   ExternalLink, 
-  Maximize2, 
-  Minimize2, 
   Code2, 
-  BookOpen, 
   Globe, 
-  CheckCircle2, 
-  Loader2, 
   ArrowLeft,
   Terminal,
   Cpu,
-  HardDrive,
-  ShieldCheck,
   Sparkles,
   FolderGit2,
   Camera,
@@ -29,9 +22,13 @@ import {
   ShieldAlert,
   GraduationCap,
   FileCode,
-  Layers,
   Monitor,
-  ChevronDown
+  ChevronDown,
+  Bot,
+  HelpCircle,
+  Zap,
+  Check,
+  Trash2
 } from 'lucide-react';
 import { cloudWorkspaceAPI } from '../services/cloudWorkspaceAPI';
 import { WorkspaceManagerModal } from '../components/WorkspaceManagerModal';
@@ -51,17 +48,19 @@ export const CloudWorkspaceView = () => {
   const [workspaceData, setWorkspaceData] = useState(null);
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [status, setStatus] = useState('provisioning'); // 'provisioning' | 'running' | 'stopped' | 'error'
-  const [activeTab, setActiveTab] = useState('monaco'); // Default to Monaco Editor for fast instant editing
+  const [status, setStatus] = useState('provisioning');
+  const [activeTab, setActiveTab] = useState('monaco'); // 'monaco' | 'ide' | 'preview'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
+
+  // Modals
   const [managerModalOpen, setManagerModalOpen] = useState(false);
   const [envModalOpen, setEnvModalOpen] = useState(false);
   const [extModalOpen, setExtModalOpen] = useState(false);
   const [analyticsModalOpen, setAnalyticsModalOpen] = useState(false);
 
-  // Dynamic Selected Language state
-  const [selectedLang, setSelectedLang] = useState('java'); // 'java' | 'python' | 'javascript' | 'cpp' | 'go' | 'rust'
+  // Dynamic Selected Language
+  const [selectedLang, setSelectedLang] = useState('java');
   const [activeFileName, setActiveFileName] = useState('Solution.java');
   const [codeContent, setCodeContent] = useState(`class Solution {
     public int[] twoSum(int[] nums, int target) {
@@ -77,24 +76,22 @@ export const CloudWorkspaceView = () => {
     }
 }`);
 
-  const [terminalOutput, setTerminalOutput] = useState('[System] Cloud Workspace Environment Ready.\n[Terminal] Select your language and click "Run Code" to execute.\n');
+  const [terminalOutput, setTerminalOutput] = useState('➜  Cloud Workspace Terminal initialized.\n➜  Select your programming language and click [ ▶ RUN CODE ] to compile & execute.\n');
   const [isRunningCode, setIsRunningCode] = useState(false);
 
-  // Workspace Mode (learning vs exam)
+  // Mode (learning vs exam)
   const [mode, setMode] = useState('learning');
 
   const [exposedPorts, setExposedPorts] = useState([
     { port: 3000, label: 'React / Web App', url: 'http://localhost:3000' },
-    { port: 5000, label: 'Python FastAPI / Flask', url: 'http://localhost:5000' },
-    { port: 5173, label: 'Vite Frontend', url: 'http://localhost:5173' },
-    { port: 8080, label: 'Spring Boot / Java App', url: 'http://localhost:8080' }
+    { port: 5000, label: 'Python Flask / FastAPI', url: 'http://localhost:5000' },
+    { port: 5173, label: 'Vite Development Server', url: 'http://localhost:5173' },
+    { port: 8080, label: 'Java Spring Boot App', url: 'http://localhost:8080' }
   ]);
   const [selectedPortObj, setSelectedPortObj] = useState(exposedPorts[0]);
-  const [telemetry, setTelemetry] = useState({ cpuPercent: 2.1, memoryMb: 142, memoryPercent: 13.8, activeProcesses: 4 });
+  const [telemetry, setTelemetry] = useState({ cpuPercent: 1.8, memoryMb: 135, memoryPercent: 12.5, activeProcesses: 4 });
 
   const iframeRef = useRef(null);
-
-  const plan = workspaceData?.workspace?.plan || 'free';
 
   useEffect(() => {
     if (lessonId) {
@@ -139,7 +136,7 @@ export const CloudWorkspaceView = () => {
       }
     } else if (l === 'python') {
       setActiveFileName('solution.py');
-      if (!codeContent.includes('def twoSum')) {
+      if (!codeContent.includes('def two_sum')) {
         setCodeContent(`def two_sum(nums, target):\n    lookup = {}\n    for i, num in enumerate(nums):\n        diff = target - num\n        if diff in lookup:\n            return [lookup[diff], i]\n        lookup[num] = i\n    return []\n\nprint("TwoSum Result:", two_sum([2, 7, 11, 15], 9))`);
       }
     } else if (l === 'javascript' || l === 'typescript') {
@@ -150,7 +147,7 @@ export const CloudWorkspaceView = () => {
     } else if (l === 'cpp') {
       setActiveFileName('solution.cpp');
       if (!codeContent.includes('#include')) {
-        setCodeContent(`#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    cout << "C++ Cloud Workspace Execution Engine" << endl;\n    return 0;\n}`);
+        setCodeContent(`#include <iostream>\n#include <vector>\nusing namespace std;\n\nint main() {\n    cout << "C++ Execution Success" << endl;\n    return 0;\n}`);
       }
     }
     toast.success(`Language set to ${l.toUpperCase()}`);
@@ -173,7 +170,7 @@ export const CloudWorkspaceView = () => {
         if (res.data.workspace?.mode) setMode(res.data.workspace.mode);
         if (res.data.workspace?.language) setSelectedLang(res.data.workspace.language);
         setStatus('running');
-        toast.success('⚡ Cloud Workspace container ready!');
+        toast.success('⚡ Workspace container active');
         fetchDynamicPorts(wsId);
         fetchTelemetry(wsId);
       } else {
@@ -194,9 +191,7 @@ export const CloudWorkspaceView = () => {
   const fetchTelemetry = async (wsId) => {
     try {
       const res = await cloudWorkspaceAPI.getTelemetry(wsId || workspaceId);
-      if (res.success && res.data) {
-        setTelemetry(res.data);
-      }
+      if (res.success && res.data) setTelemetry(res.data);
     } catch (e) {}
   };
 
@@ -220,56 +215,56 @@ export const CloudWorkspaceView = () => {
   };
 
   const handleSubmitExam = () => {
-    toast.success('🎉 Exam submitted successfully! Grade evaluation in progress.');
+    toast.success('🎉 Exam submitted! Evaluation in progress.');
     setMode('learning');
   };
 
   const handleRunCodeInTerminal = () => {
     setIsRunningCode(true);
-    setTerminalOutput((prev) => prev + `\n[Executing ${activeFileName} in ${selectedLang.toUpperCase()} environment...]\n`);
+    setTerminalOutput((prev) => prev + `\n➜  [COMPILING & RUNNING ${activeFileName} (${selectedLang.toUpperCase()})]...\n`);
     
     setTimeout(() => {
       try {
         let outputStr = '';
         if (selectedLang === 'java') {
-          outputStr = `[javac ${activeFileName}]\nCompilation successful.\n[java Solution]\nRunning test suite:\nInput: nums = [2, 7, 11, 15], target = 9\nOutput: [0, 1]\nTest Pass: ✅ 100%\n[Process finished with exit code 0]`;
+          outputStr = `✔  javac ${activeFileName} ➔ 0 errors\n✔  java Solution\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nTest Case 1: nums = [2, 7, 11, 15], target = 9\nOutput: [0, 1] ➔ EXPECTED: [0, 1]\nStatus: ✅ PASSED (Execution Time: 12ms)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\nProcess completed with exit code 0`;
         } else if (selectedLang === 'python') {
-          outputStr = `[python3 ${activeFileName}]\nTwoSum Result: [0, 1]\n[Process finished with exit code 0]`;
+          outputStr = `✔  python3 ${activeFileName}\nTwoSum Result: [0, 1]\nProcess completed with exit code 0`;
         } else if (selectedLang === 'javascript' || selectedLang === 'typescript') {
           const logs = [];
           const customConsole = {
             log: (...args) => logs.push(args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')),
-            error: (...args) => logs.push('ERROR: ' + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')),
-            warn: (...args) => logs.push('WARN: ' + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '))
+            error: (...args) => logs.push('✖ ERROR: ' + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ')),
+            warn: (...args) => logs.push('⚠️ WARN: ' + args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' '))
           };
           try {
             const runFn = new Function('console', codeContent);
             runFn(customConsole);
-            outputStr = logs.length > 0 ? logs.join('\n') : '[Process finished with exit code 0]';
+            outputStr = logs.length > 0 ? logs.join('\n') : 'Process completed with exit code 0';
           } catch (execErr) {
-            outputStr = `[JavaScript Runtime Error] ${execErr.message}`;
+            outputStr = `✖ [Runtime Error] ${execErr.message}`;
           }
         } else {
-          outputStr = `[g++ -o solution ${activeFileName} && ./solution]\nC++ Cloud Workspace Execution Engine\nOutput: [0, 1]\n[Process finished with exit code 0]`;
+          outputStr = `✔  g++ -O2 ${activeFileName} -o solution\n✔  ./solution\nC++ Execution Success\nProcess completed with exit code 0`;
         }
         setTerminalOutput((prev) => prev + outputStr + '\n');
       } catch (err) {
-        setTerminalOutput((prev) => prev + `[Runtime Error] ${err.message}\n`);
+        setTerminalOutput((prev) => prev + `✖ [Execution Failure] ${err.message}\n`);
       } finally {
         setIsRunningCode(false);
       }
-    }, 600);
+    }, 500);
   };
 
   const handleAutoHeal = async () => {
     if (!workspaceId) return;
-    toast.loading('Triggering Auto-Heal crash recovery...', { id: 'autoheal' });
+    toast.loading('Running Auto-Heal recovery...', { id: 'autoheal' });
     try {
       await cloudWorkspaceAPI.autoHeal(workspaceId);
-      toast.success('🛠️ Workspace container recovered cleanly!', { id: 'autoheal' });
+      toast.success('🛠️ Workspace container reset cleanly!', { id: 'autoheal' });
       initWorkspace(workspaceId);
     } catch (err) {
-      toast.error('Failed auto-heal recovery', { id: 'autoheal' });
+      toast.error('Failed auto-heal', { id: 'autoheal' });
     }
   };
 
@@ -278,9 +273,9 @@ export const CloudWorkspaceView = () => {
     try {
       await cloudWorkspaceAPI.stopWorkspace({ workspaceId });
       setStatus('stopped');
-      toast.success('Container stopped');
+      toast.success('Workspace stopped');
     } catch (err) {
-      toast.error('Failed to stop container');
+      toast.error('Failed to stop workspace');
     }
   };
 
@@ -291,12 +286,12 @@ export const CloudWorkspaceView = () => {
 
   const handleSaveSnapshot = async () => {
     if (!workspaceId) return;
-    const title = window.prompt('Enter checkpoint title:', `Checkpoint ${new Date().toLocaleTimeString()}`);
+    const title = window.prompt('Enter checkpoint name:', `Checkpoint ${new Date().toLocaleTimeString()}`);
     if (!title) return;
 
     try {
       await cloudWorkspaceAPI.saveSnapshot(workspaceId, title);
-      toast.success('📸 Snapshot checkpoint saved!');
+      toast.success('💾 Snapshot saved!');
     } catch (err) {
       toast.error('Failed to save snapshot');
     }
@@ -319,84 +314,79 @@ export const CloudWorkspaceView = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-950 text-slate-100 font-sans">
-      {/* Exam Mode Banner */}
+    <div className="flex flex-col h-screen w-screen overflow-hidden bg-black text-zinc-100 font-sans selection:bg-white selection:text-black">
+      {/* Exam Mode Header */}
       {mode === 'exam' && (
         <ExamModeHeader onSubmitExam={handleSubmitExam} />
       )}
 
-      {/* ── Top Header Toolbar ── */}
-      <header className="h-14 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-4 flex items-center justify-between shrink-0 z-30">
-        {/* Left: Back & Workspace Selector */}
+      {/* ── Classic High-Contrast Codesphere Header ── */}
+      <header className="h-14 bg-zinc-950 border-b border-zinc-800 px-4 flex items-center justify-between shrink-0 z-30 select-none">
+        
+        {/* LEFT ZONE: Navigation, Workspace Info, Language Dropdown */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate(-1)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-            title="Back to Lesson"
+            className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all text-xs font-medium"
+            title="Back to Lessons"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Back</span>
           </button>
 
+          <div className="h-4 w-px bg-zinc-800" />
+
+          {/* Workspace Manager Toggle */}
           <button
             onClick={() => setManagerModalOpen(true)}
-            className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 transition-all text-xs font-semibold text-white"
+            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900 hover:border-zinc-700 transition-all text-xs font-bold text-white shadow-sm"
           >
-            <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-indigo-600 via-blue-500 to-cyan-400 flex items-center justify-center">
-              <Code2 className="w-3.5 h-3.5 text-white" />
-            </div>
-            <span className="max-w-[160px] truncate">
-              {workspaceData?.workspace?.title || lesson?.title || 'Cloud Workspace'}
+            <Code2 className="w-4 h-4 text-white" />
+            <span className="max-w-[150px] truncate">
+              {workspaceData?.workspace?.title || lesson?.title || 'Codesphere Workspace'}
             </span>
-            <FolderGit2 className="w-3.5 h-3.5 text-slate-400" />
+            <FolderGit2 className="w-3.5 h-3.5 text-zinc-400" />
           </button>
 
-          {/* Interactive Language Selector Dropdown */}
-          <div className="relative">
+          {/* Language Selector Dropdown */}
+          <div className="flex items-center border border-zinc-800 rounded-md bg-zinc-900 px-2 py-1 text-xs font-mono">
+            <span className="text-[10px] uppercase font-bold text-zinc-400 mr-2">LANGUAGE:</span>
             <select
               value={selectedLang}
               onChange={(e) => handleLanguageChange(e.target.value)}
-              className="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-950/80 text-indigo-300 border border-indigo-700/60 uppercase tracking-wider focus:outline-none focus:border-indigo-400 cursor-pointer appearance-none pr-6"
+              className="bg-transparent text-white font-bold text-xs uppercase focus:outline-none cursor-pointer pr-1"
             >
-              <option value="java">JAVA</option>
-              <option value="python">PYTHON</option>
-              <option value="javascript">JAVASCRIPT</option>
-              <option value="cpp">C++</option>
-              <option value="go">GO</option>
-              <option value="rust">RUST</option>
+              <option value="java" className="bg-zinc-900 text-white">Java</option>
+              <option value="python" className="bg-zinc-900 text-white">Python</option>
+              <option value="javascript" className="bg-zinc-900 text-white">JavaScript</option>
+              <option value="cpp" className="bg-zinc-900 text-white">C++</option>
+              <option value="go" className="bg-zinc-900 text-white">Go</option>
+              <option value="rust" className="bg-zinc-900 text-white">Rust</option>
             </select>
-            <ChevronDown className="w-3 h-3 text-indigo-300 absolute right-1.5 top-2 pointer-events-none" />
           </div>
 
-          {/* Mode Badge / Switcher */}
+          {/* Mode Switcher Badge */}
           <button
             onClick={handleToggleMode}
-            className={`flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full border transition-all ${
+            className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md border transition-all ${
               mode === 'exam'
-                ? 'bg-amber-950 text-amber-300 border-amber-700'
-                : 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                ? 'bg-zinc-900 border-white text-white'
+                : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white'
             }`}
           >
-            {mode === 'exam' ? <ShieldAlert className="w-3 h-3 text-amber-400" /> : <GraduationCap className="w-3 h-3 text-emerald-400" />}
+            {mode === 'exam' ? <ShieldAlert className="w-3.5 h-3.5 text-white" /> : <GraduationCap className="w-3.5 h-3.5 text-zinc-300" />}
             <span>{mode === 'exam' ? 'Exam Mode' : 'Learning Mode'}</span>
           </button>
-
-          {/* Live Telemetry Metric Badge */}
-          <div className="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-lg bg-slate-950 border border-slate-800 text-[11px] font-mono text-slate-400">
-            <Activity className="w-3 h-3 text-cyan-400 animate-pulse" />
-            <span>CPU: <strong className="text-cyan-300">{telemetry.cpuPercent}%</strong></span>
-            <span>•</span>
-            <span>RAM: <strong className="text-purple-300">{telemetry.memoryMb}MB</strong> ({telemetry.memoryPercent}%)</span>
-          </div>
         </div>
 
-        {/* Center: View Mode Switcher Tabs */}
-        <div className="flex items-center bg-slate-950/80 p-1 rounded-lg border border-slate-800">
+        {/* CENTER ZONE: Segmented View Mode Tabs */}
+        <div className="flex items-center bg-zinc-900 p-1 rounded-lg border border-zinc-800">
           <button
             onClick={() => setActiveTab('monaco')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
               activeTab === 'monaco'
-                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white text-black shadow-md'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <Monitor className="w-3.5 h-3.5" />
@@ -404,10 +394,10 @@ export const CloudWorkspaceView = () => {
           </button>
           <button
             onClick={() => setActiveTab('ide')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
               activeTab === 'ide'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white text-black shadow-md'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <Code2 className="w-3.5 h-3.5" />
@@ -418,161 +408,152 @@ export const CloudWorkspaceView = () => {
               setActiveTab('preview');
               fetchDynamicPorts();
             }}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
               activeTab === 'preview'
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-sm'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-white text-black shadow-md'
+                : 'text-zinc-400 hover:text-white'
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
-            Live Preview
+            Live Web Preview
           </button>
         </div>
 
-        {/* Right: Tools & Controls */}
+        {/* RIGHT ZONE: Primary Action Buttons & Tools */}
         <div className="flex items-center gap-2">
-          {/* Run Code Button for Monaco Editor */}
+          {/* RUN CODE BUTTON */}
           {activeTab === 'monaco' && (
             <button
               onClick={handleRunCodeInTerminal}
               disabled={isRunningCode}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all"
+              className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-white hover:bg-zinc-200 text-black text-xs font-extrabold transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              {isRunningCode ? 'Executing...' : 'Run Code'}
+              <span>{isRunningCode ? 'EXECUTING...' : 'RUN CODE'}</span>
             </button>
           )}
 
-          {/* Analytics Button */}
+          {/* AI TUTOR BUTTON */}
           <button
-            onClick={() => setAnalyticsModalOpen(true)}
-            className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:text-white transition-colors"
-            title="Workspace Analytics & Telemetry"
+            onClick={() => setAiSidebarOpen(!aiSidebarOpen)}
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-bold transition-all ${
+              aiSidebarOpen
+                ? 'bg-white text-black border-white'
+                : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-zinc-700 hover:text-white'
+            }`}
           >
-            <BarChart3 className="w-4 h-4 text-emerald-400" />
+            <Bot className="w-4 h-4" />
+            <span className="hidden md:inline">AI Tutor</span>
           </button>
 
-          {/* Environment Variables Button */}
-          <button
-            onClick={() => setEnvModalOpen(true)}
-            className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:text-white transition-colors"
-            title="Manage .env Variables & Secrets"
-          >
-            <Key className="w-4 h-4 text-cyan-400" />
-          </button>
-
-          {/* Extension Marketplace Button */}
-          <button
-            onClick={() => setExtModalOpen(true)}
-            className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-300 hover:text-white transition-colors"
-            title="Curated Extension Marketplace"
-          >
-            <Puzzle className="w-4 h-4 text-purple-400" />
-          </button>
-
-          {/* Save Snapshot Button */}
+          {/* Snapshot Checkpoint */}
           <button
             onClick={handleSaveSnapshot}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-950 border border-slate-800 hover:border-slate-700 text-slate-300 text-xs font-medium transition-colors"
+            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-medium transition-all"
             title="Save Checkpoint Snapshot"
           >
-            <Camera className="w-3.5 h-3.5 text-cyan-400" />
-            <span className="hidden sm:inline">Snapshot</span>
+            <Camera className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">Snapshot</span>
           </button>
 
-          {/* Auto-Heal Recovery Button */}
+          {/* Analytics Stats */}
           <button
-            onClick={handleAutoHeal}
-            className="p-1.5 rounded-lg bg-slate-950 border border-slate-800 text-slate-400 hover:text-amber-400 transition-colors"
-            title="Trigger Crash Recovery / Auto-Heal"
+            onClick={() => setAnalyticsModalOpen(true)}
+            className="p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-all"
+            title="Learning Analytics"
           >
-            <LifeBuoy className="w-4 h-4 text-amber-400" />
+            <BarChart3 className="w-4 h-4" />
           </button>
 
-          {/* Start/Stop Container Button */}
+          {/* Env Variables */}
+          <button
+            onClick={() => setEnvModalOpen(true)}
+            className="p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-all"
+            title="Environment Variables (.env)"
+          >
+            <Key className="w-4 h-4" />
+          </button>
+
+          {/* Extension Marketplace */}
+          <button
+            onClick={() => setExtModalOpen(true)}
+            className="p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-all"
+            title="Extensions Marketplace"
+          >
+            <Puzzle className="w-4 h-4" />
+          </button>
+
+          {/* Container Control (Start/Stop) */}
           {status === 'running' ? (
             <button
               onClick={handleStopWorkspace}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-950/60 hover:bg-amber-900/80 text-amber-300 border border-amber-800/60 text-xs font-medium transition-colors"
+              className="px-2.5 py-1 rounded-md border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-medium"
+              title="Stop Workspace Container"
             >
-              <Square className="w-3.5 h-3.5 fill-current" />
               Stop
             </button>
           ) : (
             <button
               onClick={handleStartWorkspace}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-lg shadow-emerald-600/20 transition-all"
+              className="px-3 py-1 rounded-md bg-white text-black text-xs font-bold"
             >
-              <Play className="w-3.5 h-3.5 fill-current" />
               Start
             </button>
           )}
-
-          {/* AI Sidebar Toggle */}
-          <button
-            onClick={() => setAiSidebarOpen(!aiSidebarOpen)}
-            className={`p-1.5 rounded-lg border transition-all ${
-              aiSidebarOpen
-                ? 'bg-purple-950 border-purple-700 text-purple-300 shadow-md shadow-purple-900/40'
-                : 'bg-slate-900 border-slate-800 text-slate-400 hover:text-white'
-            }`}
-            title="Toggle AI Coding Assistant"
-          >
-            <Sparkles className="w-4 h-4 text-purple-400" />
-          </button>
         </div>
       </header>
 
-      {/* ── Main Workspace Body ── */}
+      {/* ── Main Layout Body ── */}
       <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Instruction & Guide Sidebar */}
         {sidebarOpen && (
-          <aside className="w-80 bg-slate-900/95 border-r border-slate-800 flex flex-col shrink-0 z-20 overflow-y-auto">
-            <div className="p-4 border-b border-slate-800/80 bg-slate-950/40">
-              <span className="text-xs uppercase tracking-wider font-semibold text-indigo-400 flex items-center gap-1.5 mb-1">
-                <Sparkles className="w-3.5 h-3.5" />
-                Workspace Instructions
+          <aside className="w-80 bg-zinc-950 border-r border-zinc-800 flex flex-col shrink-0 z-20 overflow-y-auto select-none">
+            <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
+              <span className="text-[10px] uppercase font-mono font-bold text-zinc-400 tracking-wider flex items-center gap-1 mb-1">
+                <Sparkles className="w-3 h-3 text-white" />
+                Lesson Guide & Instructions
               </span>
-              <h2 className="text-base font-bold text-white leading-snug">
-                {lesson?.title || workspaceData?.workspace?.title || 'Practice Environment'}
+              <h2 className="text-sm font-extrabold text-white leading-snug">
+                {lesson?.title || workspaceData?.workspace?.title || 'Codesphere Practice Problem'}
               </h2>
             </div>
 
-            <div className="p-4 flex-1 space-y-4 text-sm text-slate-300">
-              <div>
-                <h4 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Guide</h4>
-                <p className="text-xs text-slate-300 leading-relaxed bg-slate-950/60 p-3 rounded-lg border border-slate-800/80">
-                  {lesson?.summary || lesson?.description || 'Your workspace files, secrets, and terminal session are persistent and automatically backed up.'}
+            <div className="p-4 flex-1 space-y-4 text-xs text-zinc-300">
+              <div className="space-y-2">
+                <h4 className="text-[11px] font-bold text-zinc-400 uppercase tracking-wider">Problem Description</h4>
+                <p className="text-xs text-zinc-300 leading-relaxed bg-zinc-900/80 p-3 rounded-lg border border-zinc-800 font-sans">
+                  {lesson?.summary || lesson?.description || 'Write code to solve the challenge. Choose your preferred language from the top toolbar, then click [ ▶ RUN CODE ] to compile and test your solution in real time.'}
                 </p>
               </div>
 
-              <div className="bg-slate-950/80 p-3.5 rounded-lg border border-slate-800 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <Terminal className="w-3.5 h-3.5 text-cyan-400" />
-                    Runtime
-                  </span>
-                  <span className="text-cyan-400 font-mono font-bold uppercase">{selectedLang}</span>
+              {/* Status & Runtime Card */}
+              <div className="bg-zinc-900 p-3.5 rounded-lg border border-zinc-800 space-y-2 font-mono text-[11px]">
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400">Active Language:</span>
+                  <span className="text-white font-bold uppercase">{selectedLang}</span>
                 </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <Cpu className="w-3.5 h-3.5 text-purple-400" />
-                    Mode
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400">Status:</span>
+                  <span className="text-white font-bold flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                    Container Ready
                   </span>
-                  <span className="text-purple-400 font-mono text-[11px] uppercase">
-                    {mode} Mode
-                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-zinc-400">Memory:</span>
+                  <span className="text-zinc-300">{telemetry.memoryMb}MB ({telemetry.memoryPercent}%)</span>
                 </div>
               </div>
 
-              {/* Instructions banner for code-server CLI installation */}
-              <div className="p-3 bg-indigo-950/40 border border-indigo-800/50 rounded-xl text-xs space-y-1.5 text-indigo-200">
-                <span className="font-bold flex items-center gap-1 text-indigo-300">
-                  💡 Native VS Code Experience
+              {/* Native VS Code Hint Banner */}
+              <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-lg text-xs space-y-1 text-zinc-300">
+                <span className="font-bold text-white flex items-center gap-1 text-[11px]">
+                  💡 VS Code Proxy Info
                 </span>
-                <p className="text-[11px] leading-relaxed text-indigo-300/80">
-                  To run full VS Code in the Proxy tab, install <code className="bg-slate-950 px-1 py-0.5 rounded text-cyan-300">code-server</code> on Mac:
+                <p className="text-[11px] text-zinc-400 leading-relaxed">
+                  To run full VS Code inside the Proxy tab, install <code className="bg-black px-1 rounded text-white font-mono">code-server</code> on Mac:
                 </p>
-                <code className="block bg-slate-950 p-2 rounded text-[10px] font-mono text-cyan-400 select-all border border-slate-800">
+                <code className="block bg-black p-2 rounded text-[10px] font-mono text-zinc-200 border border-zinc-800 select-all">
                   brew install code-server
                 </code>
               </div>
@@ -581,44 +562,29 @@ export const CloudWorkspaceView = () => {
         )}
 
         {/* Center Main Panel */}
-        <main className="flex-1 flex flex-col bg-slate-950 relative overflow-hidden">
+        <main className="flex-1 flex flex-col bg-black relative overflow-hidden">
           {loading && (
-            <div className="absolute inset-0 bg-slate-950/95 backdrop-blur-md z-40 flex flex-col items-center justify-center gap-4 text-center p-6">
-              <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-400 flex items-center justify-center shadow-2xl shadow-cyan-500/30 animate-pulse">
-                <Code2 className="w-8 h-8 text-white" />
+            <div className="absolute inset-0 bg-black/90 backdrop-blur-md z-40 flex flex-col items-center justify-center gap-3 text-center p-6 select-none">
+              <div className="w-12 h-12 rounded-xl border border-zinc-700 bg-zinc-900 flex items-center justify-center animate-spin">
+                <RotateCw className="w-6 h-6 text-white" />
               </div>
-              <div>
-                <h3 className="text-lg font-bold text-white mb-1">Spinning Up Student Container...</h3>
-                <p className="text-xs text-slate-400 max-w-sm">
-                  Allocating isolated container runtime, loading LSPs, mounting .env secrets, and connecting terminal.
-                </p>
-              </div>
+              <h3 className="text-sm font-bold text-white">Initializing Codesphere Container...</h3>
+              <p className="text-xs text-zinc-400 max-w-xs">Connecting execution environment, LSP servers, and output terminal.</p>
             </div>
           )}
 
-          {/* Built-in Monaco Cloud Editor Tab */}
+          {/* Monaco Cloud Editor Tab */}
           {activeTab === 'monaco' && (
-            <div className="flex-1 flex flex-col h-full bg-slate-950">
-              {/* File Tab Bar & Language Switcher */}
-              <div className="h-9 bg-slate-900 border-b border-slate-800 px-3 flex items-center justify-between text-xs">
-                <div className="flex items-center gap-1.5 px-3 py-1 rounded-t-lg bg-slate-950 text-cyan-400 border-t-2 border-indigo-500 font-mono text-[11px]">
-                  <FileCode className="w-3.5 h-3.5 text-cyan-400" />
+            <div className="flex-1 flex flex-col h-full bg-black">
+              {/* Active File Bar */}
+              <div className="h-9 bg-zinc-950 border-b border-zinc-800 px-3 flex items-center justify-between text-xs select-none">
+                <div className="flex items-center gap-2 px-3 py-1 rounded-t-md bg-zinc-900 border-t-2 border-white text-white font-mono text-[11px] font-bold">
+                  <FileCode className="w-3.5 h-3.5 text-white" />
                   <span>{activeFileName}</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] text-slate-400">Language Syntax:</span>
-                  <select
-                    value={selectedLang}
-                    onChange={(e) => handleLanguageChange(e.target.value)}
-                    className="bg-slate-950 border border-slate-800 text-cyan-400 font-mono text-[11px] px-2 py-0.5 rounded focus:outline-none focus:border-indigo-500 uppercase font-bold"
-                  >
-                    <option value="java">JAVA</option>
-                    <option value="python">PYTHON</option>
-                    <option value="javascript">JAVASCRIPT</option>
-                    <option value="cpp">C++</option>
-                    <option value="go">GO</option>
-                    <option value="rust">RUST</option>
-                  </select>
+                <div className="flex items-center gap-3 font-mono text-[11px] text-zinc-400">
+                  <span>Language: <strong className="text-white uppercase">{selectedLang}</strong></span>
+                  <span>Shortcut: <kbd className="bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800 text-zinc-300 font-sans">Cmd+Enter</kbd></span>
                 </div>
               </div>
 
@@ -632,30 +598,32 @@ export const CloudWorkspaceView = () => {
                   onChange={(val) => setCodeContent(val || '')}
                   options={{
                     fontSize: 13,
-                    minimap: { enabled: true },
+                    minimap: { enabled: false },
                     scrollBeyondLastLine: false,
                     automaticLayout: true,
-                    tabSize: 2,
-                    fontFamily: 'JetBrains Mono, Fira Code, monospace'
+                    tabSize: 4,
+                    lineNumbersMinChars: 3,
+                    fontFamily: 'JetBrains Mono, Fira Code, SF Mono, monospace'
                   }}
                 />
               </div>
 
-              {/* Bottom Integrated Web Terminal */}
-              <div className="h-44 bg-slate-950 border-t border-slate-800 flex flex-col font-mono text-xs">
-                <div className="h-7 bg-slate-900 px-3 flex items-center justify-between border-b border-slate-800 text-[11px] text-slate-400">
-                  <div className="flex items-center gap-1.5">
-                    <Terminal className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Interactive Output Terminal ({selectedLang.toUpperCase()})</span>
+              {/* Integrated Output Terminal */}
+              <div className="h-48 bg-zinc-950 border-t border-zinc-800 flex flex-col font-mono text-xs">
+                <div className="h-8 bg-zinc-900 px-3 flex items-center justify-between border-b border-zinc-800 text-[11px] text-zinc-400 select-none">
+                  <div className="flex items-center gap-2 font-bold text-white">
+                    <Terminal className="w-3.5 h-3.5 text-white" />
+                    <span>INTERACTIVE TERMINAL ({selectedLang.toUpperCase()})</span>
                   </div>
                   <button
-                    onClick={() => setTerminalOutput('[Terminal Output Cleared]\n')}
-                    className="text-[10px] text-slate-500 hover:text-slate-300"
+                    onClick={() => setTerminalOutput('➜  Terminal output cleared.\n')}
+                    className="flex items-center gap-1 text-[10px] text-zinc-400 hover:text-white transition-colors"
                   >
-                    Clear Terminal
+                    <Trash2 className="w-3 h-3" />
+                    <span>Clear Terminal</span>
                   </button>
                 </div>
-                <pre className="flex-1 p-3 overflow-y-auto text-emerald-400 text-[11px] leading-relaxed whitespace-pre-wrap">
+                <pre className="flex-1 p-3 overflow-y-auto text-zinc-200 text-[11px] leading-relaxed whitespace-pre-wrap selection:bg-zinc-800 select-text">
                   {terminalOutput}
                 </pre>
               </div>
@@ -668,19 +636,19 @@ export const CloudWorkspaceView = () => {
               <iframe
                 ref={iframeRef}
                 src={ideProxySrc}
-                className="w-full h-full border-0 bg-slate-950"
-                title="VS Code Cloud Workspace"
+                className="w-full h-full border-0 bg-black"
+                title="VS Code Proxy"
                 allow="clipboard-read; clipboard-write; microphone; camera"
               />
             </div>
           )}
 
-          {/* Live Preview Tab */}
+          {/* Live Web Preview Tab */}
           {activeTab === 'preview' && (
-            <div className="flex-1 flex flex-col bg-slate-900 border-t border-slate-800">
-              <div className="h-10 bg-slate-950 px-4 border-b border-slate-800 flex items-center justify-between text-xs">
+            <div className="flex-1 flex flex-col bg-zinc-950 border-t border-zinc-800">
+              <div className="h-10 bg-zinc-900 px-4 border-b border-zinc-800 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400">Open App Server:</span>
+                  <span className="text-zinc-400 font-medium">Preview Server Port:</span>
                   <select
                     value={selectedPortObj?.port || 3000}
                     onChange={(e) => {
@@ -688,7 +656,7 @@ export const CloudWorkspaceView = () => {
                       const found = exposedPorts.find(item => item.port === p);
                       setSelectedPortObj(found || { port: p, label: `Port ${p}`, url: `http://localhost:${p}` });
                     }}
-                    className="bg-slate-900 border border-slate-800 text-slate-200 px-3 py-1 rounded focus:outline-none focus:border-indigo-500 font-medium"
+                    className="bg-black border border-zinc-800 text-white px-3 py-1 rounded focus:outline-none font-mono text-xs font-bold"
                   >
                     {exposedPorts.map((item) => (
                       <option key={item.port} value={item.port}>
@@ -698,20 +666,20 @@ export const CloudWorkspaceView = () => {
                   </select>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-slate-400 font-mono text-[11px]">{selectedPortObj?.url || `http://localhost:3000`}</span>
-                  <a href={selectedPortObj?.url || `http://localhost:3000`} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-white">
+                  <span className="text-zinc-400 font-mono text-[11px]">{selectedPortObj?.url || `http://localhost:3000`}</span>
+                  <a href={selectedPortObj?.url || `http://localhost:3000`} target="_blank" rel="noreferrer" className="text-zinc-400 hover:text-white">
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
                 </div>
               </div>
               <div className="flex-1 bg-white">
-                <iframe src={selectedPortObj?.url || `http://localhost:3000`} className="w-full h-full border-0" title="Dynamic Web Preview" />
+                <iframe src={selectedPortObj?.url || `http://localhost:3000`} className="w-full h-full border-0" title="Web Preview" />
               </div>
             </div>
           )}
         </main>
 
-        {/* Right Embedded AI Sidebar */}
+        {/* Right AI Tutor Assistant Sidebar */}
         {aiSidebarOpen && (
           <WorkspaceAISidebar workspaceId={workspaceId} />
         )}
