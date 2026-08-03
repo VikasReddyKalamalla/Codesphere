@@ -28,7 +28,13 @@ import {
   HelpCircle,
   Zap,
   Check,
-  Trash2
+  Trash2,
+  GripVertical,
+  GripHorizontal,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Menu,
+  X
 } from 'lucide-react';
 import { cloudWorkspaceAPI } from '../services/cloudWorkspaceAPI';
 import { WorkspaceManagerModal } from '../components/WorkspaceManagerModal';
@@ -52,6 +58,12 @@ export const CloudWorkspaceView = () => {
   const [activeTab, setActiveTab] = useState('monaco'); // 'monaco' | 'ide' | 'preview'
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Dynamic Component Panel Dimensions (Resizable States)
+  const [sidebarWidth, setSidebarWidth] = useState(300); // Left Instructions sidebar width (px)
+  const [terminalHeight, setTerminalHeight] = useState(200); // Bottom Output Terminal height (px)
+  const [aiSidebarWidth, setAiSidebarWidth] = useState(320); // Right AI Tutor sidebar width (px)
 
   // Modals
   const [managerModalOpen, setManagerModalOpen] = useState(false);
@@ -91,8 +103,91 @@ export const CloudWorkspaceView = () => {
   const [selectedPortObj, setSelectedPortObj] = useState(exposedPorts[0]);
   const [telemetry, setTelemetry] = useState({ cpuPercent: 1.8, memoryMb: 135, memoryPercent: 12.5, activeProcesses: 4 });
 
+  const containerRef = useRef(null);
   const iframeRef = useRef(null);
 
+  // ── Drag Resizing Handlers ────────────────────────────────────────────────
+  const isDraggingSidebar = useRef(false);
+  const isDraggingTerminal = useRef(false);
+  const isDraggingAiSidebar = useRef(false);
+
+  const startSidebarResize = (e) => {
+    e.preventDefault();
+    isDraggingSidebar.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (moveEvent) => {
+      if (!isDraggingSidebar.current) return;
+      const newWidth = Math.max(180, Math.min(500, moveEvent.clientX));
+      setSidebarWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      isDraggingSidebar.current = false;
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const startTerminalResize = (e) => {
+    e.preventDefault();
+    isDraggingTerminal.current = true;
+    document.body.style.cursor = 'row-resize';
+    document.body.style.userSelect = 'none';
+
+    const initialY = e.clientY;
+    const initialHeight = terminalHeight;
+
+    const onMouseMove = (moveEvent) => {
+      if (!isDraggingTerminal.current) return;
+      const deltaY = initialY - moveEvent.clientY;
+      const newHeight = Math.max(80, Math.min(500, initialHeight + deltaY));
+      setTerminalHeight(newHeight);
+    };
+
+    const onMouseUp = () => {
+      isDraggingTerminal.current = false;
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  const startAiSidebarResize = (e) => {
+    e.preventDefault();
+    isDraggingAiSidebar.current = true;
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+
+    const onMouseMove = (moveEvent) => {
+      if (!isDraggingAiSidebar.current) return;
+      const newWidth = Math.max(220, Math.min(500, window.innerWidth - moveEvent.clientX));
+      setAiSidebarWidth(newWidth);
+    };
+
+    const onMouseUp = () => {
+      isDraggingAiSidebar.current = false;
+      document.body.style.cursor = 'default';
+      document.body.style.userSelect = 'auto';
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  };
+
+  // ── Initial Fetch & Lesson Setup ─────────────────────────────────────────
   useEffect(() => {
     if (lessonId) {
       apiClient.get(`/lessons/single/${lessonId}`)
@@ -117,11 +212,9 @@ export const CloudWorkspaceView = () => {
 
   useEffect(() => {
     if (status !== 'running' || !workspaceId) return;
-
     const interval = setInterval(() => {
       fetchTelemetry();
     }, 5000);
-
     return () => clearInterval(interval);
   }, [status, workspaceId]);
 
@@ -314,17 +407,17 @@ export const CloudWorkspaceView = () => {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-black text-zinc-100 font-sans selection:bg-white selection:text-black">
+    <div ref={containerRef} className="flex flex-col h-screen w-screen overflow-hidden bg-black text-zinc-100 font-sans selection:bg-white selection:text-black">
       {/* Exam Mode Header */}
       {mode === 'exam' && (
         <ExamModeHeader onSubmitExam={handleSubmitExam} />
       )}
 
-      {/* ── Classic High-Contrast Codesphere Header ── */}
-      <header className="h-14 bg-zinc-950 border-b border-zinc-800 px-4 flex items-center justify-between shrink-0 z-30 select-none">
+      {/* ── Classic Responsive Codesphere Header ── */}
+      <header className="h-14 bg-zinc-950 border-b border-zinc-800 px-3 md:px-4 flex items-center justify-between shrink-0 z-30 select-none">
         
-        {/* LEFT ZONE: Navigation, Workspace Info, Language Dropdown */}
-        <div className="flex items-center gap-3">
+        {/* LEFT ZONE: Back, Sidebar Toggle, Workspace Title, Language Dropdown */}
+        <div className="flex items-center gap-2 md:gap-3">
           <button
             onClick={() => navigate(-1)}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-md border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white transition-all text-xs font-medium"
@@ -334,15 +427,22 @@ export const CloudWorkspaceView = () => {
             <span className="hidden sm:inline">Back</span>
           </button>
 
-          <div className="h-4 w-px bg-zinc-800" />
+          {/* Toggle Left Sidebar */}
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="p-1.5 rounded-md border border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-white transition-all"
+            title="Toggle Instructions Sidebar"
+          >
+            {sidebarOpen ? <PanelLeftClose className="w-4 h-4 text-white" /> : <PanelLeftOpen className="w-4 h-4 text-white" />}
+          </button>
 
           {/* Workspace Manager Toggle */}
           <button
             onClick={() => setManagerModalOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900 hover:border-zinc-700 transition-all text-xs font-bold text-white shadow-sm"
+            className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md border border-zinc-800 bg-zinc-900 hover:border-zinc-700 transition-all text-xs font-bold text-white shadow-sm"
           >
             <Code2 className="w-4 h-4 text-white" />
-            <span className="max-w-[150px] truncate">
+            <span className="max-w-[130px] md:max-w-[180px] truncate">
               {workspaceData?.workspace?.title || lesson?.title || 'Codesphere Workspace'}
             </span>
             <FolderGit2 className="w-3.5 h-3.5 text-zinc-400" />
@@ -350,7 +450,7 @@ export const CloudWorkspaceView = () => {
 
           {/* Language Selector Dropdown */}
           <div className="flex items-center border border-zinc-800 rounded-md bg-zinc-900 px-2 py-1 text-xs font-mono">
-            <span className="text-[10px] uppercase font-bold text-zinc-400 mr-2">LANGUAGE:</span>
+            <span className="hidden md:inline text-[10px] uppercase font-bold text-zinc-400 mr-2">LANG:</span>
             <select
               value={selectedLang}
               onChange={(e) => handleLanguageChange(e.target.value)}
@@ -368,7 +468,7 @@ export const CloudWorkspaceView = () => {
           {/* Mode Switcher Badge */}
           <button
             onClick={handleToggleMode}
-            className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md border transition-all ${
+            className={`hidden lg:flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-md border transition-all ${
               mode === 'exam'
                 ? 'bg-zinc-900 border-white text-white'
                 : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white'
@@ -380,7 +480,7 @@ export const CloudWorkspaceView = () => {
         </div>
 
         {/* CENTER ZONE: Segmented View Mode Tabs */}
-        <div className="flex items-center bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+        <div className="hidden md:flex items-center bg-zinc-900 p-1 rounded-lg border border-zinc-800">
           <button
             onClick={() => setActiveTab('monaco')}
             className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-bold transition-all ${
@@ -415,99 +515,92 @@ export const CloudWorkspaceView = () => {
             }`}
           >
             <Globe className="w-3.5 h-3.5" />
-            Live Web Preview
+            Web Preview
           </button>
         </div>
 
         {/* RIGHT ZONE: Primary Action Buttons & Tools */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 md:gap-2">
           {/* RUN CODE BUTTON */}
           {activeTab === 'monaco' && (
             <button
               onClick={handleRunCodeInTerminal}
               disabled={isRunningCode}
-              className="flex items-center gap-2 px-4 py-1.5 rounded-md bg-white hover:bg-zinc-200 text-black text-xs font-extrabold transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 rounded-md bg-white hover:bg-zinc-200 text-black text-xs font-extrabold transition-all shadow-md active:scale-95 disabled:opacity-50 cursor-pointer"
             >
               <Play className="w-3.5 h-3.5 fill-current" />
-              <span>{isRunningCode ? 'EXECUTING...' : 'RUN CODE'}</span>
+              <span>{isRunningCode ? 'RUNNING...' : 'RUN CODE'}</span>
             </button>
           )}
 
           {/* AI TUTOR BUTTON */}
           <button
             onClick={() => setAiSidebarOpen(!aiSidebarOpen)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md border text-xs font-bold transition-all ${
+            className={`flex items-center gap-1.5 px-2.5 md:px-3 py-1.5 rounded-md border text-xs font-bold transition-all ${
               aiSidebarOpen
                 ? 'bg-white text-black border-white'
                 : 'bg-zinc-900 border-zinc-800 text-zinc-300 hover:border-zinc-700 hover:text-white'
             }`}
           >
             <Bot className="w-4 h-4" />
-            <span className="hidden md:inline">AI Tutor</span>
+            <span className="hidden sm:inline">AI Tutor</span>
           </button>
 
           {/* Snapshot Checkpoint */}
           <button
             onClick={handleSaveSnapshot}
-            className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-medium transition-all"
+            className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-md bg-zinc-900 border border-zinc-800 hover:border-zinc-700 text-zinc-300 text-xs font-medium transition-all"
             title="Save Checkpoint Snapshot"
           >
             <Camera className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline">Snapshot</span>
+            <span>Snapshot</span>
           </button>
 
-          {/* Analytics Stats */}
+          {/* Mobile Menu Dropdown Toggle */}
           <button
-            onClick={() => setAnalyticsModalOpen(true)}
-            className="p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-all"
-            title="Learning Analytics"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="md:hidden p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300"
           >
-            <BarChart3 className="w-4 h-4" />
+            {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
           </button>
-
-          {/* Env Variables */}
-          <button
-            onClick={() => setEnvModalOpen(true)}
-            className="p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-all"
-            title="Environment Variables (.env)"
-          >
-            <Key className="w-4 h-4" />
-          </button>
-
-          {/* Extension Marketplace */}
-          <button
-            onClick={() => setExtModalOpen(true)}
-            className="p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-300 hover:text-white transition-all"
-            title="Extensions Marketplace"
-          >
-            <Puzzle className="w-4 h-4" />
-          </button>
-
-          {/* Container Control (Start/Stop) */}
-          {status === 'running' ? (
-            <button
-              onClick={handleStopWorkspace}
-              className="px-2.5 py-1 rounded-md border border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-400 hover:text-white text-xs font-medium"
-              title="Stop Workspace Container"
-            >
-              Stop
-            </button>
-          ) : (
-            <button
-              onClick={handleStartWorkspace}
-              className="px-3 py-1 rounded-md bg-white text-black text-xs font-bold"
-            >
-              Start
-            </button>
-          )}
         </div>
       </header>
 
-      {/* ── Main Layout Body ── */}
+      {/* Mobile Toolbar Dropdown */}
+      {mobileMenuOpen && (
+        <div className="md:hidden bg-zinc-950 border-b border-zinc-800 p-3 space-y-2 z-30 select-none">
+          <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+            <button
+              onClick={() => { setActiveTab('monaco'); setMobileMenuOpen(false); }}
+              className={`py-1 text-center text-xs font-bold rounded ${activeTab === 'monaco' ? 'bg-white text-black' : 'text-zinc-400'}`}
+            >
+              Monaco
+            </button>
+            <button
+              onClick={() => { setActiveTab('ide'); setMobileMenuOpen(false); }}
+              className={`py-1 text-center text-xs font-bold rounded ${activeTab === 'ide' ? 'bg-white text-black' : 'text-zinc-400'}`}
+            >
+              VS Code
+            </button>
+            <button
+              onClick={() => { setActiveTab('preview'); setMobileMenuOpen(false); }}
+              className={`py-1 text-center text-xs font-bold rounded ${activeTab === 'preview' ? 'bg-white text-black' : 'text-zinc-400'}`}
+            >
+              Preview
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main Resizable Layout Body ── */}
       <div className="flex-1 flex overflow-hidden relative">
+        
         {/* Left Instruction & Guide Sidebar */}
         {sidebarOpen && (
-          <aside className="w-80 bg-zinc-950 border-r border-zinc-800 flex flex-col shrink-0 z-20 overflow-y-auto select-none">
+          <aside 
+            style={{ width: `${sidebarWidth}px` }} 
+            className="bg-zinc-950 border-r border-zinc-800 flex flex-col shrink-0 z-20 overflow-y-auto select-none relative transition-none"
+          >
             <div className="p-4 border-b border-zinc-800 bg-zinc-900/50">
               <span className="text-[10px] uppercase font-mono font-bold text-zinc-400 tracking-wider flex items-center gap-1 mb-1">
                 <Sparkles className="w-3 h-3 text-white" />
@@ -544,24 +637,20 @@ export const CloudWorkspaceView = () => {
                   <span className="text-zinc-300">{telemetry.memoryMb}MB ({telemetry.memoryPercent}%)</span>
                 </div>
               </div>
+            </div>
 
-              {/* Native VS Code Hint Banner */}
-              <div className="p-3 bg-zinc-900 border border-zinc-800 rounded-lg text-xs space-y-1 text-zinc-300">
-                <span className="font-bold text-white flex items-center gap-1 text-[11px]">
-                  💡 VS Code Proxy Info
-                </span>
-                <p className="text-[11px] text-zinc-400 leading-relaxed">
-                  To run full VS Code inside the Proxy tab, install <code className="bg-black px-1 rounded text-white font-mono">code-server</code> on Mac:
-                </p>
-                <code className="block bg-black p-2 rounded text-[10px] font-mono text-zinc-200 border border-zinc-800 select-all">
-                  brew install code-server
-                </code>
-              </div>
+            {/* Left Drag Resizer Handle */}
+            <div
+              onMouseDown={startSidebarResize}
+              className="absolute right-0 top-0 bottom-0 w-2 hover:w-3 cursor-col-resize hover:bg-white/20 transition-all z-30 flex items-center justify-center group"
+              title="Drag to resize instructions panel"
+            >
+              <div className="w-0.5 h-8 bg-zinc-700 group-hover:bg-white rounded-full" />
             </div>
           </aside>
         )}
 
-        {/* Center Main Panel */}
+        {/* Center Main Code Editor Panel */}
         <main className="flex-1 flex flex-col bg-black relative overflow-hidden">
           {loading && (
             <div className="absolute inset-0 bg-black/90 backdrop-blur-md z-40 flex flex-col items-center justify-center gap-3 text-center p-6 select-none">
@@ -584,12 +673,12 @@ export const CloudWorkspaceView = () => {
                 </div>
                 <div className="flex items-center gap-3 font-mono text-[11px] text-zinc-400">
                   <span>Language: <strong className="text-white uppercase">{selectedLang}</strong></span>
-                  <span>Shortcut: <kbd className="bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800 text-zinc-300 font-sans">Cmd+Enter</kbd></span>
+                  <span className="hidden sm:inline">Shortcut: <kbd className="bg-zinc-900 px-1.5 py-0.5 rounded border border-zinc-800 text-zinc-300 font-sans">Cmd+Enter</kbd></span>
                 </div>
               </div>
 
               {/* Monaco Code Editor */}
-              <div className="flex-1 min-h-[300px]">
+              <div className="flex-1 min-h-[150px] relative">
                 <Editor
                   height="100%"
                   language={getMonacoLanguage(selectedLang)}
@@ -608,8 +697,17 @@ export const CloudWorkspaceView = () => {
                 />
               </div>
 
-              {/* Integrated Output Terminal */}
-              <div className="h-48 bg-zinc-950 border-t border-zinc-800 flex flex-col font-mono text-xs">
+              {/* Vertical Drag Resizer Handle for Terminal */}
+              <div
+                onMouseDown={startTerminalResize}
+                className="h-2 hover:h-3 bg-zinc-900 border-t border-b border-zinc-800 cursor-row-resize hover:bg-white/20 transition-all z-20 flex items-center justify-center group select-none"
+                title="Drag up/down to resize terminal height"
+              >
+                <div className="h-0.5 w-12 bg-zinc-700 group-hover:bg-white rounded-full" />
+              </div>
+
+              {/* Integrated Resizable Output Terminal */}
+              <div style={{ height: `${terminalHeight}px` }} className="bg-zinc-950 flex flex-col font-mono text-xs select-none">
                 <div className="h-8 bg-zinc-900 px-3 flex items-center justify-between border-b border-zinc-800 text-[11px] text-zinc-400 select-none">
                   <div className="flex items-center gap-2 font-bold text-white">
                     <Terminal className="w-3.5 h-3.5 text-white" />
@@ -703,7 +801,20 @@ export const CloudWorkspaceView = () => {
 
         {/* Right AI Tutor Assistant Sidebar */}
         {aiSidebarOpen && (
-          <WorkspaceAISidebar workspaceId={workspaceId} />
+          <aside
+            style={{ width: `${aiSidebarWidth}px` }}
+            className="bg-zinc-950 border-l border-zinc-800 flex flex-col shrink-0 z-20 overflow-y-auto select-none relative transition-none"
+          >
+            {/* Right Drag Resizer Handle */}
+            <div
+              onMouseDown={startAiSidebarResize}
+              className="absolute left-0 top-0 bottom-0 w-2 hover:w-3 cursor-col-resize hover:bg-white/20 transition-all z-30 flex items-center justify-center group"
+              title="Drag to resize AI Tutor sidebar"
+            >
+              <div className="w-0.5 h-8 bg-zinc-700 group-hover:bg-white rounded-full" />
+            </div>
+            <WorkspaceAISidebar workspaceId={workspaceId} />
+          </aside>
         )}
       </div>
 
