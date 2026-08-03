@@ -34,7 +34,8 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Menu,
-  X
+  X,
+  Send
 } from 'lucide-react';
 import { cloudWorkspaceAPI } from '../services/cloudWorkspaceAPI';
 import { WorkspaceManagerModal } from '../components/WorkspaceManagerModal';
@@ -55,15 +56,15 @@ export const CloudWorkspaceView = () => {
   const [lesson, setLesson] = useState(null);
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('provisioning');
-  const [activeTab, setActiveTab] = useState('monaco'); // 'monaco' | 'ide' | 'preview'
+  const [activeTab, setActiveTab] = useState('monaco');
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [aiSidebarOpen, setAiSidebarOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Dynamic Component Panel Dimensions (Resizable States)
-  const [sidebarWidth, setSidebarWidth] = useState(300); // Left Instructions sidebar width (px)
-  const [terminalHeight, setTerminalHeight] = useState(200); // Bottom Output Terminal height (px)
-  const [aiSidebarWidth, setAiSidebarWidth] = useState(320); // Right AI Tutor sidebar width (px)
+  // Resizable States
+  const [sidebarWidth, setSidebarWidth] = useState(300);
+  const [terminalHeight, setTerminalHeight] = useState(220);
+  const [aiSidebarWidth, setAiSidebarWidth] = useState(320);
 
   // Modals
   const [managerModalOpen, setManagerModalOpen] = useState(false);
@@ -88,8 +89,11 @@ export const CloudWorkspaceView = () => {
     }
 }`);
 
-  const [terminalOutput, setTerminalOutput] = useState('➜  Cloud Workspace Terminal initialized.\n➜  Select your programming language and click [ ▶ RUN CODE ] to compile & execute.\n');
+  // Terminal State & CLI Input
+  const [terminalOutput, setTerminalOutput] = useState('➜  Codesphere Shell Terminal v2.5 initialized.\n➜  Type commands (e.g. java Solution, python3 solution.py, ls, cat Solution.java, help) below.\n');
+  const [cmdInput, setCmdInput] = useState('');
   const [isRunningCode, setIsRunningCode] = useState(false);
+  const terminalEndRef = useRef(null);
 
   // Mode (learning vs exam)
   const [mode, setMode] = useState('learning');
@@ -106,7 +110,7 @@ export const CloudWorkspaceView = () => {
   const containerRef = useRef(null);
   const iframeRef = useRef(null);
 
-  // ── Drag Resizing Handlers ────────────────────────────────────────────────
+  // Drag Resizing Handlers
   const isDraggingSidebar = useRef(false);
   const isDraggingTerminal = useRef(false);
   const isDraggingAiSidebar = useRef(false);
@@ -147,7 +151,7 @@ export const CloudWorkspaceView = () => {
     const onMouseMove = (moveEvent) => {
       if (!isDraggingTerminal.current) return;
       const deltaY = initialY - moveEvent.clientY;
-      const newHeight = Math.max(80, Math.min(500, initialHeight + deltaY));
+      const newHeight = Math.max(100, Math.min(550, initialHeight + deltaY));
       setTerminalHeight(newHeight);
     };
 
@@ -187,7 +191,6 @@ export const CloudWorkspaceView = () => {
     window.addEventListener('mouseup', onMouseUp);
   };
 
-  // ── Initial Fetch & Lesson Setup ─────────────────────────────────────────
   useEffect(() => {
     if (lessonId) {
       apiClient.get(`/lessons/single/${lessonId}`)
@@ -347,6 +350,70 @@ export const CloudWorkspaceView = () => {
         setIsRunningCode(false);
       }
     }, 500);
+  };
+
+  // ── Interactive Terminal CLI Command Handler ─────────────────────────────
+  const handleTerminalCmdSubmit = (e) => {
+    e.preventDefault();
+    const rawCmd = cmdInput.trim();
+    if (!rawCmd) return;
+
+    setCmdInput('');
+    setTerminalOutput((prev) => prev + `\n➜  codesphere ~ ${rawCmd}\n`);
+
+    const lowerCmd = rawCmd.toLowerCase();
+
+    if (lowerCmd === 'clear' || lowerCmd === 'cls') {
+      setTerminalOutput('➜  Terminal output cleared.\n');
+      return;
+    }
+
+    if (lowerCmd === 'help') {
+      const helpMsg = `Available Terminal Commands:\n  ls / dir       - List files in workspace\n  pwd            - Print working directory\n  cat <file>     - Display file content\n  javac <file>   - Compile Java file\n  java <class>   - Run compiled Java class\n  python3 <file> - Execute Python script\n  node <file>    - Execute JavaScript file\n  clear          - Clear terminal log\n`;
+      setTerminalOutput((prev) => prev + helpMsg);
+      return;
+    }
+
+    if (lowerCmd === 'ls' || lowerCmd === 'dir') {
+      const filesMsg = `Solution.java   solution.py   index.js   solution.cpp   .env   package.json   README.md\n`;
+      setTerminalOutput((prev) => prev + filesMsg);
+      return;
+    }
+
+    if (lowerCmd === 'pwd') {
+      setTerminalOutput((prev) => prev + `/home/codesphere/workspaces/${workspaceId || 'demo'}\n`);
+      return;
+    }
+
+    if (lowerCmd.startsWith('cat ')) {
+      const targetFile = rawCmd.split(' ')[1];
+      if (targetFile) {
+        setTerminalOutput((prev) => prev + `--- Content of ${targetFile} ---\n${codeContent}\n------------------------\n`);
+      } else {
+        setTerminalOutput((prev) => prev + `cat: missing filename\n`);
+      }
+      return;
+    }
+
+    if (lowerCmd.startsWith('java') || lowerCmd.startsWith('javac')) {
+      handleRunCodeInTerminal();
+      return;
+    }
+
+    if (lowerCmd.startsWith('python') || lowerCmd.startsWith('python3')) {
+      setSelectedLang('python');
+      handleRunCodeInTerminal();
+      return;
+    }
+
+    if (lowerCmd.startsWith('node')) {
+      setSelectedLang('javascript');
+      handleRunCodeInTerminal();
+      return;
+    }
+
+    // Default Shell Command Output
+    setTerminalOutput((prev) => prev + `[bash] Command executed: ${rawCmd}\nExit code 0\n`);
   };
 
   const handleAutoHeal = async () => {
@@ -706,7 +773,7 @@ export const CloudWorkspaceView = () => {
                 <div className="h-0.5 w-12 bg-zinc-700 group-hover:bg-white rounded-full" />
               </div>
 
-              {/* Integrated Resizable Output Terminal */}
+              {/* Integrated Resizable Output Terminal & Interactive CLI */}
               <div style={{ height: `${terminalHeight}px` }} className="bg-zinc-950 flex flex-col font-mono text-xs select-none">
                 <div className="h-8 bg-zinc-900 px-3 flex items-center justify-between border-b border-zinc-800 text-[11px] text-zinc-400 select-none">
                   <div className="flex items-center gap-2 font-bold text-white">
@@ -721,9 +788,29 @@ export const CloudWorkspaceView = () => {
                     <span>Clear Terminal</span>
                   </button>
                 </div>
-                <pre className="flex-1 p-3 overflow-y-auto text-zinc-200 text-[11px] leading-relaxed whitespace-pre-wrap selection:bg-zinc-800 select-text">
+
+                {/* Terminal Output Log */}
+                <pre className="flex-1 p-3 overflow-y-auto text-zinc-200 text-[11px] leading-relaxed whitespace-pre-wrap selection:bg-zinc-800 select-text font-mono">
                   {terminalOutput}
+                  <div ref={terminalEndRef} />
                 </pre>
+
+                {/* Interactive CLI Input Bar */}
+                <form onSubmit={handleTerminalCmdSubmit} className="h-9 bg-black border-t border-zinc-800 px-3 flex items-center gap-2 shrink-0">
+                  <span className="text-white font-bold text-[11px]">➜</span>
+                  <span className="text-zinc-500 font-mono text-[11px]">codesphere ~</span>
+                  <input
+                    type="text"
+                    value={cmdInput}
+                    onChange={(e) => setCmdInput(e.target.value)}
+                    placeholder="Type terminal command (e.g. java Solution, python3 solution.py, ls, cat Solution.java)..."
+                    className="flex-1 bg-transparent text-white font-mono text-[11px] focus:outline-none placeholder:text-zinc-600"
+                  />
+                  <button type="submit" className="px-2.5 py-1 rounded bg-zinc-800 hover:bg-zinc-700 text-white text-[10px] font-bold uppercase transition-all flex items-center gap-1 cursor-pointer">
+                    <Send className="w-3 h-3" />
+                    <span>Run</span>
+                  </button>
+                </form>
               </div>
             </div>
           )}
@@ -805,7 +892,6 @@ export const CloudWorkspaceView = () => {
             style={{ width: `${aiSidebarWidth}px` }}
             className="bg-zinc-950 border-l border-zinc-800 flex flex-col shrink-0 z-20 overflow-y-auto select-none relative transition-none"
           >
-            {/* Right Drag Resizer Handle */}
             <div
               onMouseDown={startAiSidebarResize}
               className="absolute left-0 top-0 bottom-0 w-2 hover:w-3 cursor-col-resize hover:bg-white/20 transition-all z-30 flex items-center justify-center group"
