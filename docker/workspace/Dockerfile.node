@@ -1,0 +1,28 @@
+FROM ubuntu:22.04
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=UTC
+
+RUN apt-get update && apt-get install -y \
+    curl git build-essential sudo net-tools tmux \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && npm install -g yarn pnpm nodemon typescript ts-node
+
+RUN curl -fsSL https://code-server.dev/install.sh | sh
+
+RUN useradd -m -s /bin/bash coder \
+    && echo "coder ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers.d/coder \
+    && chmod 0440 /etc/sudoers.d/coder
+
+RUN mkdir -p /home/coder/workspace && chown -R coder:coder /home/coder
+WORKDIR /home/coder/workspace
+
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+USER coder
+EXPOSE 8080
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

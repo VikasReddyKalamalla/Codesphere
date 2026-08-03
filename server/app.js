@@ -61,9 +61,14 @@ const instructorStudentRoutes  = require('./routes/instructorStudent.routes');
 const instructorAnalyticsRoutes = require('./routes/instructorAnalytics.routes');
 const instructorCertificateRoutes = require('./routes/instructorCertificate.routes');
 
+const cloudWorkspaceRoutes = require('./routes/cloudWorkspace.routes');
+const cloudWorkspaceProxyHandler = require('./middlewares/cloudWorkspaceProxy.middleware');
 const errorMiddleware = require('./middlewares/error.middleware');
 
 const app = express();
+
+// ─── Reverse Proxy for Cloud Workspace containers ──────────────────
+app.use('/workspace-proxy', cloudWorkspaceProxyHandler);
 
 // ─── Global Middlewares ───────────────────────────────────────────────────────
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',');
@@ -169,6 +174,7 @@ app.use('/api/execute',       codeExecutionRoutes);
 app.use('/api/streaming',     liveStreamRoutes);
 app.use('/api/analytics',     analyticsAdvancedRoutes);
 app.use('/api/backups',       backupRoutes);
+app.use('/api/cloud-workspace', cloudWorkspaceRoutes);
 app.use('/api/ide',           webIDERoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/plans',         planRoutes);

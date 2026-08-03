@@ -1,0 +1,11 @@
+{
+  "name": "codesphere-web-workspace",
+  "version": "1.0.0",
+  "description": "CodeSphere Web Practice Template",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "dependencies": {}
+}

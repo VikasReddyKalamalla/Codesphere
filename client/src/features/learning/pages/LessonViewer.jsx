@@ -71,7 +71,21 @@ export const LessonViewer = () => {
         onLessonSelect={handleLessonSelect}
       />
       <div className="flex-1 p-6 overflow-y-auto h-[calc(100vh-64px)] flex flex-col gap-5">
-        <BackButton fallbackPath={`/learning/${courseId}`} className="self-start" />
+        <div className="flex items-center justify-between">
+          <BackButton fallbackPath={`/learning/${courseId}`} className="self-start" />
+          {activeLesson && (
+            <button
+              onClick={() => {
+                const lId = activeLesson.id || activeLesson._id;
+                navigate(`/learning/${courseId}/lesson/${lId}/practice`);
+              }}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 text-white font-semibold text-xs shadow-lg shadow-indigo-500/25 hover:shadow-indigo-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>Practice in Cloud Workspace ⚡</span>
+            </button>
+          )}
+        </div>
         
         {activeLesson ? (
           activeLesson.type === 'video' ? (

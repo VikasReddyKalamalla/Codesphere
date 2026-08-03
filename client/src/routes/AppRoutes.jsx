@@ -60,6 +60,7 @@ const SandboxPage        = lazy(() => import('@features/sandbox/pages/SandboxPag
 const SandboxProjectPage = lazy(() => import('@features/sandbox/pages/SandboxProjectPage.jsx'));
 const VSCodeWebIDE       = lazy(() => import('@pages/VSCodeWebIDE.jsx'));
 const WebIDEPage         = lazy(() => import('@features/ide/WebIDE.jsx'));
+const CloudWorkspaceView = lazy(() => import('@features/workspace/pages/CloudWorkspaceView.jsx'));
 const TestsPage          = lazy(() => import('@features/tests/pages/TestsPage.jsx'));
 const TestDetailPage     = lazy(() => import('@features/tests/pages/TestDetailPage.jsx'));
 const TestAttemptPage    = lazy(() => import('@features/tests/pages/TestAttemptPage.jsx'));
@@ -306,8 +307,11 @@ const AppRoutes = () => {
       {/* ── Redirect /instructor → /instructor/dashboard ─────────────────── */}
       <Route path="/instructor" element={<Navigate to={ROUTES.INSTRUCTOR_DASHBOARD} replace />} />
 
-      {/* ── Article Page (opens in new tab, no dashboard layout) ─────────── */}
+      {/* ── Cloud Workspace Full-Screen IDE View ────────────────── */}
       <Route element={<EmptyLayout />}>
+        <Route path="/workspace/:workspaceId" element={<W><CloudWorkspaceView /></W>} />
+        <Route path="/learning/:courseId/lesson/:lessonId/practice" element={<W><CloudWorkspaceView /></W>} />
+        <Route path="/learning/:courseId/module/:moduleId/lesson/:lessonId/practice" element={<W><CloudWorkspaceView /></W>} />
         <Route path={ROUTES.LEARNING_ARTICLE} element={<W><ArticlePage /></W>} />
       </Route>
 
