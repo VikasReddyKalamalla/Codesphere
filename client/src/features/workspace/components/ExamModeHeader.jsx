@@ -61,3 +61,5 @@ export const ExamModeHeader = ({ onSubmitExam }) => {
     </div>
   );
 };
+
+export default ExamModeHeader;

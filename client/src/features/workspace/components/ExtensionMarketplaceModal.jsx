@@ -106,3 +106,5 @@ export const ExtensionMarketplaceModal = ({ isOpen, onClose }) => {
     </div>
   );
 };
+
+export default ExtensionMarketplaceModal;

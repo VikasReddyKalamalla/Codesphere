@@ -95,3 +95,5 @@ export const WorkspaceAnalyticsModal = ({ isOpen, onClose, workspaceId }) => {
     </div>
   );
 };
+
+export default WorkspaceAnalyticsModal;

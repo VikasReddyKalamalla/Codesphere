@@ -213,3 +213,5 @@ export const WorkspaceManagerModal = ({ isOpen, onClose, currentWorkspaceId, onS
     </div>
   );
 };
+
+export default WorkspaceManagerModal;

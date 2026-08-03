@@ -167,3 +167,5 @@ export const WorkspaceAISidebar = ({ workspaceId, onInsertCode }) => {
     </div>
   );
 };
+
+export default WorkspaceAISidebar;

@@ -144,3 +144,5 @@ export const WorkspaceEnvModal = ({ isOpen, onClose, workspaceId }) => {
     </div>
   );
 };
+
+export default WorkspaceEnvModal;
