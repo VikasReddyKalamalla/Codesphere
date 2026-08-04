@@ -50,9 +50,10 @@ RUN code-server --install-extension formulahendry.code-runner || true \
     && code-server --install-extension esbenp.prettier-vscode || true \
     && code-server --install-extension ms-python.python || true
 
-# Pre-configure User settings.json for instant one-click execution of ALL languages & clean startup
+# Pre-configure User settings.json for instant tab-close confirmation & clean startup
 RUN mkdir -p /home/coder/.local/share/code-server/User /home/coder/.config/code-server/User \
     && echo '{\n\
+  "window.confirmBeforeClose": "always",\n\
   "files.hotExit": "off",\n\
   "workbench.startupEditor": "none",\n\
   "code-runner.runInTerminal": true,\n\
