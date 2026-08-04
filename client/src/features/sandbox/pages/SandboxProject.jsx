@@ -16,6 +16,7 @@ import {
   removeBookmarkAPI,
   getBookmarkStatusAPI,
   initWorkspaceAPI,
+  terminateWorkspaceAPI,
 } from '../services/sandboxAPI.js';
 import { SessionManagerModal } from '../../../components/SessionManagerModal.jsx';
 import toast from 'react-hot-toast';
@@ -261,15 +262,25 @@ export const SandboxProject = () => {
     });
   }, [problems, searchQuery, activeTab, difficultyFilter]);
 
-  // Handle clicking "YES, LET'S DO IT!" -> Launches VS Code Web Studio in a new tab
-  const handleLaunchVSCode = (problem) => {
-    const targetUrl = vscodeUrl || 'http://localhost:8107/?folder=/home/coder';
-    toast.success(`Opening VS Code Web Studio for "${problem.title}"!`, {
-      icon: '🚀',
-      style: { background: '#0B0F17', color: '#04AA6D', border: '1px solid #04AA6D' }
-    });
-    window.open(targetUrl, '_blank', 'noopener,noreferrer');
-    setSelectedProblem(null);
+  // Handle clicking "YES, LET'S DO IT!" -> Initializes per-user isolated workspace & launches VS Code
+  const handleLaunchVSCode = async (problem) => {
+    const probId = problem?._id || 'scratch';
+    const toastId = toast.loading(`Preparing isolated VS Code workspace for "${problem.title}"...`);
+    try {
+      const res = await initWorkspaceAPI(probId, { repoUrl: activeRepoUrl });
+      const targetUrl = res?.data?.iframeUrl || `http://localhost:8107/?folder=/home/coder/workspaces/session_${probId}`;
+      toast.success(`Opening VS Code Web Studio for "${problem.title}"!`, {
+        id: toastId,
+        icon: '🚀',
+        style: { background: '#0B0F17', color: '#04AA6D', border: '1px solid #04AA6D' }
+      });
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
+    } catch {
+      window.open(`http://localhost:8107/?folder=/home/coder/workspaces/session_${probId}`, '_blank', 'noopener,noreferrer');
+      toast.dismiss(toastId);
+    } finally {
+      setSelectedProblem(null);
+    }
   };
 
   // Start Session handler
@@ -282,14 +293,18 @@ export const SandboxProject = () => {
     }
   };
 
-  // End Session handler
-  const handleEndSession = ({ pushToGit, repoUrl, terminateStorage }) => {
+  // End Session handler -> cleans cloud container storage or pushes to GitHub
+  const handleEndSession = async ({ pushToGit, repoUrl, terminateStorage }) => {
     setIsSessionModalOpen(false);
-    if (pushToGit && repoUrl) {
-      toast.success(`Session changes pushed to GitHub repo "${repoUrl}"!`);
-    }
+    const activeId = selectedProblem?._id || 'scratch';
     if (terminateStorage) {
-      // Clear local session storage and reset workspace
+      const toastId = toast.loading('Terminating session and cleaning cloud storage...');
+      try {
+        await terminateWorkspaceAPI(activeId, { pushToGit, repoUrl });
+        toast.success('Session terminated. Cloud storage cleared successfully.', { id: toastId });
+      } catch {
+        toast.dismiss(toastId);
+      }
       localStorage.removeItem('cs_active_session');
       navigate('/sandbox');
     }
