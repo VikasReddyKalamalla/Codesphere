@@ -462,10 +462,10 @@ export default function DSATopicPage() {
                         {section.problems?.length || 0} questions
                       </span>
                     </div>
-                    {expandedSections[section._id] ? <ChevronDown className="w-4 h-4 text-zinc-500" /> : <ChevronRight className="w-4 h-4 text-zinc-500" />}
+                    {expandedSections[section._id] !== false ? <ChevronDown className="w-4 h-4 text-zinc-500" /> : <ChevronRight className="w-4 h-4 text-zinc-500" />}
                   </button>
 
-                  {expandedSections[section._id] && (
+                  {expandedSections[section._id] !== false && (
                     <div className="border-t border-zinc-800/80 divide-y divide-zinc-800/50">
                       {(section.problems || []).map((problem) => (
                         <button
