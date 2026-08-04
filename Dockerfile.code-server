@@ -44,7 +44,7 @@ RUN code-server --install-extension formulahendry.code-runner || true \
     && code-server --install-extension esbenp.prettier-vscode || true \
     && code-server --install-extension ms-python.python || true
 
-# Pre-configure User settings.json for instant Live Preview and Code Execution
+# Pre-configure User settings.json and root auto-redirect index.html for instant Live Server preview
 RUN mkdir -p /home/coder/.local/share/code-server/User /home/coder/.config/code-server/User \
     && echo '{\n\
   "code-runner.runInTerminal": true,\n\
@@ -58,4 +58,5 @@ RUN mkdir -p /home/coder/.local/share/code-server/User /home/coder/.config/code-
   "livePreview.openPreviewTarget": "EmbeddedPreviewBrowser",\n\
   "livePreview.showServerStatusNotifications": false\n\
 }' > /home/coder/.local/share/code-server/User/settings.json \
-    && cp /home/coder/.local/share/code-server/User/settings.json /home/coder/.config/code-server/User/settings.json
+    && cp /home/coder/.local/share/code-server/User/settings.json /home/coder/.config/code-server/User/settings.json \
+    && echo '<!DOCTYPE html><html><head><meta charset="UTF-8"><title>CodeSphere Live Server</title><script>if (window.location.pathname === "/proxy/5500/" || window.location.pathname === "/proxy/5500" || window.location.pathname === "/") { window.location.replace("/proxy/5500/python/index.html"); }</script></head><body><h2>Redirecting to HTML Preview...</h2><script>window.location.replace("/proxy/5500/python/index.html");</script></body></html>' > /home/coder/index.html
