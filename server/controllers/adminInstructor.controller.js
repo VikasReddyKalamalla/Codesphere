@@ -39,8 +39,14 @@ const removeInstructor = asyncHandler(async (req, res) => {
   successResponse(res, 200, result.message, {});
 });
 
+const getAllApplications = asyncHandler(async (req, res) => {
+  const result = await instructorService.getAllApplications(req.query);
+  successResponse(res, 200, 'Applications fetched', result);
+});
+
 module.exports = {
   getAllInstructors,
+  getAllApplications,
   approveApplication,
   rejectApplication,
   suspendInstructor,

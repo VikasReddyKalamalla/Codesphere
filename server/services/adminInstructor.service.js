@@ -60,6 +60,13 @@ const getAllInstructors = async (query = {}) => {
 };
 
 /**
+ * Get all instructor applications with filters.
+ */
+const getAllApplications = async (query = {}) => {
+  return applicationService.getAllApplications(query);
+};
+
+/**
  * Approve an instructor application (delegates to application service).
  */
 const approveApplication = async (applicationId, adminId, remarks) => {
@@ -150,6 +157,7 @@ const removeInstructor = async (instructorId, adminId) => {
 
 module.exports = {
   getAllInstructors,
+  getAllApplications,
   approveApplication,
   rejectApplication,
   suspendInstructor,
