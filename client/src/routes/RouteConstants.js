@@ -30,6 +30,17 @@ export const ROUTES = {
   LEARNING_LESSON:    '/learning/:pathId/module/:moduleId/lesson/:lessonId',
   LEARNING_ARTICLE:   '/learning/:pathId/article/:lessonId',
 
+  // ─── DSA Learning Path ──────────────────────────────────────────────────────
+  DSA_ROADMAP:       '/dsa',
+  DSA_TOPIC:         '/dsa/topic/:topicSlug',
+  DSA_PROBLEM:       '/dsa/problem/:problemSlug',
+  DSA_PROGRESS:      '/dsa/progress',
+  DSA_REVISION:      '/dsa/revision',
+  DSA_BOOKMARKS:     '/dsa/bookmarks',
+  DSA_SEARCH:        '/dsa/search',
+  DSA_PATTERNS:      '/dsa/patterns',
+  DSA_ACHIEVEMENTS:  '/dsa/achievements',
+
   // ─── Resources ──────────────────────────────────────────────────────────────
   RESOURCES:       '/resources',
   RESOURCE_DETAIL: '/resources/:resourceId',

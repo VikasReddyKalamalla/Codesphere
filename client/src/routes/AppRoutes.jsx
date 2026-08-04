@@ -70,6 +70,20 @@ import NotificationsPage from '@features/notifications/pages/NotificationsPage.j
 import SubscriptionPage from '@features/subscription/pages/SubscriptionPage.jsx';
 import BillingPage from '@features/subscription/pages/BillingPage.jsx';
 import SettingsPage from '@features/settings/pages/SettingsPage.jsx';
+
+// ─── DSA Learning Path pages ──────────────────────────────────────────────────
+import {
+  DSARoadmapPage,
+  DSATopicPage,
+  DSAProblemPage,
+  DSAProgressPage,
+  DSARevisionPage,
+  DSABookmarksPage,
+  DSASearchPage,
+  DSAPatternPage,
+  DSAAchievementsPage,
+} from '@features/dsa';
+
 const InstructorApplyPage= lazy(() => import('@features/instructor/pages/InstructorApply.jsx'));
 
 // ─── Instructor pages ─────────────────────────────────────────────────────────
@@ -177,6 +191,16 @@ const AppRoutes = () => {
         <Route path={ROUTES.LEARNING}          element={<W><LearningPage /></W>} />
         <Route path={ROUTES.LEARNING_PATH}     element={<W><LearningPathPage /></W>} />
         <Route path={ROUTES.LEARNING_LESSON}   element={<W><LessonPage /></W>} />
+
+        {/* DSA Learning Path */}
+        <Route path={ROUTES.DSA_ROADMAP}      element={<W><DSARoadmapPage /></W>} />
+        <Route path={ROUTES.DSA_TOPIC}        element={<W><DSATopicPage /></W>} />
+        <Route path={ROUTES.DSA_PROGRESS}     element={<W><DSAProgressPage /></W>} />
+        <Route path={ROUTES.DSA_REVISION}     element={<W><DSARevisionPage /></W>} />
+        <Route path={ROUTES.DSA_BOOKMARKS}    element={<W><DSABookmarksPage /></W>} />
+        <Route path={ROUTES.DSA_SEARCH}       element={<W><DSASearchPage /></W>} />
+        <Route path={ROUTES.DSA_PATTERNS}     element={<W><DSAPatternPage /></W>} />
+        <Route path={ROUTES.DSA_ACHIEVEMENTS} element={<W><DSAAchievementsPage /></W>} />
 
         {/* Resources */}
         <Route path={ROUTES.RESOURCES}         element={<W><ResourcesPage /></W>} />
@@ -298,6 +322,7 @@ const AppRoutes = () => {
 
       <Route element={<EmptyLayout />}>
         <Route path={ROUTES.COMING_SOON} element={<W><ComingSoonPage /></W>} />
+        <Route path={ROUTES.DSA_PROBLEM} element={<W><DSAProblemPage /></W>} />
       </Route>
 
       {/* ── Redirect /admin → /admin/dashboard ───────────────────────────── */}

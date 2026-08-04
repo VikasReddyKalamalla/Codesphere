@@ -62,6 +62,7 @@ const instructorAnalyticsRoutes = require('./routes/instructorAnalytics.routes')
 const instructorCertificateRoutes = require('./routes/instructorCertificate.routes');
 
 const cloudWorkspaceRoutes = require('./routes/cloudWorkspace.routes');
+const dsaRoutes = require('./routes/dsa.routes');
 const cloudWorkspaceProxyHandler = require('./middlewares/cloudWorkspaceProxy.middleware');
 const errorMiddleware = require('./middlewares/error.middleware');
 
@@ -175,6 +176,7 @@ app.use('/api/streaming',     liveStreamRoutes);
 app.use('/api/analytics',     analyticsAdvancedRoutes);
 app.use('/api/backups',       backupRoutes);
 app.use('/api/cloud-workspace', cloudWorkspaceRoutes);
+app.use('/api/dsa',             dsaRoutes);
 app.use('/api/ide',           webIDERoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
 app.use('/api/plans',         planRoutes);
