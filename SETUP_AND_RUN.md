@@ -5,6 +5,14 @@
 
 ---
 
+<!-- docker-compose up -d mongodb redis
+
+cd server
+npm run dev
+
+cd client
+npm run dev -->
+
 ## ✅ Code Verification Report
 
 ### Backend Code Analysis - PASSED ✅

@@ -38,7 +38,10 @@ router.post  ('/users/:id/notify',         userCtrl.sendNotification);
 router.post  ('/users/:id/email',          userCtrl.sendEmail);
 
 // ─── Instructor Management ────────────────────────────────────────────────────
+router.get('/instructors/requests',             instructorCtrl.getAllApplications);
 router.get('/instructors',                      instructorCtrl.getAllInstructors);
+router.put('/instructors/requests/:id/approve', instructorCtrl.approveApplication);
+router.put('/instructors/requests/:id/reject',  instructorCtrl.rejectApplication);
 router.put('/instructors/:id/approve',          instructorCtrl.approveApplication);
 router.put('/instructors/:id/reject',           instructorCtrl.rejectApplication);
 router.put('/instructors/:id/suspend',          instructorCtrl.suspendInstructor);
