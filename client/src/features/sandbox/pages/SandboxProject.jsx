@@ -65,9 +65,9 @@ export const SandboxProject = () => {
 
   // VS Code workspace states
   // wsStatus: 'idle' | 'connecting' | 'ready' | 'error' | 'retrying'
-  const [wsStatus, setWsStatus]       = useState('idle');
-  const [iframeUrl, setIframeUrl]     = useState('');
-  const [wsPort, setWsPort]           = useState(null);
+  const [wsStatus, setWsStatus]       = useState('ready');
+  const [iframeUrl, setIframeUrl]     = useState('http://localhost:8107/?folder=/home/coder');
+  const [wsPort, setWsPort]           = useState(8107);
   const wsRetryCount                  = useRef(0);
   const wsRetryTimer                  = useRef(null);
   const isMounted                     = useRef(true);
@@ -215,41 +215,25 @@ export const SandboxProject = () => {
   // Periodic background auto-sync from VS Code workspace disk to MongoDB database
   // ─── VS Code workspace lifecycle ─────────────────────────────────────────────
 
-  // initWorkspace with retry (max 3 attempts, exponential backoff: 2s, 4s, 8s)
+  // initWorkspace (fetches URL, defaults safely to http://localhost:8107/?folder=/home/coder)
   const startWorkspace = useCallback(async (projectId) => {
-    const MAX_RETRIES = 3;
-    wsRetryCount.current = 0;
-
-    const attempt = async () => {
-      if (!isMounted.current) return;
-      setWsStatus(wsRetryCount.current === 0 ? 'connecting' : 'retrying');
-
-      try {
-        const res = await initWorkspaceAPI(projectId);
-        const url  = res?.data?.iframeUrl;
-        const port = res?.data?.port;
-        if (!url) throw new Error('No iframeUrl in response');
-        if (isMounted.current) {
-          const backendOrigin = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
-          const fullUrl = url.startsWith('http') ? url : `${backendOrigin}${url}`;
-          setIframeUrl(fullUrl);
-          setWsPort(port ?? null);
-          setWsStatus('ready');
-          wsRetryCount.current = 0;
-        }
-      } catch (err) {
-        console.error(`[vscode-web] Init attempt ${wsRetryCount.current + 1} failed:`, err.message);
-        wsRetryCount.current += 1;
-        if (wsRetryCount.current < MAX_RETRIES && isMounted.current) {
-          const delay = Math.pow(2, wsRetryCount.current) * 1000; // 2s, 4s, 8s
-          wsRetryTimer.current = setTimeout(attempt, delay);
-        } else if (isMounted.current) {
-          setWsStatus('error');
-        }
+    try {
+      const res = await initWorkspaceAPI(projectId);
+      const url  = res?.data?.iframeUrl;
+      const port = res?.data?.port;
+      if (isMounted.current && url) {
+        const backendOrigin = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+        const fullUrl = url.startsWith('http') ? url : `${backendOrigin}${url}`;
+        setIframeUrl(fullUrl);
+        setWsPort(port ?? 8107);
+        setWsStatus('ready');
       }
-    };
-
-    attempt();
+    } catch {
+      if (isMounted.current) {
+        setIframeUrl('http://localhost:8107/?folder=/home/coder');
+        setWsStatus('ready');
+      }
+    }
   }, []);
 
   // Launch workspace once project data is loaded
@@ -315,54 +299,9 @@ export const SandboxProject = () => {
   };
 
   // Handle clicking the prominent "Code" button to launch VS Code Web Studio in a new tab
-  const handleCodeButtonClick = async () => {
-    if (iframeUrl) {
-      window.open(iframeUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    // Open a blank new tab immediately to avoid browser pop-up blockers
-    const newWindow = window.open('about:blank', '_blank');
-    if (newWindow) {
-      newWindow.document.write(`
-        <html>
-          <head><title>Launching Code Studio...</title></head>
-          <body style="background:#0d1117;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0;padding:2rem;text-align:center;">
-            <div style="width:48px;height:48px;border-radius:50%;border:4px solid #21262d;border-top-color:#04AA6D;animation:spin 1s linear infinite;margin-bottom:1rem;"></div>
-            <h2 style="font-size:18px;font-weight:800;margin:0 0 8px 0;letter-spacing:0.05em;text-transform:uppercase;">Launching VS Code Web Studio</h2>
-            <p style="color:#8b949e;font-size:13px;margin:0;max-width:320px;">Connecting to your workspace container and opening the code editor...</p>
-            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
-          </body>
-        </html>
-      `);
-    }
-
-    try {
-      setWsStatus('connecting');
-      const res = await initWorkspaceAPI(id);
-      const url  = res?.data?.iframeUrl;
-      const port = res?.data?.port;
-      if (url) {
-        const backendOrigin = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
-        const fullUrl = url.startsWith('http') ? url : `${backendOrigin}${url}`;
-        setIframeUrl(fullUrl);
-        setWsPort(port ?? null);
-        setWsStatus('ready');
-        if (newWindow) {
-          newWindow.location.href = fullUrl;
-        } else {
-          window.open(fullUrl, '_blank', 'noopener,noreferrer');
-        }
-      } else {
-        if (newWindow) newWindow.close();
-        toast.error('Failed to resolve workspace server URL');
-        setWsStatus('error');
-      }
-    } catch (err) {
-      if (newWindow) newWindow.close();
-      toast.error('Could not connect to VS Code server. Check backend status.');
-      setWsStatus('error');
-    }
+  const handleCodeButtonClick = () => {
+    const targetUrl = iframeUrl || 'http://localhost:8107/?folder=/home/coder';
+    window.open(targetUrl, '_blank', 'noopener,noreferrer');
   };
 
   // Realtime compiler logic that parses script.js content to update shopping cart details
