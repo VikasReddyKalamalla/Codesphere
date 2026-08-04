@@ -1,38 +1,26 @@
 const express = require('express');
 const router = express.Router();
-const { protect } = require('../middlewares/auth.middleware');
+const { protect, optionalAuth } = require('../middlewares/auth.middleware');
 const dsa = require('../controllers/dsa.controller');
 
-// All DSA routes require authentication
-router.use(protect);
+// ─── Read/View Routes (Accessible with or without login token) ────────────────
+router.get('/topics',                       optionalAuth, dsa.getTopics);
+router.get('/topics/:slug',                 optionalAuth, dsa.getTopicBySlug);
+router.get('/problems/:slug',               optionalAuth, dsa.getProblemBySlug);
+router.get('/problems/:slug/submissions',   optionalAuth, dsa.getSubmissions);
+router.get('/dashboard',                    optionalAuth, dsa.getDashboard);
+router.get('/revision',                     optionalAuth, dsa.getRevisionList);
+router.get('/bookmarks',                    optionalAuth, dsa.getBookmarks);
+router.get('/search',                       optionalAuth, dsa.searchDSA);
+router.get('/achievements',                 optionalAuth, dsa.getAchievements);
+router.get('/github-streak/:username',      optionalAuth, dsa.getGitHubStreak);
 
-// ─── Topics ───────────────────────────────────────────────────────────────────
-router.get('/topics',          dsa.getTopics);
-router.get('/topics/:slug',    dsa.getTopicBySlug);
-
-// ─── Problems ─────────────────────────────────────────────────────────────────
-router.get('/problems/:slug',                dsa.getProblemBySlug);
-router.get('/problems/:slug/editorial',      dsa.getEditorial);
-router.post('/problems/:slug/unlock-editorial', dsa.unlockEditorial);
-router.post('/problems/:slug/run',           dsa.runCode);
-router.post('/problems/:slug/submit',        dsa.submitCode);
-router.get('/problems/:slug/submissions',    dsa.getSubmissions);
-router.put('/problems/:slug/progress',       dsa.updateProgress);
-router.put('/problems/:slug/notes',          dsa.saveNotes);
-
-// ─── Dashboard & Progress ─────────────────────────────────────────────────────
-router.get('/dashboard',    dsa.getDashboard);
-router.get('/revision',     dsa.getRevision);
-router.get('/bookmarks',    dsa.getBookmarks);
-
-// ─── Search ───────────────────────────────────────────────────────────────────
-router.get('/search',       dsa.searchDSA);
-
-// ─── Patterns ─────────────────────────────────────────────────────────────────
-router.get('/patterns',         dsa.getPatterns);
-router.get('/patterns/:slug',   dsa.getProblemsByPattern);
-
-// ─── Achievements ─────────────────────────────────────────────────────────────
-router.get('/achievements',     dsa.getAchievements);
+// ─── Write/Action Routes (Require login token / optional for trial) ────────────
+router.post('/simulate-activity',             optionalAuth, dsa.simulateActivity);
+router.post('/problems/:slug/unlock-editorial', optionalAuth, dsa.unlockEditorial);
+router.post('/problems/:slug/run',              optionalAuth, dsa.runCode);
+router.post('/problems/:slug/submit',           optionalAuth, dsa.submitCode);
+router.put('/problems/:slug/notes',             optionalAuth, dsa.saveNotes);
+router.post('/problems/:slug/bookmark',         optionalAuth, dsa.toggleBookmark);
 
 module.exports = router;

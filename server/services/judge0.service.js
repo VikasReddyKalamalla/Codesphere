@@ -1,183 +1,162 @@
 /**
- * Judge0 Code Compilation Service
- * Integrates with Judge0 API for executing code submissions
- * Docs: https://judge0.com/
+ * Code Execution Service
+ * Supports:
+ *  1. Judge0 API / RapidAPI (if valid key present)
+ *  2. Real local child_process execution for Python, JavaScript, C++, Java (100% real compiler/interpreter)
  */
 
+const { exec, spawn } = require('child_process');
+const fs = require('fs');
+const path = require('path');
+const os = require('os');
 const axios = require('axios');
 const logger = require('../utils/logger');
 
 const JUDGE0_API_BASE = process.env.JUDGE0_API_URL || 'https://judge0-ce.p.rapidapi.com';
 const JUDGE0_HOST = process.env.JUDGE0_HOST || 'judge0-ce.p.rapidapi.com';
+const EXECUTION_TIMEOUT = 10; // seconds
 
-// Language ID mappings for Judge0
 const LANGUAGE_MAP = {
   'javascript': 63,
   'python': 71,
   'java': 62,
   'cpp': 54,
   'c': 50,
-  'csharp': 51,
-  'php': 68,
-  'ruby': 72,
-  'go': 60,
-  'rust': 73,
-};
-
-// Maximum execution time (seconds)
-const EXECUTION_TIMEOUT = 15;
-
-const createError = (message, statusCode) => {
-  const err = new Error(message);
-  err.statusCode = statusCode;
-  return err;
 };
 
 /**
- * Get language ID from language name
+ * Executes code locally using child_process (Python, JS, C++, Java)
+ * Returns real stdout, stderr, execution time, and exit status.
  */
-const getLanguageId = (language) => {
-  const langId = LANGUAGE_MAP[language.toLowerCase()];
-  if (!langId) {
-    throw createError(`Language '${language}' is not supported`, 400);
-  }
-  return langId;
-};
+const executeCodeLocally = (code, language, input = '') => {
+  return new Promise((resolve) => {
+    const startTime = Date.now();
+    const tmpDir = path.join(os.tmpdir(), 'codesphere_exec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
+    fs.mkdirSync(tmpDir, { recursive: true });
 
-/**
- * Submit code to Judge0 for compilation and execution
- * @param {string} code - Source code to execute
- * @param {string} language - Programming language
- * @param {string} input - Standard input (optional)
- * @param {number} timeLimit - Execution time limit in seconds (default: 15)
- * @returns {Promise<Object>} Execution result with stdout, stderr, status
- */
-const executeCode = async (code, language, input = '', timeLimit = EXECUTION_TIMEOUT) => {
-  try {
-    const apiKey = process.env.JUDGE0_API_KEY;
-    if (!apiKey || apiKey === 'test-api-key') {
-      logger.warn('Judge0 API key not configured, returning mock result');
-      return getMockExecutionResult(code, language);
+    let cmd = '';
+    let filePath = '';
+
+    const lang = (language || '').toLowerCase();
+
+    if (lang === 'python' || lang === 'python3') {
+      filePath = path.join(tmpDir, 'solution.py');
+      fs.writeFileSync(filePath, code);
+      cmd = `python3 "${filePath}"`;
+    } else if (lang === 'javascript' || lang === 'js' || lang === 'node') {
+      filePath = path.join(tmpDir, 'solution.js');
+      fs.writeFileSync(filePath, code);
+      cmd = `node "${filePath}"`;
+    } else if (lang === 'cpp' || lang === 'c++') {
+      filePath = path.join(tmpDir, 'solution.cpp');
+      const binPath = path.join(tmpDir, 'solution');
+      fs.writeFileSync(filePath, code);
+      cmd = `g++ -O2 "${filePath}" -o "${binPath}" && "${binPath}"`;
+    } else if (lang === 'java') {
+      // Find class name or use Solution
+      filePath = path.join(tmpDir, 'Solution.java');
+      fs.writeFileSync(filePath, code);
+      cmd = `javac "${filePath}" && java -cp "${tmpDir}" Solution`;
+    } else {
+      // Default to node
+      filePath = path.join(tmpDir, 'solution.js');
+      fs.writeFileSync(filePath, code);
+      cmd = `node "${filePath}"`;
     }
 
-    const languageId = getLanguageId(language);
+    const child = exec(cmd, { timeout: EXECUTION_TIMEOUT * 1000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+      const executionTime = (Date.now() - startTime) / 1000;
+      
+      // Cleanup temp directory
+      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
 
-    // Step 1: Submit code for execution
-    const submissionResponse = await axios.post(
-      `${JUDGE0_API_BASE}/submissions?base64_encoded=false&wait=false`,
-      {
-        language_id: languageId,
-        source_code: code,
-        stdin: input || '',
-        cpu_time_limit: timeLimit,
-        wall_time_limit: timeLimit * 2,
-        memory_limit: 128000, // 128 MB
-      },
-      {
-        headers: {
-          'X-RapidAPI-Key': apiKey,
-          'X-RapidAPI-Host': JUDGE0_HOST,
-          'Content-Type': 'application/json',
-        },
+      if (error && error.killed) {
+        return resolve({
+          success: false,
+          status: { id: 5, description: 'Time Limit Exceeded' },
+          statusText: 'Time Limit Exceeded',
+          output: '',
+          error: `Time Limit Exceeded (max ${EXECUTION_TIMEOUT}s)`,
+          executionTime,
+          memory: 1024,
+        });
       }
-    );
 
+      const hasError = !!stderr && stderr.trim().length > 0 && !stdout;
 
-    const token = submissionResponse.data.token;
-    logger.info(`Code submission token: ${token}`);
+      resolve({
+        success: !error && !hasError,
+        status: !error && !hasError ? { id: 3, description: 'Accepted' } : { id: 6, description: 'Compilation / Runtime Error' },
+        statusText: !error && !hasError ? 'Accepted' : 'Error',
+        output: (stdout || '').trim(),
+        error: (stderr || error?.message || '').trim(),
+        exitCode: error ? error.code || 1 : 0,
+        executionTime,
+        memory: 2048,
+      });
+    });
 
-    // Step 2: Poll for result (with timeout)
-    const result = await pollJudge0Result(token, timeLimit * 3);
-    return result;
-  } catch (error) {
-    logger.error(`Judge0 execution error: ${error.message}`);
-    throw createError(`Code execution failed: ${error.message}`, 500);
-  }
+    // Write standard input to child process stdin
+    if (input) {
+      child.stdin.write(input + '\n');
+    }
+    child.stdin.end();
+  });
 };
 
 /**
- * Poll Judge0 for execution result
+ * Submit code for execution.
+ * Tries Judge0 API first if valid key present; otherwise runs 100% real code via local environment!
  */
-const pollJudge0Result = async (token, maxWaitTime = 30) => {
-  const startTime = Date.now();
-  const pollInterval = 500; // 500ms
+const executeCode = async (code, language, input = '', timeLimit = EXECUTION_TIMEOUT) => {
+  const apiKey = process.env.JUDGE0_API_KEY;
 
-  while (Date.now() - startTime < maxWaitTime * 1000) {
+  if (apiKey && apiKey !== 'test-api-key' && apiKey !== 'demo_key_development') {
     try {
-      const response = await axios.get(
-        `${JUDGE0_API_BASE}/submissions/${token}?base64_encoded=false`,
+      const languageId = LANGUAGE_MAP[language.toLowerCase()] || 71;
+      const response = await axios.post(
+        `${JUDGE0_API_BASE}/submissions?base64_encoded=false&wait=true`,
         {
-          headers: {
-            'X-RapidAPI-Key': process.env.JUDGE0_API_KEY,
-            'X-RapidAPI-Host': JUDGE0_HOST,
-          },
+          language_id: languageId,
+          source_code: code,
+          stdin: input || '',
+          cpu_time_limit: timeLimit,
+        },
+        {
+          headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': JUDGE0_HOST },
+          timeout: 8000,
         }
       );
 
       const submission = response.data;
-
-      // Check if execution is complete
-      if (submission.status.id !== 1 && submission.status.id !== 2) {
-        // Status 1 = In Queue, 2 = Processing
-        return {
-          success: true,
-          status: submission.status,
-          statusText: submission.status.description,
-          output: submission.stdout || '',
-          error: submission.stderr || '',
-          exitCode: submission.exit_code,
-          executionTime: submission.time,
-          memory: submission.memory,
-        };
-      }
-
-      // Wait before polling again
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
-    } catch (error) {
-      logger.error(`Judge0 polling error: ${error.message}`);
-      throw error;
+      return {
+        success: submission.status?.id === 3,
+        status: submission.status,
+        statusText: submission.status?.description || 'Executed',
+        output: (submission.stdout || '').trim(),
+        error: (submission.stderr || submission.compile_output || '').trim(),
+        executionTime: submission.time || 0.01,
+        memory: submission.memory || 512,
+      };
+    } catch (err) {
+      logger.warn(`Judge0 API failed (${err.message}). Using local real execution engine.`);
     }
   }
 
-  throw createError('Code execution timed out', 504);
+  // 100% Real Code Execution via local child_process
+  return await executeCodeLocally(code, language, input);
 };
 
-/**
- * Mock execution result for development/testing
- */
-const getMockExecutionResult = (code, language) => {
-  // Simple mock: just return success with a generic message
-  return {
-    success: true,
-    status: { id: 3, description: 'Accepted' },
-    statusText: 'Accepted',
-    output: `Code executed successfully (Mock - ${language})\n`,
-    error: '',
-    exitCode: 0,
-    executionTime: 0.012,
-    memory: 512,
-  };
-};
-
-/**
- * Validate code syntax (optional, basic check)
- */
-const validateCodeSyntax = async (code, language) => {
-  try {
-    const languageId = getLanguageId(language);
-    // Most basic validation: check if code is not empty
-    if (!code || code.trim().length === 0) {
-      throw createError('Code cannot be empty', 400);
-    }
-    return { valid: true };
-  } catch (error) {
-    return { valid: false, error: error.message };
+const validateCodeSyntax = async (code) => {
+  if (!code || code.trim().length === 0) {
+    return { valid: false, error: 'Code cannot be empty' };
   }
+  return { valid: true };
 };
 
 module.exports = {
   executeCode,
-  getLanguageId,
+  executeCodeLocally,
   validateCodeSyntax,
   LANGUAGE_MAP,
   EXECUTION_TIMEOUT,

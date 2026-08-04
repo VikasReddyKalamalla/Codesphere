@@ -244,6 +244,31 @@ export const Learning = () => {
         <p className="text-sm mt-0.5" style={{ color: '#888' }}>Learn, practice and build real-world skills with structured paths.</p>
       </div>
 
+      {/* ── Featured DSA Learning Path Banner ── */}
+      <div className="mb-6 p-5 rounded-2xl bg-gradient-to-r from-zinc-950 via-indigo-950 to-purple-950 text-white border border-indigo-500/30 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-2xl bg-indigo-500/20 border border-indigo-500/40 flex items-center justify-center text-2xl shrink-0">
+            ⚡
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-indigo-500/30 text-indigo-300 border border-indigo-500/40 uppercase">FEATURED ROADMAP</span>
+              <span className="text-xs text-indigo-300 font-semibold">• 8 Topics & 100+ Problems</span>
+            </div>
+            <h2 className="text-lg font-bold mt-1 text-white">DSA Learning Path & Interactive Compiler</h2>
+            <p className="text-xs text-zinc-300 mt-0.5 max-w-xl">
+              Master Data Structures & Algorithms topic-by-topic. Solve LeetCode-style problems with full real-time Python/JS/C++/Java execution, progressive hints, and sequential level unlocks.
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={() => window.location.href = '/dsa'}
+          className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 font-bold text-xs text-white rounded-xl shadow-lg transition-all shrink-0 flex items-center gap-2 cursor-pointer"
+        >
+          Explore DSA Roadmap →
+        </button>
+      </div>
+
       {/* ── Tabs ── */}
       <div className="flex items-center gap-0 mb-4" style={{ borderBottom: '1px solid rgba(0,0,0,0.09)' }}>
         {[['all','All Paths'],['my','My Learning'],['enrolled','Enrolled'],['completed','Completed']].map(([id,label]) => (

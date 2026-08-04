@@ -19,6 +19,7 @@ export const dsaAPI = {
 
   // ─── Dashboard & Progress ──────────────────────────────────────────────────
   getDashboard:       async ()     => (await apiClient.get(`${DSA_BASE}/dashboard`)).data,
+  simulateActivity:   async (action) => (await apiClient.post(`${DSA_BASE}/simulate-activity`, { action })).data,
   getRevision:        async (params) => (await apiClient.get(`${DSA_BASE}/revision`, { params })).data,
   getBookmarks:       async ()     => (await apiClient.get(`${DSA_BASE}/bookmarks`)).data,
 
@@ -29,8 +30,9 @@ export const dsaAPI = {
   getPatterns:        async ()     => (await apiClient.get(`${DSA_BASE}/patterns`)).data,
   getPatternProblems: async (slug) => (await apiClient.get(`${DSA_BASE}/patterns/${slug}`)).data,
 
-  // ─── Achievements ──────────────────────────────────────────────────────────
+  // ─── Achievements & GitHub ─────────────────────────────────────────
   getAchievements:    async ()     => (await apiClient.get(`${DSA_BASE}/achievements`)).data,
+  getGitHubStreak:    async (user) => (await apiClient.get(`${DSA_BASE}/github-streak/${user}`)).data,
 };
 
 export default dsaAPI;

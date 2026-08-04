@@ -188,8 +188,20 @@ export default function DSAProblemPage() {
           </span>
         </div>
 
-        {/* Language selector & Actions */}
+        {/* Language selector & LeetCode link & Actions */}
         <div className="flex items-center gap-3">
+          {problem.leetcodeUrl && (
+            <a
+              href={problem.leetcodeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3 py-1.5 rounded-lg bg-[#04AA6D]/20 hover:bg-[#04AA6D]/30 border border-[#04AA6D]/40 text-[#04AA6D] font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm"
+              title="Open problem on LeetCode"
+            >
+              <span className="text-amber-400 font-extrabold">LC</span> Solve on LeetCode ↗
+            </a>
+          )}
+
           <select
             value={language}
             onChange={(e) => handleLanguageChange(e.target.value)}
@@ -290,25 +302,73 @@ export default function DSAProblemPage() {
 
             {activeTab === 'hints' && (
               <div className="space-y-4">
-                <p className="text-xs text-zinc-400">Reveal progressive hints to guide your solution without spoiling the answer.</p>
-                {problem.hints?.map((hint, idx) => (
-                  <div key={idx} className="border border-zinc-800 rounded-xl bg-zinc-900 overflow-hidden">
-                    {idx < revealedHints ? (
-                      <div className="p-4 text-xs text-zinc-200">
-                        <div className="font-bold text-amber-400 mb-1">Hint {idx + 1}</div>
-                        {hint}
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setRevealedHints(idx + 1)}
-                        className="w-full p-3 text-xs text-zinc-400 hover:text-white flex items-center justify-between hover:bg-zinc-800/50 transition-colors"
-                      >
-                        <span>Show Hint {idx + 1}</span>
-                        <Lightbulb className="w-4 h-4 text-zinc-600" />
-                      </button>
-                    )}
+                <div className="flex items-center justify-between p-3.5 rounded-2xl bg-zinc-900/80 border border-zinc-800/80">
+                  <div>
+                    <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+                      <Lightbulb className="w-4 h-4 text-amber-400" /> Progressive Hint System
+                    </h4>
+                    <p className="text-[11px] text-zinc-400 mt-0.5">
+                      Unlock hints step-by-step to guide your solution without spoiling the full answer.
+                    </p>
                   </div>
-                ))}
+                  <div className="px-3 py-1 rounded-full text-[11px] font-bold bg-[#04AA6D]/20 text-[#04AA6D] border border-[#04AA6D]/30 shrink-0 font-mono">
+                    Unlocked {revealedHints} / {problem.hints?.length || 3}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  {problem.hints?.map((hint, idx) => {
+                    const isUnlocked = idx < revealedHints;
+                    const stageTitles = [
+                      'Stage 1: Conceptual Intuition',
+                      'Stage 2: Data Structure & Strategy',
+                      'Stage 3: Edge Cases & Complexity Target',
+                    ];
+                    const stageIcons = ['💡', '🛠️', '⚡'];
+
+                    return (
+                      <div
+                        key={idx}
+                        className={`border rounded-2xl transition-all overflow-hidden ${
+                          isUnlocked
+                            ? 'bg-zinc-950 border-[#04AA6D]/40 shadow-lg shadow-[#04AA6D]/5'
+                            : 'bg-zinc-900/40 border-zinc-800/80'
+                        }`}
+                      >
+                        {isUnlocked ? (
+                          <div className="p-4 text-xs text-zinc-200">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-bold text-emerald-400 text-[11px] flex items-center gap-1.5">
+                                <span>{stageIcons[idx] || '💡'}</span> {stageTitles[idx] || `Hint ${idx + 1}`}
+                              </span>
+                              <span className="text-[10px] text-zinc-500 font-mono">UNLOCKED</span>
+                            </div>
+                            <div className="prose prose-invert prose-xs leading-relaxed">
+                              <ReactMarkdown>{hint}</ReactMarkdown>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setRevealedHints(idx + 1)}
+                            disabled={idx > revealedHints}
+                            className={`w-full p-4 text-xs flex items-center justify-between transition-colors ${
+                              idx === revealedHints
+                                ? 'text-white bg-zinc-900/80 hover:bg-[#04AA6D]/10 hover:border-[#04AA6D]/40 cursor-pointer'
+                                : 'text-zinc-500 cursor-not-allowed opacity-60'
+                            }`}
+                          >
+                            <span className="font-semibold flex items-center gap-2">
+                              <span>🔒</span> {stageTitles[idx] || `Hint ${idx + 1}`} (Click to reveal)
+                            </span>
+                            <span className="px-2.5 py-1 rounded-xl text-[10px] font-bold bg-zinc-800 text-zinc-300 border border-zinc-700">
+                              {idx === revealedHints ? 'Unlock Hint' : 'Locked'}
+                            </span>
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
@@ -463,10 +523,18 @@ export default function DSAProblemPage() {
                       </div>
                       <div>
                         <div className="text-zinc-500">Output:</div>
-                        <div className={results.testResults[activeTestTab].passed ? 'text-emerald-400' : 'text-red-400'}>
-                          {results.testResults[activeTestTab].actual}
+                        <div className={results.testResults[activeTestTab].passed ? 'text-emerald-400 font-mono whitespace-pre-wrap' : 'text-red-400 font-mono whitespace-pre-wrap'}>
+                          {results.testResults[activeTestTab].actual || '<empty>'}
                         </div>
                       </div>
+                      {results.testResults[activeTestTab].error && (
+                        <div className="mt-2 p-2 bg-red-950/40 border border-red-800/40 rounded-lg">
+                          <div className="text-red-400 font-bold mb-1">Runtime / Compiler Error:</div>
+                          <div className="text-red-300 font-mono text-[11px] whitespace-pre-wrap">
+                            {results.testResults[activeTestTab].error}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
