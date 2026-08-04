@@ -119,76 +119,132 @@ const InteractiveQuiz = ({ quizData }) => {
     </div>
   );
 };
+const CodeBlockWithCopy = ({ children, className }) => {
+  const [copied, setCopied] = useState(false);
+  const codeText = String(children).replace(/\n$/, '');
+  const match = /language-(\w+)/.exec(className || '');
+  const lang = match ? match[1] : 'code';
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(codeText);
+    setCopied(true);
+    toast.success('Code copied to clipboard! 📋');
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const getLangBadge = (l) => {
+    if (l === 'python') return { label: '🟢 Python 3', border: 'border-emerald-500/40 text-emerald-400 bg-emerald-950/40' };
+    if (l === 'cpp') return { label: '🔵 C++', border: 'border-blue-500/40 text-blue-400 bg-blue-950/40' };
+    if (l === 'java') return { label: '🔴 Java', border: 'border-red-500/40 text-red-400 bg-red-950/40' };
+    if (l === 'javascript' || l === 'js') return { label: '🟡 JavaScript', border: 'border-amber-500/40 text-amber-300 bg-amber-950/40' };
+    return { label: `⚡ ${l.toUpperCase()}`, border: 'border-zinc-700 text-zinc-300 bg-zinc-900' };
+  };
+
+  const badge = getLangBadge(lang);
+
+  return (
+    <div className="rounded-2xl border border-zinc-800 overflow-hidden bg-zinc-950 shadow-2xl my-4 group relative">
+      <div className="flex items-center justify-between px-4 py-2.5 bg-zinc-900/90 border-b border-zinc-800 text-xs">
+        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono font-bold border ${badge.border}`}>
+          {badge.label}
+        </span>
+        <button
+          onClick={handleCopy}
+          className="px-3 py-1 rounded-lg bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white font-mono text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 border border-zinc-700"
+        >
+          {copied ? '✓ Copied!' : 'Copy Code 📋'}
+        </button>
+      </div>
+      <pre className="p-4 overflow-x-auto text-xs font-mono text-emerald-300 leading-relaxed bg-zinc-950">
+        <code>{codeText}</code>
+      </pre>
+    </div>
+  );
+};
+
 const FormattedMarkdownContent = ({ content }) => {
   if (!content) return null;
 
-  // Detect raw table lines (e.g. | Concept | Time | ...)
-  if (content.includes('|')) {
-    const lines = content.split('\n').map(l => l.trim()).filter(Boolean);
-    const tableRows = lines.filter(l => l.startsWith('|') && l.endsWith('|'));
-    
-    if (tableRows.length >= 2) {
-      // Parse header and rows
-      const parseRow = (row) => row.split('|').map(c => c.trim()).filter(Boolean);
-      const headers = parseRow(tableRows[0]);
-      const dataRows = tableRows.slice(2).map(parseRow); // Skip separator line
-
-      const nonTableText = lines.filter(l => !l.startsWith('|')).join('\n');
-
-      return (
-        <div className="space-y-4">
-          {nonTableText && (
-            <div className="prose prose-invert prose-sm max-w-none text-zinc-300">
-              <ReactMarkdown>{nonTableText}</ReactMarkdown>
-            </div>
-          )}
-
-          {/* GFG Style HTML Table */}
-          <div className="rounded-2xl border border-zinc-800 overflow-hidden bg-zinc-950 shadow-xl my-4">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-zinc-300 font-mono">
-                <thead className="bg-[#04AA6D]/20 text-[#04AA6D] font-bold border-b border-zinc-800 uppercase tracking-wider">
-                  <tr>
-                    {headers.map((h, i) => (
-                      <th key={i} className="px-4 py-3 border-r border-zinc-800/80 last:border-r-0">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-zinc-800/60">
-                  {dataRows.map((row, ri) => (
-                    <tr key={ri} className="hover:bg-zinc-900/60 transition-colors">
-                      {row.map((cell, ci) => {
-                        const isO1 = cell.includes('O(1)');
-                        const isON = cell.includes('O(N)') || cell.includes('O(log');
-                        const isN2 = cell.includes('O(N²)');
-                        return (
-                          <td key={ci} className="px-4 py-3 border-r border-zinc-800/60 last:border-r-0">
-                            {isO1 ? (
-                              <span className="px-2 py-0.5 bg-emerald-500/15 text-emerald-400 rounded-md font-bold">{cell}</span>
-                            ) : isON ? (
-                              <span className="px-2 py-0.5 bg-amber-500/15 text-amber-300 rounded-md font-bold">{cell}</span>
-                            ) : isN2 ? (
-                              <span className="px-2 py-0.5 bg-red-500/15 text-red-400 rounded-md font-bold">{cell}</span>
-                            ) : (
-                              <span>{cell}</span>
-                            )}
-                          </td>
-                        );
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      );
-    }
-  }
-
   return (
-    <div className="prose prose-invert prose-sm max-w-none text-zinc-300 font-sans leading-relaxed">
-      <ReactMarkdown>{content}</ReactMarkdown>
+    <div className="prose prose-invert max-w-none text-zinc-300 font-sans leading-relaxed space-y-4">
+      <ReactMarkdown
+        components={{
+          h2: ({ children }) => (
+            <h2 className="text-xl sm:text-2xl font-black text-white border-b border-zinc-800/80 pb-2.5 mt-6 mb-4 flex items-center gap-2">
+              {children}
+            </h2>
+          ),
+          h3: ({ children }) => (
+            <h3 className="text-base sm:text-lg font-bold text-emerald-400 mt-5 mb-3 flex items-center gap-2">
+              {children}
+            </h3>
+          ),
+          h4: ({ children }) => (
+            <h4 className="text-xs sm:text-sm font-extrabold text-amber-300 uppercase tracking-wider mt-4 mb-2">
+              {children}
+            </h4>
+          ),
+          p: ({ children }) => (
+            <p className="text-xs sm:text-sm text-zinc-300 leading-relaxed mb-3">
+              {children}
+            </p>
+          ),
+          blockquote: ({ children }) => (
+            <blockquote className="p-4 rounded-2xl bg-emerald-950/20 border-l-4 border-[#04AA6D] my-4 text-xs sm:text-sm text-emerald-200 shadow-lg font-medium">
+              {children}
+            </blockquote>
+          ),
+          code({ node, inline, className, children, ...props }) {
+            if (inline) {
+              const text = String(children);
+              const isO1 = text.includes('O(1)');
+              const isON = text.includes('O(N)') || text.includes('O(log');
+              const isN2 = text.includes('O(N²)') || text.includes('O(2ⁿ)');
+              let style = 'bg-zinc-900 text-emerald-300 border-zinc-800';
+              if (isO1) style = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40 font-bold';
+              else if (isON) style = 'bg-amber-500/20 text-amber-300 border-amber-500/40 font-bold';
+              else if (isN2) style = 'bg-red-500/20 text-red-300 border-red-500/40 font-bold';
+
+              return (
+                <code className={`px-1.5 py-0.5 rounded-md border text-[11px] font-mono ${style}`} {...props}>
+                  {children}
+                </code>
+              );
+            }
+            return <CodeBlockWithCopy className={className}>{children}</CodeBlockWithCopy>;
+          },
+          table: ({ children }) => (
+            <div className="rounded-2xl border border-zinc-800 overflow-hidden bg-zinc-950 shadow-2xl my-6">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs text-zinc-300 font-mono">
+                  {children}
+                </table>
+              </div>
+            </div>
+          ),
+          thead: ({ children }) => (
+            <thead className="bg-[#04AA6D]/20 text-[#04AA6D] font-bold border-b border-zinc-800 uppercase tracking-wider">
+              {children}
+            </thead>
+          ),
+          th: ({ children }) => (
+            <th className="px-4 py-3 border-r border-zinc-800/80 last:border-r-0 font-extrabold">{children}</th>
+          ),
+          td: ({ children }) => (
+            <td className="px-4 py-3 border-r border-zinc-800/60 last:border-r-0 border-t border-zinc-800/60">{children}</td>
+          ),
+          ul: ({ children }) => (
+            <ul className="list-disc list-inside space-y-1.5 text-xs sm:text-sm text-zinc-300 my-3 pl-2">
+              {children}
+            </ul>
+          ),
+          li: ({ children }) => (
+            <li className="leading-relaxed">{children}</li>
+          )
+        }}
+      >
+        {content}
+      </ReactMarkdown>
     </div>
   );
 };
