@@ -4,7 +4,8 @@ import {
   Compass, Briefcase, Bookmark, ClipboardList, Clock, ArrowRight, ChevronLeft,
   BookOpen, Lock, CheckCircle2, Play, RotateCcw, Sparkles, Share2, Star,
   CheckSquare, HelpCircle, Code2, ExternalLink, ShieldCheck, Flame, Zap,
-  Layers, Terminal, FileCode, Check, X, Award, Eye, Search, Filter, Lightbulb
+  Layers, Terminal, FileCode, Check, X, Award, Eye, Search, Filter, Lightbulb,
+  FolderGit2, LogOut
 } from 'lucide-react';
 import {
   fetchProjectDetailsAPI,
@@ -16,6 +17,7 @@ import {
   getBookmarkStatusAPI,
   initWorkspaceAPI,
 } from '../services/sandboxAPI.js';
+import { SessionManagerModal } from '../../../components/SessionManagerModal.jsx';
 import toast from 'react-hot-toast';
 
 // ─── Default Problem Statements & Flashcards Catalog ──────────────────────────
@@ -188,13 +190,19 @@ export const SandboxProject = () => {
   const { projectId: id } = useParams();
   const navigate = useNavigate();
 
-  const [problems, setProblems]         = useState(FEATURED_PROBLEM_STATEMENTS);
-  const [selectedProblem, setSelectedProblem] = useState(null);
-  const [activeTab, setActiveTab]       = useState('all'); // 'all' | 'frontend' | 'backend' | 'system' | 'python'
+  const [problems, setProblems]                 = useState(FEATURED_PROBLEM_STATEMENTS);
+  const [selectedProblem, setSelectedProblem]   = useState(null);
+  const [activeTab, setActiveTab]               = useState('all'); // 'all' | 'frontend' | 'backend' | 'system' | 'python'
   const [difficultyFilter, setDifficultyFilter] = useState('all');
-  const [searchQuery, setSearchQuery]   = useState('');
-  const [loading, setLoading]           = useState(false);
-  const [vscodeUrl, setVscodeUrl]       = useState('http://localhost:8107/?folder=/home/coder');
+  const [searchQuery, setSearchQuery]           = useState('');
+  const [loading, setLoading]                   = useState(false);
+  const [vscodeUrl, setVscodeUrl]               = useState('http://localhost:8107/?folder=/home/coder');
+
+  // Session Manager Modal state (Start / End of Session flow)
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [sessionModalMode, setSessionModalMode]     = useState('start'); // 'start' | 'end'
+  const [isGitHubImported, setIsGitHubImported]     = useState(false);
+  const [activeRepoUrl, setActiveRepoUrl]           = useState('');
 
   // Load problem statements from backend MongoDB API
   const loadProblemStatements = async () => {
@@ -203,7 +211,6 @@ export const SandboxProject = () => {
       const data = await fetchSandboxProjectsAPI();
       const fetchedProjects = data?.projects || (Array.isArray(data) ? data : []);
       if (fetchedProjects && fetchedProjects.length > 0) {
-        // Merge fetched DB projects with rich flashcards
         const formatted = fetchedProjects.map((p, idx) => ({
           _id: p._id || `ps-${idx}`,
           title: p.title,
@@ -221,7 +228,7 @@ export const SandboxProject = () => {
         setProblems(formatted);
       }
     } catch {
-      // Quiet fallback to FEATURED_PROBLEM_STATEMENTS
+      // Quiet fallback
     } finally {
       setLoading(false);
     }
@@ -265,6 +272,29 @@ export const SandboxProject = () => {
     setSelectedProblem(null);
   };
 
+  // Start Session handler
+  const handleStartSession = ({ isGitHub, repoUrl }) => {
+    setIsGitHubImported(isGitHub);
+    setActiveRepoUrl(repoUrl);
+    setIsSessionModalOpen(false);
+    if (isGitHub && repoUrl) {
+      toast.success(`GitHub Repo "${repoUrl}" linked to session!`);
+    }
+  };
+
+  // End Session handler
+  const handleEndSession = ({ pushToGit, repoUrl, terminateStorage }) => {
+    setIsSessionModalOpen(false);
+    if (pushToGit && repoUrl) {
+      toast.success(`Session changes pushed to GitHub repo "${repoUrl}"!`);
+    }
+    if (terminateStorage) {
+      // Clear local session storage and reset workspace
+      localStorage.removeItem('cs_active_session');
+      navigate('/sandbox');
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto font-sans pb-16 text-slate-800 select-none">
       
@@ -283,15 +313,28 @@ export const SandboxProject = () => {
           </p>
         </div>
 
-        {/* Quick Launch VS Code Direct Button */}
-        <button
-          onClick={() => window.open('http://localhost:8107/?folder=/home/coder', '_blank', 'noopener,noreferrer')}
-          className="flex items-center gap-2.5 px-5 py-3 bg-[#04AA6D] hover:bg-emerald-600 text-white font-bold text-xs rounded-2xl transition-all cursor-pointer shadow-md shadow-emerald-950/20 border border-emerald-500/30 shrink-0"
-        >
-          <Code2 size={16} />
-          <span>Launch Blank VS Code Studio</span>
-          <ExternalLink size={13} />
-        </button>
+        {/* Action Buttons: Session Manager & Launch VS Code */}
+        <div className="flex items-center gap-3 shrink-0">
+          <button
+            onClick={() => {
+              setSessionModalMode('end');
+              setIsSessionModalOpen(true);
+            }}
+            className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition-all cursor-pointer border border-slate-200"
+          >
+            <FolderGit2 size={16} className="text-purple-600" />
+            <span>End Session / GitHub Sync</span>
+          </button>
+
+          <button
+            onClick={() => window.open('http://localhost:8107/?folder=/home/coder', '_blank', 'noopener,noreferrer')}
+            className="flex items-center gap-2.5 px-5 py-3 bg-[#04AA6D] hover:bg-emerald-600 text-white font-bold text-xs rounded-2xl transition-all cursor-pointer shadow-md shadow-emerald-950/20 border border-emerald-500/30"
+          >
+            <Code2 size={16} />
+            <span>Launch Blank VS Code Studio</span>
+            <ExternalLink size={13} />
+          </button>
+        </div>
       </div>
 
       {/* ── Filter Bar & Search Box ── */}
@@ -530,6 +573,17 @@ export const SandboxProject = () => {
           </div>
         </div>
       )}
+
+      {/* ── SESSION MANAGER MODAL (GitHub & Storage Workflow) ── */}
+      <SessionManagerModal
+        isOpen={isSessionModalOpen}
+        mode={sessionModalMode}
+        isGitHubImported={isGitHubImported}
+        githubRepoUrl={activeRepoUrl}
+        onStartSession={handleStartSession}
+        onEndSession={handleEndSession}
+        onClose={() => setIsSessionModalOpen(false)}
+      />
 
     </div>
   );
