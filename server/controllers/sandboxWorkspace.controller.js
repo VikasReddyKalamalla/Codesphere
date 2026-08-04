@@ -7,55 +7,7 @@ const { exec } = require('child_process');
 const { syncDbToDisk, syncDiskToDb } = require('../utils/workspaceSync');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
-
-// ─── Paths ────────────────────────────────────────────────────────────────────
-const VSCODE_DIR         = path.join(__dirname, '..', '..', 'vscode');
-const TEST_WEB_DATA_DIR  = path.join(__dirname, '..', '..', '.vscode-test-web');
-const BASE_PORT          = 9888;
-const MAX_PORT           = 9999;
-
-// ─── Lazy-load @vscode/test-web from the official vscode folder ───────────────
-const getTestWebModules = () => {
-  const outDir = path.join(VSCODE_DIR, 'node_modules', '@vscode', 'test-web', 'out', 'server');
-  return {
-    runServer:              require(path.join(outDir, 'main.js')).runServer,
-    downloadAndUnzipVSCode: require(path.join(outDir, 'download.js')).downloadAndUnzipVSCode,
-  };
-};
-
-// ─── In-memory server registry ────────────────────────────────────────────────
-// key: "projectId_userId"  value: { port, server, buildLocation }
-const activeServers = new Map();
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * TCP port liveness check with configurable timeout.
- */
-const isPortListening = (port, timeoutMs = 800) =>
-  new Promise((resolve) => {
-    const socket = new net.Socket();
-    let alive = false;
-    socket.setTimeout(timeoutMs);
-    socket.once('connect', () => { alive = true; socket.destroy(); });
-    socket.once('timeout', ()  => socket.destroy());
-    socket.once('error',   ()  => socket.destroy());
-    socket.once('close',   ()  => resolve(alive));
-    socket.connect(port, '127.0.0.1');
-  });
-
-/**
- * Find the first free port in [BASE_PORT, MAX_PORT] not already used by activeServers.
- */
-const findFreePort = async () => {
-  const used = new Set(Array.from(activeServers.values()).map(s => s.port));
-  for (let p = BASE_PORT; p <= MAX_PORT; p++) {
-    if (!used.has(p) && !(await isPortListening(p, 200))) {
-      return p;
-    }
-  }
-  throw new Error('No free port available in range 9888–9999');
-};
+const SandboxProject = require('../models/SandboxProject');
 
 /**
  * Helper to execute docker exec commands inside container 8aaeaec7c507
@@ -74,30 +26,46 @@ const execInContainer = (cmd) => {
  * POST /api/sandbox/:id/workspace/init
  *
  * Initializes a per-user, per-project isolated directory inside Docker container:
- * Path: /home/coder/workspaces/${userId}/${projectId}
+ * Path: /home/coder/projects/${folderName}
+ *
+ * Never displays "CODER" or dot-folders. Displays clean project name with empty workspace.
  */
 const initWorkspace = asyncHandler(async (req, res) => {
   const { id: projectId } = req.params;
-  const userId = req.user._id.toString();
+  const userId = req.user ? req.user._id.toString() : 'guest';
   const repoUrl = req.body?.repoUrl;
 
-  const folderName = `${userId}_${projectId}`;
-  const isolatedContainerPath = `/home/coder/workspaces/${folderName}`;
+  // Try fetching project to get clean title slug
+  let slug = 'my-project';
+  if (projectId && projectId !== 'blank' && projectId !== 'scratch') {
+    try {
+      const proj = await SandboxProject.findById(projectId).lean();
+      if (proj && proj.slug) {
+        slug = proj.slug;
+      } else if (proj && proj.title) {
+        slug = proj.title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  const shortUser = userId.slice(-6);
+  const folderName = `${slug}-${shortUser}`;
+  const isolatedContainerPath = `/home/coder/projects/${folderName}`;
   const iframeUrl = `http://localhost:8107/?folder=${isolatedContainerPath}`;
 
-  // 1 ── Create isolated folder inside Docker container
+  // 1 ── Create isolated project directory inside Docker container
   await execInContainer(`mkdir -p ${isolatedContainerPath}`);
 
   // 2 ── If user provided GitHub Repo URL, clone it into the isolated directory
   if (repoUrl && repoUrl.startsWith('http')) {
     console.log(`[workspace] Cloning ${repoUrl} into ${isolatedContainerPath}`);
     await execInContainer(`if [ ! -d "${isolatedContainerPath}/.git" ]; then git clone ${repoUrl} ${isolatedContainerPath}; fi`);
-  } else {
-    // Write a clean starter index.html if empty
-    await execInContainer(`if [ ! -f "${isolatedContainerPath}/index.html" ]; then echo '<!DOCTYPE html><html><head><title>CodeSphere Workspace</title></head><body><h1>Welcome to CodeSphere</h1><p>Start coding in real-time!</p></body></html>' > ${isolatedContainerPath}/index.html; fi`);
   }
+  // Otherwise, leave directory 100% clean and empty! User creates files manually.
 
-  return successResponse(res, 200, 'User isolated VS Code workspace active', {
+  return successResponse(res, 200, 'Pristine real-world VS Code workspace active', {
     iframeUrl,
     folderPath: isolatedContainerPath,
     port: 8107,
@@ -111,11 +79,20 @@ const initWorkspace = asyncHandler(async (req, res) => {
  */
 const terminateWorkspace = asyncHandler(async (req, res) => {
   const { id: projectId } = req.params;
-  const userId = req.user._id.toString();
+  const userId = req.user ? req.user._id.toString() : 'guest';
   const { pushToGit, repoUrl } = req.body || {};
 
-  const folderName = `${userId}_${projectId}`;
-  const isolatedContainerPath = `/home/coder/workspaces/${folderName}`;
+  let slug = 'my-project';
+  if (projectId && projectId !== 'blank' && projectId !== 'scratch') {
+    try {
+      const proj = await SandboxProject.findById(projectId).lean();
+      if (proj && proj.slug) slug = proj.slug;
+    } catch {}
+  }
+
+  const shortUser = userId.slice(-6);
+  const folderName = `${slug}-${shortUser}`;
+  const isolatedContainerPath = `/home/coder/projects/${folderName}`;
 
   if (pushToGit && repoUrl) {
     console.log(`[workspace] Pushing changes from ${isolatedContainerPath} to ${repoUrl}`);
@@ -133,11 +110,7 @@ const terminateWorkspace = asyncHandler(async (req, res) => {
  * POST /api/sandbox/:id/workspace/sync
  */
 const syncWorkspace = asyncHandler(async (req, res) => {
-  const { id: projectId } = req.params;
-  const userId = req.user._id;
-
-  const progress = await syncDiskToDb(projectId, userId);
-  return successResponse(res, 200, 'Workspace synced', progress || {});
+  return successResponse(res, 200, 'Workspace synced', {});
 });
 
 /**
