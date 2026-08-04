@@ -17,7 +17,7 @@ const DSASubmission   = require('../models/DSASubmission');
 const DSAAchievement  = require('../models/DSAAchievement');
 const DSAUserStats    = require('../models/DSAUserStats');
 
-const GFG_THEORY_DATA = require('../data/gfgTheoryData');
+const { GFG_THEORY_DATA, getGFGTheoryForTopic } = require('../data/gfgTheoryData');
 
 const isMongoConnected = () => mongoose.connection && mongoose.connection.readyState === 1;
 
@@ -722,7 +722,7 @@ const getTopicBySlug = asyncHandler(async (req, res) => {
 
   const topicsWithStatus = await computeTopicLockStatus(isMongoConnected() ? await DSATopic.find({ isPublished: true }).sort({ order: 1 }) : MOCK_TOPICS, userId);
   const thisTopicStatus = topicsWithStatus.find(t => t.slug === slug);
-  const gfgDetail = GFG_THEORY_DATA[slug] || {};
+  const gfgDetail = getGFGTheoryForTopic(slug, topic?.title);
 
   return successResponse(res, 200, 'Topic detail retrieved', {
     topic: { ...topic, totalProblems: problems.length, ...gfgDetail, ...thisTopicStatus },
