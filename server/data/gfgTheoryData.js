@@ -709,8 +709,8 @@ def isValidBST(root, low=float('-inf'), high=float('inf')):
 `,
     commonMistakes: `### ⚠️ Invalid BST Check Trap
 Checking only \`node.left.val < node.val\` is INCORRECT! All nodes in the left subtree must be smaller than root. Pass range bounds \`(low, high)\`!`,
-    whyItMatters: \`### 💼 Real-World Database Engines
-C++ \`std::map\` and Java \`TreeMap\` are implemented using Red-Black Self-Balancing BSTs.\`,
+    whyItMatters: `### 💼 Real-World Database Engines
+C++ std::map and Java TreeMap are implemented using Red-Black Self-Balancing BSTs.`,
     quiz: [
       {
         question: 'What is the worst-case search time complexity in an unbalanced skewed BST of N nodes?',

@@ -722,10 +722,11 @@ const getTopicBySlug = asyncHandler(async (req, res) => {
 
   const topicsWithStatus = await computeTopicLockStatus(isMongoConnected() ? await DSATopic.find({ isPublished: true }).sort({ order: 1 }) : MOCK_TOPICS, userId);
   const thisTopicStatus = topicsWithStatus.find(t => t.slug === slug);
-  const gfgDetail = getGFGTheoryForTopic(slug, topic?.title);
+  const plainTopic = topic && typeof topic.toObject === 'function' ? topic.toObject() : (topic || {});
+  const gfgDetail = getGFGTheoryForTopic(slug, plainTopic?.title);
 
   return successResponse(res, 200, 'Topic detail retrieved', {
-    topic: { ...topic, totalProblems: problems.length, ...gfgDetail, ...thisTopicStatus },
+    topic: { ...plainTopic, totalProblems: problems.length, ...gfgDetail, ...thisTopicStatus },
     sections,
     unsectionedProblems: [],
   });
