@@ -326,20 +326,20 @@ export default function DSARoadmapPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-6 pt-6 border-t border-zinc-800/80">
             <div
               onClick={() => handleSimulate('solve')}
-              className="p-3.5 rounded-2xl bg-zinc-950/80 border border-zinc-800/80 hover:border-[#04AA6D]/50 transition-colors cursor-pointer group"
+              className="p-3.5 rounded-2xl bg-zinc-950/80 border border-zinc-800/80 hover:border-[#04AA6D]/50 transition-all cursor-pointer group hover:scale-[1.02]"
             >
               <div className="flex items-center gap-2 text-zinc-400 text-xs font-semibold mb-1 group-hover:text-[#04AA6D]">
-                <Target className="w-4 h-4 text-[#04AA6D]" /> Solved
+                <Target className="w-4 h-4 text-[#04AA6D]" /> Solved Problems
               </div>
               <div className="text-xl font-black text-white">{totalSolved} <span className="text-xs text-zinc-500 font-normal">/ {totalProblems}</span></div>
             </div>
 
             <div
               onClick={() => handleSimulate('streak')}
-              className="p-3.5 rounded-2xl bg-zinc-950/80 border border-zinc-800/80 hover:border-orange-500/50 transition-colors cursor-pointer group"
+              className="p-3.5 rounded-2xl bg-zinc-950/80 border border-zinc-800/80 hover:border-orange-500/50 transition-all cursor-pointer group hover:scale-[1.02]"
             >
               <div className="flex items-center gap-2 text-zinc-400 text-xs font-semibold mb-1 group-hover:text-orange-400">
-                <Flame className="w-4 h-4 text-orange-400" /> Streak
+                <Flame className="w-4 h-4 text-orange-400" /> Current Streak
               </div>
               <div className="text-xl font-black text-white">{stats.currentStreak || 0} <span className="text-xs text-zinc-500 font-normal">days</span></div>
             </div>
@@ -360,29 +360,60 @@ export default function DSARoadmapPage() {
           </div>
         </div>
 
-        {/* ═══ GITHUB STREAK INTEGRATION CARD ═══ */}
+        {/* ═══ DAILY QUEST BANNER ═══ */}
+        <div className="mb-8 p-5 rounded-3xl bg-gradient-to-r from-emerald-950/40 via-zinc-950 to-zinc-900/60 border border-[#04AA6D]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-[#04AA6D]/20 border border-[#04AA6D]/40 flex items-center justify-center text-emerald-400 shrink-0 font-bold">
+              ⚔️
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-emerald-400">Daily Student Challenge</h3>
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-extrabold bg-amber-500/20 text-amber-300 border border-amber-500/30">+100 XP</span>
+              </div>
+              <p className="text-xs text-zinc-300 font-medium mt-0.5">Solve 2 Array or Recursion problems today to extend your daily streak!</p>
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              if (dashboard?.recommendedProblem) {
+                navigate(`/dsa/problem/${dashboard.recommendedProblem.slug}`);
+              } else {
+                navigate('/dsa/topic/basics');
+              }
+            }}
+            className="px-5 py-2.5 bg-[#04AA6D] hover:bg-[#038d5a] text-white font-bold text-xs rounded-xl shadow-lg transition-all shrink-0 flex items-center gap-2 cursor-pointer border border-emerald-400/30"
+          >
+            <Play className="w-3.5 h-3.5 fill-current" /> Start Quest Now
+          </button>
+        </div>
+
+        {/* ═══ GITHUB STREAK WIDGET ═══ */}
         <GitHubStreakCard />
 
-        {/* ═══ SEARCH & FILTERS BAR ═══ */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 mb-8">
-          <div className="w-full sm:w-80 flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-zinc-900/90 border border-zinc-800 text-xs text-zinc-200 focus-within:border-[#04AA6D] transition-colors">
-            <Search className="w-4 h-4 text-zinc-500 shrink-0" />
+        {/* ═══ SEARCH & FILTER BAR ═══ */}
+        <div className="mb-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="relative w-full sm:w-80">
+            <Search className="w-4 h-4 text-zinc-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search topics or questions..."
-              className="bg-transparent outline-none w-full text-xs text-white placeholder-zinc-500"
+              placeholder="Search 18 DSA steps or topics..."
+              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-zinc-950 border border-zinc-800 text-xs text-white placeholder-zinc-500 outline-none focus:border-[#04AA6D] transition-colors"
             />
           </div>
 
-          <div className="flex items-center gap-1 p-1 bg-zinc-900/90 rounded-2xl border border-zinc-800 w-full sm:w-auto">
-            {['all', 'beginner', 'intermediate', 'advanced'].map(d => (
+          <div className="flex items-center gap-1.5 bg-zinc-950 p-1 rounded-2xl border border-zinc-800/80 w-full sm:w-auto overflow-x-auto">
+            {['all', 'beginner', 'intermediate', 'advanced'].map((d) => (
               <button
                 key={d}
                 onClick={() => setFilterDifficulty(d)}
-                className={`flex-1 sm:flex-none px-3.5 py-1.5 rounded-xl text-[11px] font-bold capitalize transition-all ${
-                  filterDifficulty === d ? 'bg-[#04AA6D] text-white shadow-md' : 'text-zinc-400 hover:text-white'
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold capitalize transition-all cursor-pointer whitespace-nowrap ${
+                  filterDifficulty === d
+                    ? 'bg-[#04AA6D] text-white shadow-md'
+                    : 'text-zinc-400 hover:text-white'
                 }`}
               >
                 {d}
