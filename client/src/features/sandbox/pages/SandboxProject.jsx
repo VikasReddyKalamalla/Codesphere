@@ -314,6 +314,57 @@ export const SandboxProject = () => {
     window.open(vscodeUrl, '_blank', 'width=1400,height=900,noopener,noreferrer');
   };
 
+  // Handle clicking the prominent "Code" button to launch VS Code Web Studio in a new tab
+  const handleCodeButtonClick = async () => {
+    if (iframeUrl) {
+      window.open(iframeUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // Open a blank new tab immediately to avoid browser pop-up blockers
+    const newWindow = window.open('about:blank', '_blank');
+    if (newWindow) {
+      newWindow.document.write(`
+        <html>
+          <head><title>Launching Code Studio...</title></head>
+          <body style="background:#0d1117;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0;padding:2rem;text-align:center;">
+            <div style="width:48px;height:48px;border-radius:50%;border:4px solid #21262d;border-top-color:#04AA6D;animation:spin 1s linear infinite;margin-bottom:1rem;"></div>
+            <h2 style="font-size:18px;font-weight:800;margin:0 0 8px 0;letter-spacing:0.05em;text-transform:uppercase;">Launching VS Code Web Studio</h2>
+            <p style="color:#8b949e;font-size:13px;margin:0;max-width:320px;">Connecting to your workspace container and opening the code editor...</p>
+            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+          </body>
+        </html>
+      `);
+    }
+
+    try {
+      setWsStatus('connecting');
+      const res = await initWorkspaceAPI(id);
+      const url  = res?.data?.iframeUrl;
+      const port = res?.data?.port;
+      if (url) {
+        const backendOrigin = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+        const fullUrl = url.startsWith('http') ? url : `${backendOrigin}${url}`;
+        setIframeUrl(fullUrl);
+        setWsPort(port ?? null);
+        setWsStatus('ready');
+        if (newWindow) {
+          newWindow.location.href = fullUrl;
+        } else {
+          window.open(fullUrl, '_blank', 'noopener,noreferrer');
+        }
+      } else {
+        if (newWindow) newWindow.close();
+        toast.error('Failed to resolve workspace server URL');
+        setWsStatus('error');
+      }
+    } catch (err) {
+      if (newWindow) newWindow.close();
+      toast.error('Could not connect to VS Code server. Check backend status.');
+      setWsStatus('error');
+    }
+  };
+
   // Realtime compiler logic that parses script.js content to update shopping cart details
   useEffect(() => {
     try {
@@ -790,6 +841,7 @@ export const SandboxProject = () => {
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* Center Column: VS Code Web Studio (xl:col-span-5) */}
         <div className="xl:col-span-5 flex flex-col gap-4 min-w-0">
           <div className="border border-slate-200/60 bg-[#0d1117] rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col min-h-[720px] relative">
@@ -906,6 +958,165 @@ export const SandboxProject = () => {
               </div>
             )}
 
+=======
+        {/* Column 2: Current Step Instructions (col-span-3) */}
+        <div className="xl:col-span-3 flex flex-col gap-4">
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-sm">
+            <div className="flex flex-col gap-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Current Step</span>
+                {(progress?.completedSteps?.includes(currentStepIdx + 1) || (currentStepIdx + 1 < (progress?.currentStep || 1))) && (
+                  <button
+                    onClick={() => handleStepUnmark(currentStepIdx + 1)}
+                    className="text-[9px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1"
+                  >
+                    <RotateCcw size={10} />
+                    Unmark Complete
+                  </button>
+                )}
+              </div>
+              <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider mt-0.5">Step {currentStepIdx + 1}: {currentStep.title}</h2>
+              <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
+                {currentStep.description}
+              </p>
+
+              {/* Requirements Checklist */}
+              <div className="mt-4">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-2">Requirements</p>
+                <div className="flex flex-col gap-1.5">
+                  {objectivesList.map((req, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-left">
+                      <CheckCircle2 size={13} className="text-[#04AA6D] mt-0.5 shrink-0" />
+                      <span className="text-[10px] text-slate-600 leading-snug">{req}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Resources Links */}
+              <div className="mt-4">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Resources</p>
+                <div className="flex flex-col gap-1">
+                  {resourcesList.map(res => (
+                    <a key={res} href="#" className="text-[9.5px] font-bold text-[#04AA6D] hover:underline uppercase tracking-wider flex items-center gap-1">
+                      <BookOpen size={11} />
+                      {res}
+                      <ExternalLink size={9} className="text-[#04AA6D] inline" />
+                    </a>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Example Output Mockup Card — dynamic per project */}
+            <div className="mt-4 border-t border-slate-200/60 pt-4 select-none">
+              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-2">Example Output</p>
+              <div className="p-3.5 bg-[#0B0F17] border border-[#1A202F] rounded-xl flex flex-col gap-2.5 text-slate-300">
+                {(() => {
+                  const t = (project?.title || '').toLowerCase();
+                  if (t.includes('rest api') || t.includes('node') || t.includes('express')) {
+                    return (
+                      <>
+                        <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
+                          <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">API Server</span>
+                          <span className="w-2 h-2 rounded-full bg-[#04AA6D] animate-pulse" />
+                        </div>
+                        {['> Server running on port 5000', '> MongoDB connected', '> POST /api/auth/register 201', '> POST /api/auth/login 200', '> Token: eyJhbGci...'].map((line, i) => (
+                          <p key={i} className="text-[9px] font-mono" style={{ color: line.includes('201') || line.includes('200') ? '#04AA6D' : line.includes('Token') ? '#60a5fa' : '#94a3b8' }}>{line}</p>
+                        ))}
+                      </>
+                    );
+                  }
+                  if (t.includes('react') || t.includes('dashboard') || t.includes('chart')) {
+                    return (
+                      <>
+                        <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
+                          <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">Dashboard Preview</span>
+                        </div>
+                        <div className="grid grid-cols-2 gap-1.5">
+                          {[{ l: 'Total Sales', v: '$42,500', t: '+12%' }, { l: 'New Users', v: '1,284', t: '+8%' }, { l: 'Revenue', v: '$18,900', t: '+5%' }, { l: 'Orders', v: '326', t: '-2%' }].map((s, i) => (
+                            <div key={i} className="bg-[#121824] border border-[#1A202F] rounded-lg p-2">
+                              <p className="text-[8px] text-slate-500 uppercase">{s.l}</p>
+                              <p className="text-[11px] font-bold text-white">{s.v}</p>
+                              <p className={`text-[8px] font-bold ${s.t.startsWith('+') ? 'text-[#04AA6D]' : 'text-rose-400'}`}>{s.t}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    );
+                  }
+                  if (t.includes('python') || t.includes('pandas') || t.includes('data')) {
+                    return (
+                      <>
+                        <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
+                          <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">Pipeline Output</span>
+                        </div>
+                        {['>>> Shape: (1000, 6)', '>>> Columns: date, product, qty, price', '>>> Missing values: 0', '>>> Groups: Electronics 480, Accessories 520', '>>> Pipeline complete. ✓'].map((line, i) => (
+                          <p key={i} className="text-[9px] font-mono" style={{ color: line.includes('complete') ? '#04AA6D' : line.includes('>>>') ? '#60a5fa' : '#94a3b8' }}>{line}</p>
+                        ))}
+                      </>
+                    );
+                  }
+                  // Generic
+                  return (
+                    <>
+                      <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
+                        <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">Output</span>
+                      </div>
+                      <p className="text-[9px] font-mono text-[#04AA6D]">{'> Project initialized. ✓'}</p>
+                      <p className="text-[9px] font-mono text-slate-400">{'> Ready. Start coding...'}</p>
+                    </>
+                  );
+                })()}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* Column 3: VS Code Web Studio Code Button Launcher (col-span-4) */}
+        <div className="xl:col-span-4 flex flex-col gap-4">
+          <div className="border border-slate-200/60 bg-[#0d1117] rounded-3xl p-8 shadow-md flex-1 flex flex-col items-center justify-center text-center relative min-h-[500px] overflow-hidden select-none">
+            {/* Background Gradient & Glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(4,170,109,0.15)_0%,transparent_70%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(6,182,212,0.1)_0%,transparent_60%)] pointer-events-none" />
+
+            <div className="relative z-10 flex flex-col items-center max-w-sm">
+              {/* Glowing Hexagon Icon Badge */}
+              <div className="w-20 h-20 rounded-3xl bg-[#04AA6D]/15 border border-[#04AA6D]/40 flex items-center justify-center text-[#04AA6D] mb-6 shadow-2xl shadow-emerald-950/80 backdrop-blur-md">
+                <Code2 className="w-10 h-10" />
+              </div>
+
+              <h3 className="text-xl font-black text-white font-mono uppercase tracking-wider">VS Code Web Studio</h3>
+              <p className="text-xs text-slate-400 mt-2.5 leading-relaxed font-sans">
+                Launch your dedicated cloud development workspace in a new browser tab to view and edit project files in real-time.
+              </p>
+
+              {/* Prominent Centered Code Button */}
+              <button
+                onClick={handleCodeButtonClick}
+                className="mt-8 px-10 py-4 bg-[#04AA6D] hover:bg-emerald-600 text-white font-black text-base uppercase tracking-widest rounded-2xl flex items-center gap-3 shadow-2xl shadow-emerald-950/80 cursor-pointer transition-all hover:scale-105 active:scale-95 border border-emerald-400/40 font-mono"
+              >
+                <Code2 className="w-6 h-6" />
+                <span>Code</span>
+                <ExternalLink className="w-4 h-4 opacity-80 ml-1" />
+              </button>
+
+              {/* Realtime Server Status Indicator */}
+              <div className="mt-8 flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-950/90 border border-slate-800 text-[11px] font-mono text-slate-300 shadow-md">
+                <span className={`w-2.5 h-2.5 rounded-full ${wsStatus === 'ready' ? 'bg-[#04AA6D]' : wsStatus === 'error' ? 'bg-rose-500' : 'bg-amber-400 animate-pulse'}`} />
+                <span>
+                  {wsStatus === 'ready' 
+                    ? 'VS Code Server Ready' 
+                    : wsStatus === 'connecting' || wsStatus === 'retrying'
+                    ? 'Launching Code Server...'
+                    : wsStatus === 'error'
+                    ? 'Server Offline (Click Code to Launch)'
+                    : 'Code Server Ready'}
+                </span>
+              </div>
+            </div>
+>>>>>>> 712c9e36 (feat: replace embedded VS Code iframe with centered Code launcher button and auto-detect Docker code-server port 8107)
           </div>
         </div>
 
