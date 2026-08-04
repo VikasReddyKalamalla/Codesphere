@@ -336,12 +336,13 @@ async function seed() {
       description: 'Build an innovative web app in 48 hours. Top 3 teams win cash prizes and cloud credits.',
       eventType: 'hackathon', mode: 'online', difficulty: 'intermediate',
       organizer: sarah._id, category: eventCats[0]._id,
+      country: 'United States', city: 'San Francisco', latitude: 37.7749, longitude: -122.4194,
       startDate: new Date(now.getTime() + 7 * 86400000),
       endDate:   new Date(now.getTime() + 9 * 86400000),
       registrationDeadline: new Date(now.getTime() + 5 * 86400000),
       maxParticipants: 200, registeredParticipants: 84,
       prizePool: '₹50,000 + AWS Credits', entryFee: 0,
-      status: 'registration_open', isPublished: true,
+      status: 'registration_open', isPublished: true, source: 'internal',
       tags: ['hackathon', 'web', 'open-source'],
     },
     {
@@ -350,11 +351,12 @@ async function seed() {
       description: 'Hands-on workshop on profiling, memoization, code splitting, and bundle optimization.',
       eventType: 'workshop', mode: 'online', difficulty: 'advanced',
       organizer: sarah._id, category: eventCats[1]._id,
+      country: 'United Kingdom', city: 'London', latitude: 51.5074, longitude: -0.1278,
       startDate: new Date(now.getTime() + 3 * 86400000),
       endDate:   new Date(now.getTime() + 3 * 86400000 + 7200000),
       registrationDeadline: new Date(now.getTime() + 2 * 86400000),
       maxParticipants: 50, registeredParticipants: 38,
-      entryFee: 0, status: 'registration_open', isPublished: true,
+      entryFee: 0, status: 'registration_open', isPublished: true, source: 'internal',
       tags: ['react', 'performance', 'workshop'],
     },
     {
@@ -363,11 +365,12 @@ async function seed() {
       description: 'Introduction to pandas, NumPy, and Matplotlib. Build your first data analysis project live.',
       eventType: 'webinar', mode: 'online', difficulty: 'beginner',
       organizer: james._id, category: eventCats[2]._id,
+      country: 'India', city: 'Bengaluru', latitude: 12.9716, longitude: 77.5946,
       startDate: new Date(now.getTime() + 1 * 86400000),
       endDate:   new Date(now.getTime() + 1 * 86400000 + 5400000),
       registrationDeadline: new Date(now.getTime() + 86000000),
       maxParticipants: 300, registeredParticipants: 211,
-      entryFee: 0, status: 'upcoming', isPublished: true,
+      entryFee: 0, status: 'upcoming', isPublished: true, source: 'internal',
       tags: ['python', 'data', 'beginners'],
     },
     {
@@ -376,11 +379,12 @@ async function seed() {
       description: 'Solve 5 algorithmic problems in 90 minutes. Rated contest — win certificates and XP points.',
       eventType: 'coding_contest', mode: 'online', difficulty: 'intermediate',
       organizer: admin._id, category: eventCats[3]._id,
+      country: 'Japan', city: 'Tokyo', latitude: 35.6762, longitude: 139.6503,
       startDate: new Date(now.getTime() + 14 * 86400000),
       endDate:   new Date(now.getTime() + 14 * 86400000 + 5400000),
       registrationDeadline: new Date(now.getTime() + 12 * 86400000),
       maxParticipants: 500, registeredParticipants: 127,
-      entryFee: 0, status: 'registration_open', isPublished: true,
+      entryFee: 0, status: 'registration_open', isPublished: true, source: 'internal',
       tags: ['javascript', 'algorithms', 'contest'],
     },
   ]);
@@ -443,68 +447,204 @@ async function seed() {
   console.log(`✓ Seeded ${tests.length} tests with questions`);
 
   // ── 9. Resources ──────────────────────────────────────────────────────────
-  // Need a resource category first
   const ResourceCategory = mongoose.models.ResourceCategory || require('./models/ResourceCategory');
   const resCats = await ResourceCategory.insertMany([
-    { name: 'JavaScript', slug: 'javascript', icon: 'code', color: '#f59e0b' },
-    { name: 'Python',     slug: 'python',     icon: 'code', color: '#3b82f6' },
-    { name: 'React',      slug: 'react',      icon: 'code', color: '#06b6d4' },
-    { name: 'General CS', slug: 'general-cs', icon: 'book', color: '#8b5cf6' },
+    { name: 'Full Stack & Web Dev', slug: 'fullstack',       icon: 'code',     color: '#04AA6D', resourceCount: 5 },
+    { name: 'DSA & Algorithms',     slug: 'dsa',             icon: 'terminal', color: '#3b82f6', resourceCount: 4 },
+    { name: 'AI, ML & Data Science', slug: 'ai',              icon: 'sparkles', color: '#8b5cf6', resourceCount: 3 },
+    { name: 'System Design',        slug: 'system_design',   icon: 'cpu',      color: '#f59e0b', resourceCount: 2 },
+    { name: 'Cloud & DevOps',       slug: 'cloud',           icon: 'globe',    color: '#06b6d4', resourceCount: 3 },
+    { name: 'Cyber Security',       slug: 'cybersecurity',   icon: 'shield',   color: '#ef4444', resourceCount: 2 },
+    { name: 'Interview & Placement',slug: 'placements',      icon: 'trophy',   color: '#ec4899', resourceCount: 1 },
+    { name: 'General CS',           slug: 'general-cs',      icon: 'book',     color: '#6366f1', resourceCount: 1 },
   ]);
 
   await Resource.insertMany([
+    // Full Stack & Web Dev
     {
       title: 'JavaScript ES6+ Cheatsheet',
       description: 'Complete reference for arrow functions, destructuring, spread/rest, modules, promises, and async/await.',
-      resourceType: 'pdf', category: resCats[0]._id,
-      difficulty: 'beginner', language: 'English',
-      externalUrl: 'https://example.com/js-es6-cheatsheet.pdf',
-      uploadedBy: sarah._id, status: 'published',
-      views: 340, downloadsCount: 156, averageRating: 4.8,
-      tags: ['javascript', 'es6', 'cheatsheet'],
+      resourceType: 'pdf', category: resCats[0]._id, difficulty: 'beginner', language: 'English',
+      externalUrl: 'https://example.com/js-es6-cheatsheet.pdf', uploadedBy: sarah._id, status: 'published',
+      views: 540, downloadsCount: 280, averageRating: 4.9, isFeatured: true, isTrending: true,
+      tags: ['javascript', 'es6', 'cheatsheet', 'fullstack'],
     },
     {
-      title: 'Node.js Event Loop Explained',
-      description: 'Detailed article with diagrams explaining the Node.js event loop, call stack, and task queues.',
-      resourceType: 'documentation', category: resCats[0]._id,
-      difficulty: 'intermediate', language: 'English',
-      externalUrl: 'https://example.com/nodejs-event-loop',
-      uploadedBy: sarah._id, status: 'published',
-      views: 220, downloadsCount: 98, averageRating: 4.6,
-      tags: ['nodejs', 'event-loop', 'async'],
+      title: 'Node.js Event Loop Architecture Guide',
+      description: 'Detailed article with diagrams explaining the Node.js event loop, call stack, microtasks, and task queues.',
+      resourceType: 'documentation', category: resCats[0]._id, difficulty: 'intermediate', language: 'English',
+      externalUrl: 'https://example.com/nodejs-event-loop', uploadedBy: sarah._id, status: 'published',
+      views: 420, downloadsCount: 190, averageRating: 4.8, isFeatured: true,
+      tags: ['nodejs', 'event-loop', 'async', 'fullstack'],
     },
     {
-      title: 'Python Pandas Complete Guide',
-      description: 'From DataFrames to groupby, merge, pivot tables, and time series — a comprehensive reference.',
-      resourceType: 'pdf', category: resCats[1]._id,
-      difficulty: 'intermediate', language: 'English',
-      externalUrl: 'https://example.com/pandas-guide.pdf',
-      uploadedBy: james._id, status: 'published',
-      views: 190, downloadsCount: 88, averageRating: 4.7,
-      tags: ['python', 'pandas', 'data'],
+      title: 'React 19 & Next.js App Router Masterclass Notes',
+      description: 'Deep dive into Server Components, Server Actions, Suspense boundaries, streaming, and state management in React 19.',
+      resourceType: 'pdf', category: resCats[0]._id, difficulty: 'advanced', language: 'English',
+      externalUrl: 'https://example.com/react-19-nextjs-guide.pdf', uploadedBy: sarah._id, status: 'published',
+      views: 680, downloadsCount: 340, averageRating: 4.9, isFeatured: true, isTrending: true,
+      tags: ['react', 'nextjs', 'frontend', 'fullstack'],
     },
     {
-      title: 'React Hooks Reference Card',
-      description: 'One-page reference for all built-in React hooks with examples and common use cases.',
-      resourceType: 'pdf', category: resCats[2]._id,
-      difficulty: 'intermediate', language: 'English',
-      externalUrl: 'https://example.com/react-hooks-ref.pdf',
-      uploadedBy: sarah._id, status: 'published',
-      views: 412, downloadsCount: 201, averageRating: 4.9,
-      tags: ['react', 'hooks', 'reference'],
+      title: 'Full-Stack MERN Starter & Auth Template',
+      description: 'Complete production-ready starter template with JWT authentication, RBAC, file upload, and MongoDB Mongoose models.',
+      resourceType: 'source_code', category: resCats[0]._id, difficulty: 'intermediate', language: 'English',
+      externalUrl: 'https://github.com/example/mern-starter', uploadedBy: sarah._id, status: 'published',
+      views: 390, downloadsCount: 210, averageRating: 4.8,
+      tags: ['mern', 'react', 'nodejs', 'mongodb', 'starter', 'fullstack'],
     },
     {
-      title: 'Big-O Complexity Cheatsheet',
-      description: 'Time and space complexity for all common data structures and sorting algorithms.',
-      resourceType: 'pdf', category: resCats[3]._id,
-      difficulty: 'beginner', language: 'English',
-      externalUrl: 'https://example.com/big-o-cheatsheet.pdf',
-      uploadedBy: james._id, status: 'published',
-      views: 580, downloadsCount: 310, averageRating: 4.9,
-      tags: ['algorithms', 'data-structures', 'big-o'],
+      title: 'CSS Grid & Flexbox Visual Cheat Sheet',
+      description: 'Quick visual reference for grid layout, flex directions, alignment, positioning, and responsive design patterns.',
+      resourceType: 'notes', category: resCats[0]._id, difficulty: 'beginner', language: 'English',
+      externalUrl: 'https://example.com/css-grid-flexbox.pdf', uploadedBy: sarah._id, status: 'published',
+      views: 310, downloadsCount: 145, averageRating: 4.7,
+      tags: ['css', 'frontend', 'flexbox', 'layout', 'fullstack'],
+    },
+
+    // DSA & Algorithms
+    {
+      title: 'Big-O Complexity & Data Structures Cheatsheet',
+      description: 'Time and space complexity tables for array, linked list, tree, graph, sorting algorithms, and hash tables.',
+      resourceType: 'pdf', category: resCats[1]._id, difficulty: 'beginner', language: 'English',
+      externalUrl: 'https://example.com/big-o-cheatsheet.pdf', uploadedBy: james._id, status: 'published',
+      views: 920, downloadsCount: 510, averageRating: 4.9, isFeatured: true, isTrending: true,
+      tags: ['algorithms', 'dsa', 'big-o', 'data-structures'],
+    },
+    {
+      title: 'Blind 75 LeetCode Pattern Guide',
+      description: 'Comprehensive breakdown of the Blind 75 LeetCode questions categorized by pattern: Two Pointers, Sliding Window, Graphs, DP.',
+      resourceType: 'pdf', category: resCats[1]._id, difficulty: 'intermediate', language: 'English',
+      externalUrl: 'https://example.com/blind-75-patterns.pdf', uploadedBy: james._id, status: 'published',
+      views: 850, downloadsCount: 460, averageRating: 4.9, isFeatured: true, isTrending: true,
+      tags: ['dsa', 'leetcode', 'algorithms', 'interview'],
+    },
+    {
+      title: 'Dynamic Programming & Backtracking Framework',
+      description: 'Step-by-step framework to identify subproblems, state transitions, memoization, and bottom-up DP table construction.',
+      resourceType: 'documentation', category: resCats[1]._id, difficulty: 'advanced', language: 'English',
+      externalUrl: 'https://example.com/dp-framework-guide', uploadedBy: james._id, status: 'published',
+      views: 390, downloadsCount: 180, averageRating: 4.8,
+      tags: ['dp', 'algorithms', 'backtracking', 'dsa'],
+    },
+    {
+      title: 'Graph Algorithms & Tree Traversals Handbook',
+      description: 'BFS, DFS, Dijkstra, Topological Sort, and Union-Find algorithms implementation in Python and JavaScript.',
+      resourceType: 'notes', category: resCats[1]._id, difficulty: 'intermediate', language: 'English',
+      externalUrl: 'https://example.com/graph-algorithms.pdf', uploadedBy: james._id, status: 'published',
+      views: 290, downloadsCount: 135, averageRating: 4.7,
+      tags: ['graph', 'bfs', 'dfs', 'algorithms', 'dsa'],
+    },
+
+    // AI, ML & Data Science
+    {
+      title: 'Python Pandas & NumPy Complete Reference',
+      description: 'From DataFrames to groupby, merge, pivot tables, and time series — a comprehensive data science reference.',
+      resourceType: 'pdf', category: resCats[2]._id, difficulty: 'intermediate', language: 'English',
+      externalUrl: 'https://example.com/pandas-guide.pdf', uploadedBy: james._id, status: 'published',
+      views: 480, downloadsCount: 260, averageRating: 4.8, isFeatured: true,
+      tags: ['python', 'pandas', 'numpy', 'data-science', 'ai'],
+    },
+    {
+      title: 'PyTorch & Deep Learning Foundations',
+      description: 'Tensors, autograd, neural network modules, loss functions, optimizers, and CNN/Transformer architectures in PyTorch.',
+      resourceType: 'pdf', category: resCats[2]._id, difficulty: 'advanced', language: 'English',
+      externalUrl: 'https://example.com/pytorch-foundations.pdf', uploadedBy: james._id, status: 'published',
+      views: 560, downloadsCount: 290, averageRating: 4.9, isFeatured: true, isTrending: true,
+      tags: ['pytorch', 'deep-learning', 'ai', 'machine-learning'],
+    },
+    {
+      title: 'LangChain & RAG AI Boilerplate',
+      description: 'Production-ready Retrieval-Augmented Generation pipeline using LangChain, OpenAI API, and Pinecone vector store.',
+      resourceType: 'source_code', category: resCats[2]._id, difficulty: 'intermediate', language: 'English',
+      externalUrl: 'https://github.com/example/langchain-rag', uploadedBy: james._id, status: 'published',
+      views: 620, downloadsCount: 310, averageRating: 4.9, isFeatured: true, isTrending: true,
+      tags: ['ai', 'langchain', 'openai', 'rag', 'llm'],
+    },
+
+    // System Design
+    {
+      title: 'System Design Interview Architecture Guide',
+      description: 'High-availability architecture patterns: Load balancers, API gateways, database sharding, caching, message queues, and CAP theorem.',
+      resourceType: 'pdf', category: resCats[3]._id, difficulty: 'advanced', language: 'English',
+      externalUrl: 'https://example.com/system-design-guide.pdf', uploadedBy: sarah._id, status: 'published',
+      views: 980, downloadsCount: 580, averageRating: 4.9, isFeatured: true, isTrending: true,
+      tags: ['system-design', 'microservices', 'architecture', 'scaling'],
+    },
+    {
+      title: 'Distributed Caching with Redis & Kafka Event Streaming',
+      description: 'Deep dive into cache invalidation strategies, pub/sub messaging, Kafka consumer groups, and event-driven microservices.',
+      resourceType: 'documentation', category: resCats[3]._id, difficulty: 'advanced', language: 'English',
+      externalUrl: 'https://example.com/redis-kafka-guide', uploadedBy: sarah._id, status: 'published',
+      views: 440, downloadsCount: 220, averageRating: 4.8,
+      tags: ['redis', 'kafka', 'system-design', 'event-driven'],
+    },
+
+    // Cloud & DevOps
+    {
+      title: 'Docker & Containerization Master Class Notes',
+      description: 'Dockerfile best practices, multi-stage builds, Docker Compose configurations, and container security hardening.',
+      resourceType: 'pdf', category: resCats[4]._id, difficulty: 'intermediate', language: 'English',
+      externalUrl: 'https://example.com/docker-masterclass.pdf', uploadedBy: vikas._id, status: 'published',
+      views: 610, downloadsCount: 330, averageRating: 4.9, isFeatured: true,
+      tags: ['docker', 'devops', 'containers', 'cloud'],
+    },
+    {
+      title: 'Kubernetes Cluster Administration & YAML Reference',
+      description: 'Deployments, Services, Ingress controllers, ConfigMaps, Secrets, Helm charts, and HPA autoscaling configs.',
+      resourceType: 'notes', category: resCats[4]._id, difficulty: 'advanced', language: 'English',
+      externalUrl: 'https://example.com/k8s-yaml-ref.pdf', uploadedBy: vikas._id, status: 'published',
+      views: 470, downloadsCount: 240, averageRating: 4.8,
+      tags: ['kubernetes', 'devops', 'cloud', 'k8s'],
+    },
+    {
+      title: 'AWS Cloud Solutions Architect Quick Ref',
+      description: 'EC2, S3, RDS, Lambda, VPC networking, IAM policies, and CloudWatch monitoring cheat sheet.',
+      resourceType: 'pdf', category: resCats[4]._id, difficulty: 'intermediate', language: 'English',
+      externalUrl: 'https://example.com/aws-quick-ref.pdf', uploadedBy: vikas._id, status: 'published',
+      views: 520, downloadsCount: 270, averageRating: 4.8,
+      tags: ['aws', 'cloud', 'devops', 'architecture'],
+    },
+
+    // Cyber Security
+    {
+      title: 'OWASP Top 10 Web Security Cheat Sheet',
+      description: 'How to prevent SQL injection, XSS, CSRF, broken authentication, SSRF, and sensitive data exposure in modern web apps.',
+      resourceType: 'pdf', category: resCats[5]._id, difficulty: 'intermediate', language: 'English',
+      externalUrl: 'https://example.com/owasp-top-10.pdf', uploadedBy: sarah._id, status: 'published',
+      views: 410, downloadsCount: 205, averageRating: 4.9, isFeatured: true,
+      tags: ['security', 'owasp', 'cybersecurity', 'web-dev'],
+    },
+    {
+      title: 'Network Security & Cryptography Essentials',
+      description: 'Symmetric & asymmetric encryption, SSL/TLS handshakes, JWT tokens, OAuth 2.0 flows, and CORS configurations explained.',
+      resourceType: 'documentation', category: resCats[5]._id, difficulty: 'intermediate', language: 'English',
+      externalUrl: 'https://example.com/network-security.pdf', uploadedBy: sarah._id, status: 'published',
+      views: 330, downloadsCount: 160, averageRating: 4.7,
+      tags: ['security', 'cryptography', 'jwt', 'oauth', 'cybersecurity'],
+    },
+
+    // Interview & Placement
+    {
+      title: 'Software Engineer Tech Interview Playbook',
+      description: 'Complete placement preparation kit: Behavioral STAR method questions, resume templates, system design frameworks, and HR prep.',
+      resourceType: 'pdf', category: resCats[6]._id, difficulty: 'beginner', language: 'English',
+      externalUrl: 'https://example.com/tech-interview-playbook.pdf', uploadedBy: sarah._id, status: 'published',
+      views: 890, downloadsCount: 520, averageRating: 4.9, isFeatured: true, isTrending: true,
+      tags: ['interview', 'placement', 'career', 'resume', 'placements'],
+    },
+
+    // General CS
+    {
+      title: 'SQL Database Optimization & Indexing Guide',
+      description: 'B-Trees, composite indexes, query execution plans, transactions, ACID properties, and database normalization rules.',
+      resourceType: 'notes', category: resCats[7]._id, difficulty: 'intermediate', language: 'English',
+      externalUrl: 'https://example.com/sql-optimization.pdf', uploadedBy: james._id, status: 'published',
+      views: 370, downloadsCount: 195, averageRating: 4.8,
+      tags: ['sql', 'database', 'postgresql', 'indexing', 'general-cs'],
     },
   ]);
-  console.log('✓ Seeded 4 resource categories and 5 resources');
+  console.log('✓ Seeded 8 resource categories and 21 developer resources');
 
   // ── 10. Workspaces ────────────────────────────────────────────────────────
   await Workspace.insertMany([
@@ -594,13 +734,19 @@ async function seed() {
   console.log('  Notifications (6)');
   console.log('═══════════════════════════════════════════════════\n');
 
-  await mongoose.disconnect();
-  process.exit(0);
+  if (require.main === module) {
+    await mongoose.disconnect();
+    process.exit(0);
+  }
 }
 
-seed().catch((err) => {
-  console.error('\n✗ Seed failed:', err.message);
-  console.error(err);
-  mongoose.disconnect();
-  process.exit(1);
-});
+if (require.main === module) {
+  seed().catch((err) => {
+    console.error('\n✗ Seed failed:', err.message);
+    console.error(err);
+    mongoose.disconnect();
+    process.exit(1);
+  });
+} else {
+  module.exports = seed;
+}

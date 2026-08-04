@@ -1,10 +1,12 @@
 import React from 'react';
+import { HealthMonitor } from '../components/HealthMonitor.jsx';
+import { BackButton } from '@components/common/BackButton.jsx';
 
 export default function AdminHealthPage() {
   return (
-    <div className="p-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-sm animate-fade-in w-full">
-      <h2 className="text-base font-bold text-slate-850 dark:text-white">AdminHealth Page</h2>
-      <p className="text-xs text-slate-400 mt-1">Placeholder page for feature: adminhealth</p>
+    <div className="flex flex-col gap-5 w-full font-sans">
+      <BackButton fallbackPath="/admin" className="self-start" />
+      <HealthMonitor />
     </div>
   );
 }

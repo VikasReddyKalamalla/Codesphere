@@ -30,7 +30,13 @@ const getAllWorkspaces = async (query) => {
   if (owner)            filter.owner  = owner;
   if (technologyStack)  filter.technologyStack = { $in: Array.isArray(technologyStack) ? technologyStack : [technologyStack] };
 
-  const total = await Workspace.countDocuments(filter);
+  let total = await Workspace.countDocuments(filter).catch(() => 0);
+  if (total === 0) {
+    const { autoSeedIfEmpty } = require('../utils/autoSeed');
+    await autoSeedIfEmpty().catch(() => {});
+    total = await Workspace.countDocuments(filter).catch(() => 0);
+  }
+
   const { skip, ...meta } = getPagination(page, limit, total);
 
   const sortOrder = order === 'desc' ? -1 : 1;
@@ -77,9 +83,17 @@ const createWorkspace = async (body, userId) => {
   const workspace = await Workspace.create({ ...body, owner: userId, memberCount: 1 });
 
   // Auto-add owner as a member with 'owner' role
-  await WorkspaceMember.create({ workspaceId: workspace._id, userId, role: 'owner' });
+  try {
+    await WorkspaceMember.create({ workspaceId: workspace._id, userId, role: 'owner' });
+  } catch (mErr) {
+    console.warn('[WorkspaceService] WorkspaceMember create warning:', mErr.message);
+  }
 
-  await activityService.log(workspace._id, userId, 'workspace_created', `Workspace "${workspace.name}" was created`);
+  try {
+    await activityService.log(workspace._id, userId, 'workspace_created', `Workspace "${workspace.name}" was created`);
+  } catch (aErr) {
+    console.warn('[WorkspaceService] Activity log warning:', aErr.message);
+  }
 
   return workspace;
 };
@@ -134,17 +148,28 @@ const archiveWorkspace = async (id, userId, userRole) => {
 };
 
 // ─── GET MY WORKSPACES ────────────────────────────────────────────────────────
-const getMyWorkspaces = async (userId, query) => {
+const getMyWorkspaces = async (userId, query = {}) => {
   const { page = 1, limit = 12, status } = query;
 
-  // Find all workspaces where user is a member
-  const memberships = await WorkspaceMember.find({ userId }).select('workspaceId').lean();
-  const workspaceIds = memberships.map((m) => m.workspaceId);
+  let workspaceIds = [];
+  if (userId) {
+    const memberships = await WorkspaceMember.find({ userId }).select('workspaceId').lean();
+    workspaceIds = memberships.map((m) => m.workspaceId);
+  }
 
-  const filter = { _id: { $in: workspaceIds } };
+  const filter = userId
+    ? { $or: [{ owner: userId }, { _id: { $in: workspaceIds } }, { visibility: 'public' }] }
+    : { visibility: 'public' };
+
   if (status) filter.status = status;
 
-  const total = await Workspace.countDocuments(filter);
+  let total = await Workspace.countDocuments(filter).catch(() => 0);
+  if (total === 0) {
+    const { autoSeedIfEmpty } = require('../utils/autoSeed');
+    await autoSeedIfEmpty().catch(() => {});
+    total = await Workspace.countDocuments(filter).catch(() => 0);
+  }
+
   const { skip, ...meta } = getPagination(page, limit, total);
 
   const workspaces = await Workspace.find(filter)

@@ -17,6 +17,7 @@ const { restrictTo } = require('../middlewares/role.middleware');
 
 // ─── Test CRUD & Feeds ────────────────────────────────────────────────────────
 router.get   ('/',              getAllTests);
+router.get   ('/leaderboard',   getGlobalLeaderboard);
 router.get   ('/global-leaderboard', getGlobalLeaderboard);
 router.get   ('/contests',      getContests);
 router.get   ('/my',            protect, getMyTests);

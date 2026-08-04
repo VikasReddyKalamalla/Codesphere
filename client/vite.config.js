@@ -11,14 +11,26 @@ export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
     proxy: {
-      '/vscode-web': {
-        target: 'http://localhost:5000',
+      '/workspace-proxy': {
+        target: 'http://127.0.0.1:5000',
         ws: true,
         changeOrigin: true,
-        // Don't strip the /vscode-web prefix — Express handles path routing
+      },
+      '/vscode-web': {
+        target: 'http://127.0.0.1:5000',
+        ws: true,
+        changeOrigin: true,
       },
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://127.0.0.1:5000',
+        changeOrigin: true,
+      },
+      '/preview': {
+        target: 'http://127.0.0.1:5000',
         changeOrigin: true,
       },
     },

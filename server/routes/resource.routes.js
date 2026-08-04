@@ -25,17 +25,17 @@ const {
   getDownloadHistory,
 } = require('../controllers/download.controller');
 
-const { protect }        = require('../middlewares/auth.middleware');
+const { protect, optionalAuth } = require('../middlewares/auth.middleware');
 const { restrictTo }     = require('../middlewares/role.middleware');
 const { uploadResource } = require('../middlewares/upload.middleware');
 
 // ─── Special & Public Routes ──────────────────────────────────────────────────
-router.get('/',            protect, getAllResources);
-router.get('/featured',    protect, getFeaturedResources);
-router.get('/trending',    protect, getTrendingResources);
-router.get('/recommended', protect, getRecommendedResources);
+router.get('/',            optionalAuth, getAllResources);
+router.get('/featured',    optionalAuth, getFeaturedResources);
+router.get('/trending',    optionalAuth, getTrendingResources);
+router.get('/recommended', optionalAuth, getRecommendedResources);
 router.get('/analytics',   protect, getAnalyticsSummary);
-router.get('/:id',         protect, getResourceById);
+router.get('/:id',         optionalAuth, getResourceById);
 router.post('/:id/comments', protect, addComment);
 
 // ─── Create / Update / Delete ─────────────────────────────────────────────────

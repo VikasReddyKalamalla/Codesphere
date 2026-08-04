@@ -67,12 +67,18 @@ export const Codex = () => {
     setLoading(true);
     try {
       const res = await createWorkspaceAPI(payload);
-      if (res.success) {
+      const wsData = res?.data || res;
+      const createdId = wsData?._id || wsData?.id || (typeof wsData === 'string' ? wsData : null);
+      if (createdId) {
         toast.success(`Launched ${templateName} template!`);
-        navigate(`/codex/${res.data._id || res.data}`);
+        navigate(`/codex/${createdId}`);
+      } else {
+        toast.error(res?.message || 'Failed to launch template');
       }
     } catch (err) {
-      toast.error('Failed to launch template');
+      console.error('Launch template error:', err);
+      toast.error(err?.response?.data?.message || 'Failed to launch template');
+    } finally {
       setLoading(false);
     }
   };

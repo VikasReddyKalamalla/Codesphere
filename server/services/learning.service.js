@@ -20,8 +20,14 @@ const getAllPaths = async ({ page = 1, limit = 10, category, difficulty, isPremi
   if (isPremium !== undefined) filter.isPremium = isPremium === 'true';
   if (search)     filter.$text = { $search: search };
 
-  const total              = await LearningPath.countDocuments(filter);
-  const { skip, ...meta }  = getPagination(page, limit, total);
+  let total = await LearningPath.countDocuments(filter).catch(() => 0);
+  if (total === 0) {
+    const { autoSeedIfEmpty } = require('../utils/autoSeed');
+    await autoSeedIfEmpty().catch(() => {});
+    total = await LearningPath.countDocuments(filter).catch(() => 0);
+  }
+
+  const { skip, ...meta } = getPagination(page, limit, total);
 
   const paths = await LearningPath
     .find(filter)

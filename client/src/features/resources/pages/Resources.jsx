@@ -223,6 +223,7 @@ export const Resources = () => {
 
         {/* Right Sidebar */}
         <ResourceRightSidebar
+          resources={filteredResources}
           history={userHistory}
           onSelectResource={handleSelectResource}
         />

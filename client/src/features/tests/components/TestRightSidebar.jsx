@@ -2,14 +2,6 @@ import React from 'react';
 import { Trophy, Sparkles, Award, CheckCircle2, TrendingUp, Cpu, Flame, Star } from 'lucide-react';
 
 export const TestRightSidebar = ({ leaderboard = [], onSelectUser }) => {
-  const defaultLeaderboard = leaderboard.length > 0 ? leaderboard : [
-    { rank: 1, name: 'Siddharth V.', xp: '4,850 XP', score: 98, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200' },
-    { rank: 2, name: 'Aarav Patel', xp: '4,620 XP', score: 95, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200' },
-    { rank: 3, name: 'Maya Lin', xp: '4,410 XP', score: 92, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200' },
-    { rank: 4, name: 'Kavya Sharma', xp: '4,190 XP', score: 90, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200' },
-    { rank: 5, name: 'David Kim', xp: '3,950 XP', score: 88, avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200' }
-  ];
-
   return (
     <div className="w-full lg:w-80 flex flex-col gap-6 shrink-0 font-sans">
       {/* AI Readiness Score Banner */}
@@ -38,25 +30,29 @@ export const TestRightSidebar = ({ leaderboard = [], onSelectUser }) => {
         </div>
 
         <div className="flex flex-col gap-3">
-          {defaultLeaderboard.map((u, idx) => (
-            <div key={idx} className="flex items-center justify-between text-xs">
-              <div className="flex items-center gap-3">
-                <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-black font-mono ${
-                  u.rank === 1 ? 'bg-amber-500 text-slate-950' : u.rank === 2 ? 'bg-slate-300 text-slate-950' : u.rank === 3 ? 'bg-amber-700 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
-                }`}>
-                  {u.rank}
-                </span>
-                <img src={u.avatar} alt={u.name} className="w-8 h-8 rounded-full object-cover border border-[#04AA6D]/40" />
-                <div className="flex flex-col">
-                  <span className="font-bold text-slate-900 dark:text-slate-100 leading-tight">{u.name}</span>
-                  <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{u.xp || `${u.score} pts`}</span>
+          {leaderboard && leaderboard.length > 0 ? (
+            leaderboard.map((u, idx) => (
+              <div key={idx} className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-3">
+                  <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-black font-mono ${
+                    (u.rank || idx + 1) === 1 ? 'bg-amber-500 text-slate-950' : (u.rank || idx + 1) === 2 ? 'bg-slate-300 text-slate-950' : (u.rank || idx + 1) === 3 ? 'bg-amber-700 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-500'
+                  }`}>
+                    {u.rank || idx + 1}
+                  </span>
+                  <img src={u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.name}`} alt={u.name} className="w-8 h-8 rounded-full object-cover border border-[#04AA6D]/40" />
+                  <div className="flex flex-col">
+                    <span className="font-bold text-slate-900 dark:text-slate-100 leading-tight">{u.name}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">{u.xp || `${u.score}% pts`}</span>
+                  </div>
                 </div>
+                <span className="text-[10px] font-mono font-bold text-[#04AA6D] dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
+                  {u.score}% Avg
+                </span>
               </div>
-              <span className="text-[10px] font-mono font-bold text-[#04AA6D] dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md">
-                {u.score}% Avg
-              </span>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-xs text-slate-500 font-mono py-2 text-center">No rankings recorded yet.</p>
+          )}
         </div>
       </div>
 

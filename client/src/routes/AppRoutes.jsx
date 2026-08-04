@@ -36,41 +36,40 @@ const PrivacyPage   = lazy(() => import('@features/legal/pages/PrivacyPage.jsx')
 const TermsPage     = lazy(() => import('@features/legal/pages/TermsPage.jsx'));
 const CookiesPage   = lazy(() => import('@features/legal/pages/CookiesPage.jsx'));
 
-// ─── Student dashboard pages ──────────────────────────────────────────────────
-const DashboardPage      = lazy(() => import('@features/dashboard/pages/DashboardPage.jsx'));
-const LearningPage       = lazy(() => import('@features/learning/pages/LearningPage.jsx'));
-const LearningPathPage   = lazy(() => import('@features/learning/pages/LearningPathPage.jsx'));
-const LessonPage         = lazy(() => import('@features/learning/pages/LessonPage.jsx'));
-const ArticlePage        = lazy(() => import('@features/learning/pages/ArticlePage.jsx'));
-const ResourcesPage      = lazy(() => import('@features/resources/pages/ResourcesPage.jsx'));
-const ResourceDetailPage = lazy(() => import('@features/resources/pages/ResourceDetailPage.jsx'));
-const CommunityPage      = lazy(() => import('@features/communities/pages/CommunityPage.jsx'));
-const CommunityDetailPage= lazy(() => import('@features/communities/pages/CommunityDetailPage.jsx'));
-const CreateCommunityPage= lazy(() => import('@features/communities/pages/CreateCommunity.jsx'));
-const CommunitySettingsPage= lazy(() => import('@features/communities/pages/CommunitySettings.jsx'));
-const SessionsPage       = lazy(() => import('@features/sessions/pages/SessionsPage.jsx'));
-const SessionDetailPage  = lazy(() => import('@features/sessions/pages/SessionDetailPage.jsx'));
-const LiveSessionPage    = lazy(() => import('@features/sessions/pages/LiveSession.jsx'));
-const EventsPage         = lazy(() => import('@features/events/pages/EventsPage.jsx'));
-const EventDetailPage    = lazy(() => import('@features/events/pages/EventDetailPage.jsx'));
-const CodexPage          = lazy(() => import('@features/codex/pages/CodexPage.jsx'));
-const CreateWorkspacePage = lazy(() => import('@features/codex/pages/CreateWorkspace.jsx'));
-const WorkspacePage      = lazy(() => import('@features/codex/pages/WorkspacePage.jsx'));
-const SandboxPage        = lazy(() => import('@features/sandbox/pages/SandboxPage.jsx'));
-const SandboxProjectPage = lazy(() => import('@features/sandbox/pages/SandboxProjectPage.jsx'));
+// ─── Student dashboard pages (Statically imported for 100% stability) ─────────
+import DashboardPage from '@features/dashboard/pages/DashboardPage.jsx';
+import LearningPage from '@features/learning/pages/LearningPage.jsx';
+import LearningPathPage from '@features/learning/pages/LearningPathPage.jsx';
+import LessonPage from '@features/learning/pages/LessonPage.jsx';
+import ArticlePage from '@features/learning/pages/ArticlePage.jsx';
+import ResourcesPage from '@features/resources/pages/ResourcesPage.jsx';
+import ResourceDetailPage from '@features/resources/pages/ResourceDetailPage.jsx';
+import CommunityPage from '@features/communities/pages/CommunityPage.jsx';
+import CommunityDetailPage from '@features/communities/pages/CommunityDetailPage.jsx';
+import CreateCommunityPage from '@features/communities/pages/CreateCommunity.jsx';
+import CommunitySettingsPage from '@features/communities/pages/CommunitySettings.jsx';
+import SessionsPage from '@features/sessions/pages/SessionsPage.jsx';
+import SessionDetailPage from '@features/sessions/pages/SessionDetailPage.jsx';
+import LiveSessionPage from '@features/sessions/pages/LiveSession.jsx';
+import EventsPage from '@features/events/pages/EventsPage.jsx';
+import EventDetailPage from '@features/events/pages/EventDetailPage.jsx';
+import CodexPage from '@features/codex/pages/CodexPage.jsx';
+import CreateWorkspacePage from '@features/codex/pages/CreateWorkspace.jsx';
+import WorkspacePage from '@features/codex/pages/WorkspacePage.jsx';
+import SandboxPage from '@features/sandbox/pages/SandboxPage.jsx';
+import SandboxProjectPage from '@features/sandbox/pages/SandboxProjectPage.jsx';
 import CloudWorkspaceView from '@features/workspace/pages/CloudWorkspaceView.jsx';
-const VSCodeWebIDE       = CloudWorkspaceView;
-const WebIDEPage         = lazy(() => import('@features/ide/WebIDE.jsx'));
-const TestsPage          = lazy(() => import('@features/tests/pages/TestsPage.jsx'));
-const TestDetailPage     = lazy(() => import('@features/tests/pages/TestDetailPage.jsx'));
-const TestAttemptPage    = lazy(() => import('@features/tests/pages/TestAttemptPage.jsx'));
-const TestResultsPage    = lazy(() => import('@features/tests/pages/TestResultsPage.jsx'));
-const ProfilePage        = lazy(() => import('@features/profile/pages/ProfilePage.jsx'));
-const PublicProfilePage  = lazy(() => import('@features/profile/pages/PublicProfilePage.jsx'));
-const NotificationsPage  = lazy(() => import('@features/notifications/pages/NotificationsPage.jsx'));
-const SubscriptionPage   = lazy(() => import('@features/subscription/pages/SubscriptionPage.jsx'));
-const BillingPage        = lazy(() => import('@features/subscription/pages/BillingPage.jsx'));
-const SettingsPage       = lazy(() => import('@features/settings/pages/SettingsPage.jsx'));
+import WebIDEPage from '@features/ide/WebIDE.jsx';
+import TestsPage from '@features/tests/pages/TestsPage.jsx';
+import TestDetailPage from '@features/tests/pages/TestDetailPage.jsx';
+import TestAttemptPage from '@features/tests/pages/TestAttemptPage.jsx';
+import TestResultsPage from '@features/tests/pages/TestResultsPage.jsx';
+import ProfilePage from '@features/profile/pages/ProfilePage.jsx';
+import PublicProfilePage from '@features/profile/pages/PublicProfilePage.jsx';
+import NotificationsPage from '@features/notifications/pages/NotificationsPage.jsx';
+import SubscriptionPage from '@features/subscription/pages/SubscriptionPage.jsx';
+import BillingPage from '@features/subscription/pages/BillingPage.jsx';
+import SettingsPage from '@features/settings/pages/SettingsPage.jsx';
 const InstructorApplyPage= lazy(() => import('@features/instructor/pages/InstructorApply.jsx'));
 
 // ─── Instructor pages ─────────────────────────────────────────────────────────
@@ -206,7 +205,7 @@ const AppRoutes = () => {
         {/* Sandbox & Web IDE */}
         <Route path={ROUTES.SANDBOX}           element={<W><SandboxPage /></W>} />
         <Route path={ROUTES.SANDBOX_PROJECT}   element={<W><SandboxProjectPage /></W>} />
-        <Route path="/vscode/:projectId"       element={<W><VSCodeWebIDE /></W>} />
+        <Route path="/vscode/:projectId"       element={<W><SandboxProjectPage /></W>} />
         <Route path={ROUTES.IDE}               element={<W><WebIDEPage /></W>} />
 
         {/* Tests */}
@@ -307,8 +306,10 @@ const AppRoutes = () => {
       {/* ── Redirect /instructor → /instructor/dashboard ─────────────────── */}
       <Route path="/instructor" element={<Navigate to={ROUTES.INSTRUCTOR_DASHBOARD} replace />} />
 
-      {/* ── Cloud Workspace Full-Screen IDE View ────────────────── */}
+      {/* ── Cloud Workspace / Code Server Full-Screen IDE View ────────────────── */}
       <Route element={<EmptyLayout />}>
+        <Route path="/code-server" element={<W><CloudWorkspaceView /></W>} />
+        <Route path="/code-server/:workspaceId" element={<W><CloudWorkspaceView /></W>} />
         <Route path="/workspace/:workspaceId" element={<W><CloudWorkspaceView /></W>} />
         <Route path="/learning/:courseId/lesson/:lessonId/practice" element={<W><CloudWorkspaceView /></W>} />
         <Route path="/learning/:courseId/module/:moduleId/lesson/:lessonId/practice" element={<W><CloudWorkspaceView /></W>} />

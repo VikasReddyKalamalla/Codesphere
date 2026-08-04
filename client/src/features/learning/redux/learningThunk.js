@@ -1,11 +1,13 @@
 import { fetchCoursesAPI, fetchCourseDetailsAPI } from '../services/learningAPI.js';
 import { fetchStart, fetchSuccess, fetchCourseSuccess, fetchFailure } from './learningSlice.js';
 
-export const fetchCoursesThunk = () => async (dispatch) => {
+export const fetchCoursesThunk = (params) => async (dispatch) => {
   dispatch(fetchStart());
   try {
-    const data = await fetchCoursesAPI();
-    dispatch(fetchSuccess(data));
+    const res = await fetchCoursesAPI(params);
+    const payload = res?.data || res;
+    const list = Array.isArray(payload) ? payload : (payload?.paths || payload?.courses || payload?.data || []);
+    dispatch(fetchSuccess(list));
   } catch (err) {
     dispatch(fetchFailure(err.message));
   }

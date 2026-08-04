@@ -26,7 +26,13 @@ const getAllCommunities = async (query) => {
   if (visibility)  filter.visibility = visibility;
   if (search)      filter.$text = { $search: search };
 
-  const total = await Community.countDocuments(filter);
+  let total = await Community.countDocuments(filter).catch(() => 0);
+  if (total === 0) {
+    const { autoSeedIfEmpty } = require('../utils/autoSeed');
+    await autoSeedIfEmpty().catch(() => {});
+    total = await Community.countDocuments(filter).catch(() => 0);
+  }
+
   const { skip, ...meta } = getPagination(page, limit, total);
 
   const sortOrder = order === 'desc' ? -1 : 1;
@@ -41,7 +47,7 @@ const getAllCommunities = async (query) => {
     .sort(sortOptions)
     .skip(skip)
     .limit(meta.limit)
-    .select('-members -posts'); // don't populate full arrays for list view
+    .select('-members -posts');
 
   return { ...meta, communities };
 };

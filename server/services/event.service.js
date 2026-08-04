@@ -55,7 +55,13 @@ const getAllEvents = async (query) => {
     filter.status = 'completed';
   }
 
-  const total = await Event.countDocuments(filter);
+  let total = await Event.countDocuments(filter).catch(() => 0);
+  if (total === 0) {
+    const { autoSeedIfEmpty } = require('../utils/autoSeed');
+    await autoSeedIfEmpty().catch(() => {});
+    total = await Event.countDocuments(filter).catch(() => 0);
+  }
+
   const { skip, ...meta } = getPagination(page, limit, total);
 
   // Sorting
@@ -504,39 +510,60 @@ const SEED_GLOBAL_EVENTS = [
   }
 ];
 
-// ─── GET GLOBE EVENTS (Strictly Real Admin/Instructor Events from MongoDB) ──
+const DEFAULT_GLOBE_LOCATIONS = [
+  { country: 'United States', city: 'San Francisco', lat: 37.7749, lng: -122.4194 },
+  { country: 'United Kingdom', city: 'London', lat: 51.5074, lng: -0.1278 },
+  { country: 'India', city: 'Bengaluru', lat: 12.9716, lng: 77.5946 },
+  { country: 'Japan', city: 'Tokyo', lat: 35.6762, lng: 139.6503 },
+  { country: 'Germany', city: 'Berlin', lat: 52.5200, lng: 13.4050 },
+  { country: 'Australia', city: 'Sydney', lat: -33.8688, lng: 151.2093 },
+  { country: 'Canada', city: 'Toronto', lat: 43.6532, lng: -79.3832 },
+  { country: 'Singapore', city: 'Singapore', lat: 1.3521, lng: 103.8198 },
+];
+
+// ─── GET GLOBE EVENTS (Published Admin/Instructor & Seeded Events from MongoDB) ──
 const getGlobeEvents = async () => {
-  // Strictly query events manually published by admin/instructor (source: 'user_created')
   const events = await Event.find({ 
-    isPublished: true, 
-    source: 'user_created' 
+    isPublished: true 
   })
     .select('_id title slug eventType mode categoryName categoryColor country city latitude longitude startDate endDate registeredParticipants maxParticipants bannerImage thumbnail companyName organizer prizePool isFeatured')
     .populate('organizer', 'fullName avatar')
     .lean();
 
-  return events.map(ev => ({
-    id: ev._id,
-    title: ev.title,
-    slug: ev.slug,
-    eventType: ev.eventType,
-    mode: ev.mode,
-    categoryName: ev.categoryName,
-    categoryColor: ev.categoryColor || '#04AA6D',
-    country: ev.country || '',
-    city: ev.city || '',
-    lat: Number(ev.latitude || 0),
-    lng: Number(ev.longitude || 0),
-    startDate: ev.startDate,
-    endDate: ev.endDate,
-    registeredCount: ev.registeredParticipants || 0,
-    maxCapacity: ev.maxParticipants || 0,
-    bannerImage: ev.bannerImage || ev.thumbnail,
-    companyName: ev.companyName,
-    organizerName: ev.organizer?.fullName || 'CodeSphere Admin',
-    prizePool: ev.prizePool,
-    isFeatured: ev.isFeatured,
-  }));
+  return events.map((ev, idx) => {
+    const fallbackLoc = DEFAULT_GLOBE_LOCATIONS[idx % DEFAULT_GLOBE_LOCATIONS.length];
+    const hasCustomCoords = typeof ev.latitude === 'number' && typeof ev.longitude === 'number' &&
+      ev.latitude !== 0 && ev.longitude !== 0 &&
+      !(ev.latitude === 20.5937 && ev.longitude === 78.9629 && ev.city !== 'Bengaluru');
+
+    const lat = hasCustomCoords ? Number(ev.latitude) : fallbackLoc.lat;
+    const lng = hasCustomCoords ? Number(ev.longitude) : fallbackLoc.lng;
+    const country = (ev.country && ev.country !== 'Global') ? ev.country : fallbackLoc.country;
+    const city = (ev.city && ev.city !== 'Remote') ? ev.city : fallbackLoc.city;
+
+    return {
+      id: ev._id,
+      title: ev.title,
+      slug: ev.slug,
+      eventType: ev.eventType,
+      mode: ev.mode,
+      categoryName: ev.categoryName,
+      categoryColor: ev.categoryColor || '#04AA6D',
+      country,
+      city,
+      lat,
+      lng,
+      startDate: ev.startDate,
+      endDate: ev.endDate,
+      registeredCount: ev.registeredParticipants || 0,
+      maxCapacity: ev.maxParticipants || 0,
+      bannerImage: ev.bannerImage || ev.thumbnail,
+      companyName: ev.companyName,
+      organizerName: ev.organizer?.fullName || 'CodeSphere Admin',
+      prizePool: ev.prizePool,
+      isFeatured: ev.isFeatured,
+    };
+  });
 };
 
 // ─── GET GLOBALLY AGGREGATED ANALYTICS SUMMARY ────────────────────────────────

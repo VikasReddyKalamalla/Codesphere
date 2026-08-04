@@ -36,8 +36,9 @@ export const fetchCommunitiesThunk = (params) => async (dispatch) => {
   dispatch(fetchStart());
   try {
     const res = await fetchCommunitiesAPI(params);
-    const payload = res.data || res;
-    dispatch(fetchSuccess(payload.communities || payload || []));
+    const payload = res?.data || res;
+    const list = Array.isArray(payload) ? payload : (payload?.communities || payload?.data || []);
+    dispatch(fetchSuccess(list));
   } catch (err) {
     dispatch(fetchFailure(err.message));
     toast.error('Failed to load communities');

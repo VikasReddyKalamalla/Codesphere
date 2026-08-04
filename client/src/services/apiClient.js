@@ -36,12 +36,12 @@ apiClient.interceptors.response.use(
     const status  = error.response?.status;
     const message = error.response?.data?.message || error.message || 'Something went wrong';
 
-    // Session expired — clear local storage and redirect to login
-    if (status === 401) {
+    // Session expired — clear local storage and redirect to login (except for auth requests)
+    const isAuthRoute = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/register');
+    if (status === 401 && !isAuthRoute) {
       localStorage.removeItem(API_CONFIG.TOKEN_KEY);
       localStorage.removeItem(API_CONFIG.USER_KEY);
-      // Avoid importing react-router here to keep this file framework-agnostic
-      if (window.location.pathname !== '/login') {
+      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
         window.location.href = '/login';
       }
     }

@@ -26,47 +26,19 @@ const seedSandboxDatabase = async () => {
 
 // GET /api/sandbox
 const getAllProjects = asyncHandler(async (req, res) => {
-  await seedSandboxDatabase();
-  
-  // Use mock data in development mode
-  if (process.env.NODE_ENV === 'development') {
-    const page = req.query.page || 1;
-    const limit = req.query.limit || 10;
-    const data = getPaginatedProjects(page, limit);
-    return successResponse(res, 200, 'Sandbox projects fetched successfully', data);
-  }
-  
   const data = await sandboxService.getAllProjects(req.query);
   return successResponse(res, 200, 'Sandbox projects fetched successfully', data);
 });
 
 // GET /api/sandbox/my
 const getMyProjects = asyncHandler(async (req, res) => {
-  await seedSandboxDatabase();
-  
-  if (process.env.NODE_ENV === 'development') {
-    // Return empty array for now (no user projects in development mode)
-    return successResponse(res, 200, 'My sandbox projects fetched successfully', { data: [], total: 0 });
-  }
-  
-  const data = await sandboxService.getMyProjects(req.user._id, req.query);
+  const userId = req.user?._id || req.user?.id;
+  const data = await sandboxService.getMyProjects(userId, req.query);
   return successResponse(res, 200, 'My sandbox projects fetched successfully', data);
 });
 
 // GET /api/sandbox/:id
 const getProjectById = asyncHandler(async (req, res) => {
-  await seedSandboxDatabase();
-  
-  if (process.env.NODE_ENV === 'development') {
-    const { getSandboxProjects } = require('../services/mockSeed');
-    const projects = getSandboxProjects();
-    const project = projects.find(p => p._id === req.params.id);
-    if (!project) {
-      return successResponse(res, 404, 'Project not found');
-    }
-    return successResponse(res, 200, 'Sandbox project fetched successfully', project);
-  }
-  
   const data = await sandboxService.getProjectById(req.params.id);
   return successResponse(res, 200, 'Sandbox project fetched successfully', data);
 });

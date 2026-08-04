@@ -11,6 +11,15 @@ export class ErrorBoundary extends Component {
     this.setState({ errorInfo });
     const errText = error?.stack || error?.message || (typeof error === 'object' ? JSON.stringify(error) : String(error));
     console.error('ErrorBoundary caught a runtime crash:', errText, errorInfo?.componentStack);
+
+    // Auto recover if Vite dynamic module fetch fails during HMR / dev server restart
+    if (errText.includes('Failed to fetch dynamically imported module') || errText.includes('Importing a module script failed')) {
+      const lastAutoReload = Number(sessionStorage.getItem('cs_last_dynamic_reload') || 0);
+      if (Date.now() - lastAutoReload > 3000) {
+        sessionStorage.setItem('cs_last_dynamic_reload', String(Date.now()));
+        window.location.reload();
+      }
+    }
   }
 
   render() {

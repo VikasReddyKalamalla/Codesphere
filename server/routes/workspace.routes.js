@@ -30,13 +30,13 @@ const { getWorkspaceTasks }       = require('../controllers/task.controller');
 const { getWorkspaceMilestones }  = require('../controllers/milestone.controller');
 const { getActivities }           = require('../controllers/workspaceActivity.controller');
 
-const { protect } = require('../middlewares/auth.middleware');
+const { protect, optionalAuth } = require('../middlewares/auth.middleware');
 
 // ─── Workspace CRUD ───────────────────────────────────────────────────────────
-router.get   ('/',          protect, getAllWorkspaces);
-router.get   ('/my',        protect, getMyWorkspaces);
+router.get   ('/',          optionalAuth, getAllWorkspaces);
+router.get   ('/my',        optionalAuth, getMyWorkspaces);
 router.get   ('/my/invites',protect, getMyInvites);
-router.get   ('/:id',       protect, getWorkspaceById);
+router.get   ('/:id',       optionalAuth, getWorkspaceById);
 router.post  ('/',          protect, createWorkspace);
 router.put   ('/:id',       protect, updateWorkspace);
 router.delete('/:id',       protect, deleteWorkspace);

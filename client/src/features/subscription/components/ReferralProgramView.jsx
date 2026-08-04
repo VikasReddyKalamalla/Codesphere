@@ -12,12 +12,7 @@ export const ReferralProgramView = () => {
   const totalEarned = referralData?.totalEarned || 1500;
   const totalReferrals = referralData?.totalReferrals || 6;
 
-  const leaderboard = referralData?.leaderboard || [
-    { rank: 1, name: 'Siddharth V.', count: 48, earned: 12000, avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100' },
-    { rank: 2, name: 'Ananya Roy', count: 35, earned: 8750, avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100' },
-    { rank: 3, name: 'Vikram Mehta', count: 29, earned: 7250, avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=100' },
-    { rank: 4, name: 'Priya Sharma', count: 22, earned: 5500, avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=100' },
-  ];
+  const leaderboard = referralData?.leaderboard || [];
 
   const handleCopy = () => {
     navigator.clipboard.writeText(link);
@@ -76,19 +71,23 @@ export const ReferralProgramView = () => {
           <Trophy className="w-4 h-4 text-amber-500" /> Top Referral Advocates
         </h3>
         <div className="divide-y divide-slate-200 dark:divide-slate-800 text-xs">
-          {leaderboard.map((user, idx) => (
-            <div key={idx} className="py-3 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <span className="font-mono font-bold text-slate-500 dark:text-slate-400 w-4">#{user.rank}</span>
-                <img src={user.avatar} alt={user.name} className="w-7 h-7 rounded-full object-cover" />
-                <span className="text-slate-900 dark:text-white font-semibold">{user.name}</span>
+          {leaderboard && leaderboard.length > 0 ? (
+            leaderboard.map((user, idx) => (
+              <div key={idx} className="py-3 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <span className="font-mono font-bold text-slate-500 dark:text-slate-400 w-4">#{user.rank || idx + 1}</span>
+                  <img src={user.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.name}`} alt={user.name} className="w-7 h-7 rounded-full object-cover" />
+                  <span className="text-slate-900 dark:text-white font-semibold">{user.name}</span>
+                </div>
+                <div className="flex items-center gap-4">
+                  <span className="text-slate-500 dark:text-slate-400">{user.count} Referrals</span>
+                  <span className="font-mono font-bold text-[#04AA6D] dark:text-emerald-400">₹{user.earned.toLocaleString()}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-4">
-                <span className="text-slate-500 dark:text-slate-400">{user.count} Referrals</span>
-                <span className="font-mono font-bold text-[#04AA6D] dark:text-emerald-400">₹{user.earned.toLocaleString()}</span>
-              </div>
-            </div>
-          ))}
+            ))
+          ) : (
+            <p className="text-xs text-slate-500 font-mono py-2 text-center">No referral advocates yet.</p>
+          )}
         </div>
       </div>
     </div>

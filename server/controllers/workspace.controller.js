@@ -10,13 +10,15 @@ const getAllWorkspaces = asyncHandler(async (req, res) => {
 
 // GET /api/workspaces/my
 const getMyWorkspaces = asyncHandler(async (req, res) => {
-  const data = await workspaceService.getMyWorkspaces(req.user._id, req.query);
+  const userId = req.user?._id || req.user?.id;
+  const data = await workspaceService.getMyWorkspaces(userId, req.query);
   return successResponse(res, 200, 'My workspaces fetched successfully', data);
 });
 
 // GET /api/workspaces/:id
 const getWorkspaceById = asyncHandler(async (req, res) => {
-  const data = await workspaceService.getWorkspaceById(req.params.id, req.user._id);
+  const userId = req.user?._id || req.user?.id;
+  const data = await workspaceService.getWorkspaceById(req.params.id, userId);
   return successResponse(res, 200, 'Workspace fetched successfully', data);
 });
 

@@ -31,7 +31,13 @@ const getAllProjects = async (query) => {
   if (technology)  filter.technologyStack = { $in: Array.isArray(technology) ? technology : [technology] };
   if (featured === 'true') filter.isFeatured = true;
 
-  const total = await SandboxProject.countDocuments(filter);
+  let total = await SandboxProject.countDocuments(filter).catch(() => 0);
+  if (total === 0) {
+    const { autoSeedIfEmpty } = require('../utils/autoSeed');
+    await autoSeedIfEmpty().catch(() => {});
+    total = await SandboxProject.countDocuments(filter).catch(() => 0);
+  }
+
   const { skip, ...meta } = getPagination(page, limit, total);
 
   const sortOrder = order === 'desc' ? -1 : 1;

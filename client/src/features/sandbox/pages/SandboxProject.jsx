@@ -655,79 +655,98 @@ export const SandboxProject = () => {
       </div>
 
       {/* Main Grid Workspace Layout */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch">
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 items-stretch w-full max-w-full overflow-hidden">
         
-        {/* Column 1: Project Overview & Step List (col-span-3) */}
-        <div className="xl:col-span-3 flex flex-col gap-4">
-          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 flex-1 flex flex-col gap-4 shadow-sm">
+        {/* Left Column: Project Overview, Current Step & Instructions (xl:col-span-4) */}
+        <div className="xl:col-span-4 flex flex-col gap-4">
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 flex-1 flex flex-col gap-4 shadow-sm min-w-0">
             
-            {/* E-commerce Card Graphic & Summary */}
-            <div className="flex flex-col gap-3">
-              <div className="flex items-start gap-3">
-                <div className="w-14 h-14 rounded-2xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
-                  <img 
-                    src="/images/ecommerce_cart_illustration.png" 
-                    alt="E-commerce Cart" 
-                    className="w-full h-full object-cover" 
-                  />
+            {/* Project Banner & Tech Tags */}
+            <div className="flex flex-col gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl border border-slate-200 bg-slate-50 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                  <Code2 size={24} className="text-[#04AA6D]" />
                 </div>
-                <div className="leading-tight text-left min-w-0">
+                <div className="leading-tight text-left min-w-0 flex-1">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider truncate">{project?.title || 'Build an E-commerce Cart'}</h3>
                     <span className="text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase bg-amber-50 text-amber-600 border border-amber-100">
                       {project?.difficulty || 'Intermediate'}
                     </span>
                   </div>
-                  <p className="text-[10px] text-slate-405 mt-1.5 leading-relaxed font-sans line-clamp-2">
+                  <p className="text-[10px] text-slate-500 mt-1 leading-relaxed font-sans line-clamp-2">
                     {project?.description || 'Build a dynamic shopping cart with add/remove items, update quantity, and calculate total price.'}
                   </p>
                 </div>
               </div>
 
-              {/* Technologies Stack rounded tag list */}
-              <div className="flex flex-wrap gap-1 mt-1">
+              {/* Technologies Stack tags */}
+              <div className="flex flex-wrap gap-1">
                 {(project?.technologyStack || ['HTML', 'CSS', 'JavaScript', 'Local Storage']).map((tech) => (
                   <span key={tech} className="text-[8.5px] font-semibold bg-slate-50 text-slate-500 border border-slate-100 rounded px-1.5 py-0.5 font-sans">{tech}</span>
                 ))}
-                <span className="text-[8.5px] font-semibold bg-slate-50 text-slate-500 border border-slate-100 rounded px-1.5 py-0.5 font-sans">+1</span>
               </div>
             </div>
 
-            {/* Instructor Details Card */}
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/60">
-              <div className="flex items-center gap-2">
-                <img 
-                  src={project?.instructor?.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=80&h=80&q=80'} 
-                  alt="Instructor" 
-                  className="w-7 h-7 rounded-full object-cover border border-slate-200" 
-                />
-                <div className="leading-none text-left">
-                  <span className="text-[7.5px] font-bold text-slate-400 uppercase tracking-widest">Instructor</span>
-                  <div className="flex items-center gap-1 mt-0.5">
-                    <p className="text-[10px] font-bold text-slate-800 uppercase">{project?.instructor?.fullName || 'Neha Sharma'}</p>
-                    <BadgeCheck size={11} className="text-[#04AA6D]" />
+            {/* Current Step & Instructions */}
+            <div className="flex flex-col gap-3 text-left">
+              <div className="flex items-center justify-between">
+                <span className="text-[9px] font-bold text-[#04AA6D] uppercase tracking-widest bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-100 font-mono">
+                  Step {currentStepIdx + 1} of {steps.length}
+                </span>
+                {(progress?.completedSteps?.includes(currentStepIdx + 1) || (currentStepIdx + 1 < (progress?.currentStep || 1))) && (
+                  <button
+                    onClick={() => handleStepUnmark(currentStepIdx + 1)}
+                    className="text-[9px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1"
+                  >
+                    <RotateCcw size={10} />
+                    Unmark
+                  </button>
+                )}
+              </div>
+
+              <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider">{currentStep.title}</h2>
+              <p className="text-[10px] text-slate-600 leading-relaxed font-sans">
+                {currentStep.description}
+              </p>
+
+              {/* Requirements Checklist */}
+              <div className="mt-2 bg-slate-50/60 p-3 rounded-xl border border-slate-200/60">
+                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-2">Requirements</p>
+                <div className="flex flex-col gap-1.5">
+                  {objectivesList.map((req, idx) => (
+                    <div key={idx} className="flex items-start gap-2 text-left">
+                      <CheckCircle2 size={13} className="text-[#04AA6D] mt-0.5 shrink-0" />
+                      <span className="text-[10px] text-slate-600 leading-snug">{req}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Resources Links */}
+              {resourcesList.length > 0 && (
+                <div className="mt-1">
+                  <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Resources</p>
+                  <div className="flex flex-wrap gap-2">
+                    {resourcesList.map(res => (
+                      <a key={res} href="#" className="text-[9.5px] font-bold text-[#04AA6D] hover:underline uppercase tracking-wider flex items-center gap-1">
+                        <BookOpen size={11} />
+                        {res}
+                        <ExternalLink size={9} className="text-[#04AA6D] inline" />
+                      </a>
+                    ))}
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 text-right leading-none">
-                <div className="flex items-center gap-0.5 text-[9.5px] font-bold text-amber-500">
-                  <Star size={11} className="fill-amber-500" />
-                  <span>4.8</span>
-                  <span className="text-slate-400 text-[8px] font-normal font-sans">(128)</span>
-                </div>
-                <div className="border-l border-slate-200 pl-2">
-                  <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider">Enrolled</span>
-                  <p className="text-[9.5px] font-bold text-slate-800 mt-0.5">{project?.enrolledCount || '2.4K'}</p>
-                </div>
-              </div>
+              )}
             </div>
 
-            <div className="flex flex-col gap-2">
+            {/* Project Steps Navigation Accordion */}
+            <div className="mt-2 pt-3 border-t border-slate-100 flex flex-col gap-2">
               <div className="flex items-center justify-between text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                <span>Project Steps</span>
-                <span className="bg-slate-100 text-slate-505 text-[8px] px-1.5 py-0.5 rounded-md border border-slate-200/60 font-mono">{steps.length} Steps</span>
+                <span>All Project Steps</span>
+                <span className="bg-slate-100 text-slate-500 text-[8px] px-1.5 py-0.5 rounded-md border border-slate-200/60 font-mono">{steps.length} Steps</span>
               </div>
-              <div className="flex flex-col gap-1.5 max-h-[500px] overflow-y-auto pr-1">
+              <div className="flex flex-col gap-1 max-h-[220px] overflow-y-auto pr-1">
                 {steps.map((step, idx) => {
                   const stepNum = idx + 1;
                   const active = currentStepIdx === idx;
@@ -741,30 +760,27 @@ export const SandboxProject = () => {
                       onClick={() => setCurrentStepIdx(idx)}
                       className={`w-full flex items-center justify-between p-2 rounded-xl text-left border transition-all ${
                         active 
-                          ? 'bg-emerald-50/40 border-[#04AA6D] text-[#04AA6D] shadow-sm' 
+                          ? 'bg-emerald-50/60 border-[#04AA6D] text-[#04AA6D] shadow-sm font-bold' 
                           : completed 
-                            ? 'bg-slate-50/40 border-slate-200/40 text-slate-500 hover:bg-slate-50' 
-                            : 'bg-slate-50/40 border-slate-200/40 text-slate-400 hover:bg-slate-50'
+                            ? 'bg-slate-50/40 border-slate-200/40 text-slate-600 hover:bg-slate-50' 
+                            : 'bg-slate-50/20 border-slate-200/40 text-slate-400 hover:bg-slate-50'
                       } ${locked ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer'}`}
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="flex items-center gap-2 min-w-0">
                         {completed ? (
-                          <CheckCircle2 size={13} className="text-[#04AA6D] shrink-0" />
+                          <CheckCircle2 size={12} className="text-[#04AA6D] shrink-0" />
                         ) : locked ? (
-                          <Lock size={11} className="text-slate-350 shrink-0" />
+                          <Lock size={10} className="text-slate-350 shrink-0" />
                         ) : (
-                          <span className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 text-[8.5px] font-bold border ${
+                          <span className={`w-3.5 h-3.5 rounded-full flex items-center justify-center shrink-0 text-[8px] font-bold border ${
                             active ? 'bg-[#04AA6D] text-white border-[#04AA6D]' : 'border-slate-300 text-slate-500'
                           }`}>{stepNum}</span>
                         )}
-                        <div className="min-w-0 leading-tight">
-                          <p className="text-[9.5px] font-bold truncate uppercase tracking-wider">Step {stepNum}</p>
-                          <p className="text-[8.5px] truncate text-slate-400 mt-0.5">
-                            {step.title || (idx === 0 ? 'Project Setup' : idx === 1 ? 'Add Products' : idx === 2 ? 'Add to Cart' : idx === 3 ? 'Update Quantity' : idx === 4 ? 'Remove Items' : idx === 5 ? 'Calculate Total' : idx === 6 ? 'Persist Cart' : 'Polish UI')}
-                          </p>
-                        </div>
+                        <span className="text-[9.5px] truncate uppercase tracking-wider">
+                          Step {stepNum}: {step.title || 'Step'}
+                        </span>
                       </div>
-                      <ChevronLeft size={10} className="rotate-180 text-slate-400" />
+                      <ChevronLeft size={10} className="rotate-180 text-slate-400 shrink-0" />
                     </button>
                   );
                 })}
@@ -774,129 +790,13 @@ export const SandboxProject = () => {
           </div>
         </div>
 
-        {/* Column 2: Current Step Instructions (col-span-3) */}
-        <div className="xl:col-span-3 flex flex-col gap-4">
-          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 flex-1 flex flex-col justify-between shadow-sm">
-            <div className="flex flex-col gap-4">
-              <div className="flex items-center justify-between">
-                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest">Current Step</span>
-                {(progress?.completedSteps?.includes(currentStepIdx + 1) || (currentStepIdx + 1 < (progress?.currentStep || 1))) && (
-                  <button
-                    onClick={() => handleStepUnmark(currentStepIdx + 1)}
-                    className="text-[9px] font-bold text-rose-500 hover:text-rose-600 uppercase tracking-wider transition-colors cursor-pointer flex items-center gap-1"
-                  >
-                    <RotateCcw size={10} />
-                    Unmark Complete
-                  </button>
-                )}
-              </div>
-              <h2 className="text-xs font-black text-slate-800 uppercase tracking-wider mt-0.5">Step {currentStepIdx + 1}: {currentStep.title}</h2>
-              <p className="text-[10px] text-slate-500 mt-2 leading-relaxed">
-                {currentStep.description}
-              </p>
-
-              {/* Requirements Checklist */}
-              <div className="mt-4">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-2">Requirements</p>
-                <div className="flex flex-col gap-1.5">
-                  {objectivesList.map((req, idx) => (
-                    <div key={idx} className="flex items-start gap-2 text-left">
-                      <CheckCircle2 size={13} className="text-[#04AA6D] mt-0.5 shrink-0" />
-                      <span className="text-[10px] text-slate-600 leading-snug">{req}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* Resources Links */}
-              <div className="mt-4">
-                <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-1.5">Resources</p>
-                <div className="flex flex-col gap-1">
-                  {resourcesList.map(res => (
-                    <a key={res} href="#" className="text-[9.5px] font-bold text-[#04AA6D] hover:underline uppercase tracking-wider flex items-center gap-1">
-                      <BookOpen size={11} />
-                      {res}
-                      <ExternalLink size={9} className="text-[#04AA6D] inline" />
-                    </a>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Example Output Mockup Card — dynamic per project */}
-            <div className="mt-4 border-t border-slate-200/60 pt-4 select-none">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400 mb-2">Example Output</p>
-              <div className="p-3.5 bg-[#0B0F17] border border-[#1A202F] rounded-xl flex flex-col gap-2.5 text-slate-300">
-                {(() => {
-                  const t = (project?.title || '').toLowerCase();
-                  if (t.includes('rest api') || t.includes('node') || t.includes('express')) {
-                    return (
-                      <>
-                        <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
-                          <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">API Server</span>
-                          <span className="w-2 h-2 rounded-full bg-[#04AA6D] animate-pulse" />
-                        </div>
-                        {['> Server running on port 5000', '> MongoDB connected', '> POST /api/auth/register 201', '> POST /api/auth/login 200', '> Token: eyJhbGci...'].map((line, i) => (
-                          <p key={i} className="text-[9px] font-mono" style={{ color: line.includes('201') || line.includes('200') ? '#04AA6D' : line.includes('Token') ? '#60a5fa' : '#94a3b8' }}>{line}</p>
-                        ))}
-                      </>
-                    );
-                  }
-                  if (t.includes('react') || t.includes('dashboard') || t.includes('chart')) {
-                    return (
-                      <>
-                        <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
-                          <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">Dashboard Preview</span>
-                        </div>
-                        <div className="grid grid-cols-2 gap-1.5">
-                          {[{ l: 'Total Sales', v: '$42,500', t: '+12%' }, { l: 'New Users', v: '1,284', t: '+8%' }, { l: 'Revenue', v: '$18,900', t: '+5%' }, { l: 'Orders', v: '326', t: '-2%' }].map((s, i) => (
-                            <div key={i} className="bg-[#121824] border border-[#1A202F] rounded-lg p-2">
-                              <p className="text-[8px] text-slate-500 uppercase">{s.l}</p>
-                              <p className="text-[11px] font-bold text-white">{s.v}</p>
-                              <p className={`text-[8px] font-bold ${s.t.startsWith('+') ? 'text-[#04AA6D]' : 'text-rose-400'}`}>{s.t}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </>
-                    );
-                  }
-                  if (t.includes('python') || t.includes('pandas') || t.includes('data')) {
-                    return (
-                      <>
-                        <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
-                          <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">Pipeline Output</span>
-                        </div>
-                        {['>>> Shape: (1000, 6)', '>>> Columns: date, product, qty, price', '>>> Missing values: 0', '>>> Groups: Electronics 480, Accessories 520', '>>> Pipeline complete. ✓'].map((line, i) => (
-                          <p key={i} className="text-[9px] font-mono" style={{ color: line.includes('complete') ? '#04AA6D' : line.includes('>>>') ? '#60a5fa' : '#94a3b8' }}>{line}</p>
-                        ))}
-                      </>
-                    );
-                  }
-                  // Generic
-                  return (
-                    <>
-                      <div className="flex items-center gap-1.5 pb-1.5 border-b border-slate-800">
-                        <span className="text-[9.5px] font-bold text-white uppercase tracking-wider">Output</span>
-                      </div>
-                      <p className="text-[9px] font-mono text-[#04AA6D]">{'> Project initialized. ✓'}</p>
-                      <p className="text-[9px] font-mono text-slate-400">{'> Ready. Start coding...'}</p>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-
-          </div>
-        </div>
-
-        {/* Column 3: VS Code Web Studio (col-span-4) */}
-        <div className="xl:col-span-4 flex flex-col gap-4">
-          <div className="border border-slate-200/60 bg-[#0d1117] rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col min-h-[780px] relative">
+        {/* Center Column: VS Code Web Studio (xl:col-span-5) */}
+        <div className="xl:col-span-5 flex flex-col gap-4 min-w-0">
+          <div className="border border-slate-200/60 bg-[#0d1117] rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col min-h-[720px] relative">
 
             {/* ── Title Bar ── */}
             <div className="h-10 px-4 bg-[#0d1117] border-b border-slate-800 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-2 font-mono text-[10px] uppercase font-bold tracking-wider">
-                {/* Animated status dot */}
                 {wsStatus === 'ready' && <span className="w-2 h-2 rounded-full bg-[#04AA6D]" />}
                 {(wsStatus === 'connecting' || wsStatus === 'retrying') && (
                   <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
@@ -904,9 +804,8 @@ export const SandboxProject = () => {
                 {wsStatus === 'error' && <span className="w-2 h-2 rounded-full bg-rose-500" />}
                 {wsStatus === 'idle' && <span className="w-2 h-2 rounded-full bg-slate-600" />}
 
-                <span className="text-white">VS Code Web Studio</span>
+                <span className="text-white truncate">VS Code Web Studio</span>
 
-                {/* Status badge */}
                 {wsStatus === 'ready' && (
                   <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-[#04AA6D] text-[9px] border border-emerald-500/20 font-mono">
                     Live
@@ -922,18 +821,13 @@ export const SandboxProject = () => {
                     Retrying…
                   </span>
                 )}
-                {wsStatus === 'error' && (
-                  <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 text-[9px] border border-rose-500/20 font-mono">
-                    Offline
-                  </span>
-                )}
               </div>
 
               {wsStatus === 'ready' && (
                 <button
                   onClick={handleOpenInNewTab}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#04AA6D] hover:bg-[#03935e] text-white text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
-                  title="Open VS Code in a dedicated tab for full-screen editing"
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#04AA6D] hover:bg-[#03935e] text-white text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm shrink-0"
+                  title="Open VS Code in full-screen tab"
                 >
                   <ExternalLink size={11} />
                   <span>Full Screen</span>
@@ -943,7 +837,7 @@ export const SandboxProject = () => {
 
             {/* ── Connecting / Starting state ── */}
             {(wsStatus === 'connecting' || wsStatus === 'retrying') && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-[#0d1117]">
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-[#0d1117] p-4">
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full border-4 border-slate-700 border-t-[#04AA6D] animate-spin" />
                   <div className="absolute inset-0 flex items-center justify-center">
@@ -957,27 +851,20 @@ export const SandboxProject = () => {
                       : 'Launching VS Code Server…'}
                   </p>
                   <p className="text-[9px] text-slate-500 font-sans mt-1.5 max-w-[260px] leading-normal">
-                    Syncing your workspace files and starting the VS Code Web server. This takes a few seconds on first load.
+                    Syncing your workspace files and starting the VS Code Web server.
                   </p>
-                </div>
-                {/* Fake progress bar */}
-                <div className="w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#04AA6D] rounded-full animate-[indeterminate_1.5s_ease-in-out_infinite] w-1/3" />
                 </div>
               </div>
             )}
 
             {/* ── Error state ── */}
             {wsStatus === 'error' && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-[#0d1117]">
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-[#0d1117] p-4">
                 <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
                   <ShieldAlert size={22} className="text-rose-400" />
                 </div>
                 <div className="text-center">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-300 font-mono">VS Code Server Unavailable</p>
-                  <p className="text-[9px] text-slate-500 font-sans mt-1.5 max-w-[260px] leading-normal">
-                    The workspace server failed to start after 3 attempts. Check that the backend is running and try again.
-                  </p>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-300 font-mono">VS Code Server Offline</p>
                 </div>
                 <button
                   onClick={handleRetryWorkspace}
@@ -992,31 +879,28 @@ export const SandboxProject = () => {
             {/* ── Ready: VS Code iframe ── */}
             {wsStatus === 'ready' && iframeUrl && (
               <div className="flex-1 flex flex-col w-full relative" style={{ minHeight: 0 }}>
-
-                {/* Slim info bar above iframe */}
                 <div className="bg-[#0B0F17] border-b border-slate-800/60 px-3 py-1.5 flex items-center justify-between shrink-0">
                   <div className="flex items-center gap-2 text-slate-400">
                     <Sparkles size={11} className="text-[#04AA6D]" />
-                    <span className="text-[10px] font-sans">
-                      Editing live — changes auto-save to your project every 15 s
+                    <span className="text-[10px] font-sans truncate">
+                      Editing live — auto-saves to project
                     </span>
                   </div>
                   <button
                     onClick={handleOpenInNewTab}
-                    className="flex items-center gap-1 text-[9.5px] font-bold text-[#04AA6D] hover:text-emerald-400 uppercase tracking-wider transition-colors cursor-pointer"
+                    className="flex items-center gap-1 text-[9.5px] font-bold text-[#04AA6D] hover:text-emerald-400 uppercase tracking-wider transition-colors cursor-pointer shrink-0"
                   >
                     <ExternalLink size={10} />
                     New Tab
                   </button>
                 </div>
 
-                {/* The VS Code Web iframe */}
                 <iframe
                   key={iframeUrl}
                   src={iframeUrl}
                   title="VS Code Web Studio"
                   className="flex-1 w-full border-none"
-                  style={{ minHeight: '700px', height: '100%' }}
+                  style={{ minHeight: '640px', height: '100%' }}
                   allow="clipboard-read; clipboard-write; fullscreen"
                 />
               </div>
@@ -1025,11 +909,11 @@ export const SandboxProject = () => {
           </div>
         </div>
 
-        {/* Column 4: Side Information Panel (col-span-2) */}
-        <div className="xl:col-span-2 flex flex-col gap-4">
+        {/* Right Column: Progress & Project Stats (xl:col-span-3) */}
+        <div className="xl:col-span-3 flex flex-col gap-4 min-w-0">
           
           {/* Your Progress */}
-          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 flex flex-col justify-between shadow-sm">
+          <div className="bg-white border border-slate-200/60 rounded-2xl p-4 flex flex-col justify-between shadow-sm text-left">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Your Progress</p>
               <div className="flex items-center gap-3 justify-center select-none py-1">
@@ -1042,9 +926,9 @@ export const SandboxProject = () => {
                     <span className="text-[10px] font-black text-slate-800">{calculatedPct}%</span>
                   </div>
                 </div>
-                <div className="text-left font-mono">
+                <div className="text-left font-mono min-w-0">
                   <span className="text-[8px] font-bold text-slate-400 uppercase tracking-wider leading-none">Steps</span>
-                  <p className="text-[10px] font-black text-slate-700 leading-none mt-0.5">{completedCount} / {totalStepsCount} Steps Completed</p>
+                  <p className="text-[10px] font-black text-slate-700 leading-none mt-0.5 truncate">{completedCount} / {totalStepsCount} Completed</p>
                 </div>
               </div>
             </div>
@@ -1069,8 +953,7 @@ export const SandboxProject = () => {
                 { name: 'Difficulty', val: project?.difficulty || 'Intermediate', style: 'text-amber-600 font-bold capitalize bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100/60 w-max' },
                 { name: 'Enrolled Students', val: project?.enrolledCount || '2.4K', style: 'text-slate-800 font-bold' },
                 { name: 'Estimated Time', val: project?.estimatedDuration || '4-6 hours', style: 'text-slate-800 font-bold' },
-                { name: 'Last Updated', val: '24 Apr 2025', style: 'text-slate-800 font-semibold' },
-                { name: 'Project ID', val: 'CS-SBX-1024', style: 'text-slate-400 font-mono' },
+                { name: 'Project ID', val: `CS-SBX-${id || '1024'}`, style: 'text-slate-400 font-mono' },
               ].map((info) => (
                 <div key={info.name} className="flex flex-col gap-0.5 text-[8.5px] font-bold text-slate-400 uppercase leading-none select-none">
                   <span>{info.name}</span>
@@ -1091,10 +974,6 @@ export const SandboxProject = () => {
               <button onClick={handleShare} className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 text-[9.5px] font-bold text-slate-600 uppercase tracking-wider border border-slate-200/60 cursor-pointer">
                 <span>Share Project</span>
                 <Share2 size={12} className="text-slate-400" />
-              </button>
-              <button onClick={() => toast('Issue logged with admin.')} className="w-full flex items-center justify-between p-2 rounded-xl bg-slate-50 hover:bg-slate-100/80 text-[9.5px] font-bold text-slate-600 uppercase tracking-wider border border-slate-200/60 cursor-pointer">
-                <span>Report Issue</span>
-                <AlertTriangle size={12} className="text-slate-400" />
               </button>
             </div>
           </div>

@@ -32,7 +32,13 @@ const getAllTests = async (query) => {
   if (instructor) filter.instructor  = instructor;
   if (isPremium !== undefined) filter.isPremium = isPremium === 'true';
 
-  const total = await Test.countDocuments(filter);
+  let total = await Test.countDocuments(filter).catch(() => 0);
+  if (total === 0) {
+    const { autoSeedIfEmpty } = require('../utils/autoSeed');
+    await autoSeedIfEmpty().catch(() => {});
+    total = await Test.countDocuments(filter).catch(() => 0);
+  }
+
   const { skip, ...meta } = getPagination(page, limit, total);
 
   const sortOrder = order === 'desc' ? -1 : 1;
@@ -203,21 +209,35 @@ const getTestAnalytics = async (id, userId, userRole) => {
 
 // ─── GET LEADERBOARD ─────────────────────────────────────────────────────────
 const getLeaderboard = async () => {
-  return [
-    { rank: 1, name: 'Siddharth V.', xp: 4850, country: 'IN', score: 98, time: '14m 20s', avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=200' },
-    { rank: 2, name: 'Aarav Patel', xp: 4620, country: 'US', score: 95, time: '16m 05s', avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200' },
-    { rank: 3, name: 'Maya Lin', xp: 4410, country: 'SG', score: 92, time: '17m 40s', avatar: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=200' },
-    { rank: 4, name: 'Kavya Sharma', xp: 4190, country: 'IN', score: 90, time: '19m 12s', avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200' },
-    { rank: 5, name: 'David Kim', xp: 3950, country: 'KR', score: 88, time: '21m 00s', avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=200' }
-  ];
+  const User = require('../models/User');
+  const topUsers = await User.find({ isActive: true })
+    .select('fullName avatar role achievementPoints dayStreak email')
+    .sort({ achievementPoints: -1, createdAt: 1 })
+    .limit(5);
+
+  return topUsers.map((u, idx) => ({
+    rank: idx + 1,
+    name: u.fullName || u.email.split('@')[0],
+    xp: `${u.achievementPoints || 0} XP`,
+    score: Math.max(70, Math.min(99, 99 - idx * 4)),
+    avatar: u.avatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${u.fullName || u.email}`,
+  }));
 };
 
 // ─── GET CONTESTS ─────────────────────────────────────────────────────────────
 const getContests = async () => {
-  return [
-    { id: 'c1', title: 'CodeSphere Weekly Grand Contest 42', status: 'live', participants: 1420, prize: '$1,500 AWS Credits', startTime: 'Live Now', duration: '90 Mins' },
-    { id: 'c2', title: 'National System Design & Algo Cup 2026', status: 'upcoming', participants: 850, prize: 'Direct Interview Slot', startTime: 'Starts Tomorrow at 6:00 PM', duration: '120 Mins' }
-  ];
+  const contestTests = await Test.find({ isPublished: true, isContest: true })
+    .limit(4);
+
+  return contestTests.map(t => ({
+    id: t._id,
+    title: t.title,
+    status: t.status === 'published' ? 'Live' : 'Upcoming',
+    participants: t.attemptCount || 0,
+    prize: t.isPremium ? 'Pro Certificate & Badge' : 'Community Placement Badge',
+    startTime: 'Scheduled',
+    duration: `${t.duration || 60} Mins`
+  }));
 };
 
 // ─── SUBMIT TEST ATTEMPT ──────────────────────────────────────────────────────

@@ -1,4 +1,6 @@
+const mongoose = require('mongoose');
 const Resource = require('../models/Resource');
+const ResourceCategory = require('../models/ResourceCategory');
 const Bookmark = require('../models/Bookmark');
 const { getPagination } = require('../utils/pagination');
 
@@ -24,13 +26,40 @@ const getAllResources = async (query) => {
 
   const filter = { status: 'published' };
 
-  if (category)      filter.category = category;
-  if (difficulty)    filter.difficulty = difficulty;
-  if (resourceType)  filter.resourceType = resourceType;
+  if (category && category !== 'all') {
+    if (mongoose.Types.ObjectId.isValid(category)) {
+      filter.category = category;
+    } else {
+      const catDoc = await ResourceCategory.findOne({
+        $or: [
+          { slug: category },
+          { slug: category.replace(/_/g, '-') },
+          { name: new RegExp('^' + category.replace(/[-_]/g, ' ') + '$', 'i') }
+        ]
+      });
+      if (catDoc) {
+        filter.category = catDoc._id;
+      } else {
+        filter.$or = [
+          { tags: { $in: [category.toLowerCase(), category.replace('_', '-').toLowerCase()] } },
+          { subCategory: new RegExp(category, 'i') }
+        ];
+      }
+    }
+  }
+
+  if (difficulty && difficulty !== 'all')   filter.difficulty = difficulty;
+  if (resourceType && resourceType !== 'all') filter.resourceType = resourceType;
   if (tags)          filter.tags = { $in: tags.split(',') };
   if (search)        filter.$text = { $search: search };
 
-  const total = await Resource.countDocuments(filter);
+  let total = await Resource.countDocuments(filter).catch(() => 0);
+  if (total === 0) {
+    const { autoSeedIfEmpty } = require('../utils/autoSeed');
+    await autoSeedIfEmpty().catch(() => {});
+    total = await Resource.countDocuments(filter).catch(() => 0);
+  }
+
   const { skip, ...meta } = getPagination(page, limit, total);
 
   const sortOrder = order === 'desc' ? -1 : 1;

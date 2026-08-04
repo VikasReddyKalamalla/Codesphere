@@ -11,7 +11,8 @@ const MARKER_COLORS = {
   conference: '#EAB308',        // Gold
   cybersecurity_conf: '#EF4444',// Red
   blockchain_event: '#8B5CF6',  // Purple
-  workshop: '#04AA6D',          // CodeSphere Emerald
+  workshop: '#10B981',          // Emerald Green
+  webinar: '#8B5CF6',           // Purple
   default: '#04AA6D'
 };
 

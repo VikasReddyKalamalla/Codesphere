@@ -13,12 +13,12 @@ const {
   removeModerator,
 } = require('../controllers/community.controller');
 
-const { protect }    = require('../middlewares/auth.middleware');
+const { protect, optionalAuth }    = require('../middlewares/auth.middleware');
 const { restrictTo } = require('../middlewares/role.middleware');
 
 // ─── CRUD ─────────────────────────────────────────────────────────────────────
-router.get ('/',    protect, getAllCommunities);
-router.get ('/:id', protect, getCommunityById);
+router.get ('/',    optionalAuth, getAllCommunities);
+router.get ('/:id', optionalAuth, getCommunityById);
 router.post('/',    protect, createCommunity);
 router.put ('/:id', protect, updateCommunity);
 router.delete('/:id', protect, deleteCommunity);
@@ -26,7 +26,7 @@ router.delete('/:id', protect, deleteCommunity);
 // ─── Membership ───────────────────────────────────────────────────────────────
 router.post  ('/:id/join',  protect, joinCommunity);
 router.delete('/:id/leave', protect, leaveCommunity);
-router.get   ('/:id/members', protect, getMembers);
+router.get   ('/:id/members', optionalAuth, getMembers);
 
 // ─── Moderation ───────────────────────────────────────────────────────────────
 router.post  ('/:id/moderators/:userId', protect, promoteModerator);

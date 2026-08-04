@@ -1,1 +1,3 @@
-export { Events as default } from './Events.jsx';
+import Events from './Events.jsx';
+export default Events;
+

@@ -13,7 +13,7 @@ const {
   unenroll,
 } = require('../controllers/learning.controller');
 
-const { protect }    = require('../middlewares/auth.middleware');
+const { protect, optionalAuth } = require('../middlewares/auth.middleware');
 const { restrictTo } = require('../middlewares/role.middleware');
 
 // ─── Progress (must be BEFORE /:id to avoid route conflict) ──────────────────
@@ -26,9 +26,9 @@ router.post('/:id/enroll',   protect, enroll);
 router.delete('/:id/enroll', protect, unenroll);
 
 // ─── Learning Paths ───────────────────────────────────────────────────────────
-router.get   ('/',    protect, getAllPaths);
+router.get   ('/',    optionalAuth, getAllPaths);
 router.post  ('/',    protect, restrictTo('instructor', 'admin'), createPath);
-router.get   ('/:id', protect, getPathById);
+router.get   ('/:id', optionalAuth, getPathById);
 router.put   ('/:id', protect, restrictTo('instructor', 'admin'), updatePath);
 router.delete('/:id', protect, restrictTo('admin'), deletePath);
 

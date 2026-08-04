@@ -11,9 +11,14 @@ const server = http.createServer(app);
 // Initialize Socket.io
 initSocket(server);
 
+const { autoSeedIfEmpty } = require('./utils/autoSeed');
+
 // Connect to MongoDB then start server
-connectDB().then(() => {
-  // Create database indexes on startup (if MongoDB is connected)
+connectDB().then(async () => {
+  // Auto-seed empty database
+  await autoSeedIfEmpty();
+
+  // Create database indexes on startup
   if (process.env.NODE_ENV !== 'development' || process.env.MONGO_URI) {
     const { createIndexes } = require('./config/indexes');
     createIndexes().catch((err) => console.error('Failed to create database indexes:', err));
