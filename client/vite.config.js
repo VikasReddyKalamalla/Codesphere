@@ -24,7 +24,10 @@ export default defineConfig({
     },
   },
   resolve: {
+    dedupe: ['react', 'react-dom'],
     alias: {
+      'react': resolve(__dirname, 'node_modules/react'),
+      'react-dom': resolve(__dirname, 'node_modules/react-dom'),
       '@': resolve(__dirname, 'src'),
       '@app': resolve(__dirname, 'src/app'),
       '@assets': resolve(__dirname, 'src/assets'),
