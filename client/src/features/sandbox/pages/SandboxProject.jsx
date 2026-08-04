@@ -313,6 +313,57 @@ export const SandboxProject = () => {
     window.open(iframeUrl, '_blank', 'noopener,noreferrer');
   };
 
+  // Handle clicking the prominent "Code" button to launch VS Code Web Studio in a new tab
+  const handleCodeButtonClick = async () => {
+    if (iframeUrl) {
+      window.open(iframeUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // Open a blank new tab immediately to avoid browser pop-up blockers
+    const newWindow = window.open('about:blank', '_blank');
+    if (newWindow) {
+      newWindow.document.write(`
+        <html>
+          <head><title>Launching Code Studio...</title></head>
+          <body style="background:#0d1117;color:#ffffff;font-family:-apple-system,BlinkMacSystemFont,sans-serif;height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;margin:0;padding:2rem;text-align:center;">
+            <div style="width:48px;height:48px;border-radius:50%;border:4px solid #21262d;border-top-color:#04AA6D;animation:spin 1s linear infinite;margin-bottom:1rem;"></div>
+            <h2 style="font-size:18px;font-weight:800;margin:0 0 8px 0;letter-spacing:0.05em;text-transform:uppercase;">Launching VS Code Web Studio</h2>
+            <p style="color:#8b949e;font-size:13px;margin:0;max-width:320px;">Connecting to your workspace container and opening the code editor...</p>
+            <style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
+          </body>
+        </html>
+      `);
+    }
+
+    try {
+      setWsStatus('connecting');
+      const res = await initWorkspaceAPI(id);
+      const url  = res?.data?.iframeUrl;
+      const port = res?.data?.port;
+      if (url) {
+        const backendOrigin = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api').replace(/\/api\/?$/, '');
+        const fullUrl = url.startsWith('http') ? url : `${backendOrigin}${url}`;
+        setIframeUrl(fullUrl);
+        setWsPort(port ?? null);
+        setWsStatus('ready');
+        if (newWindow) {
+          newWindow.location.href = fullUrl;
+        } else {
+          window.open(fullUrl, '_blank', 'noopener,noreferrer');
+        }
+      } else {
+        if (newWindow) newWindow.close();
+        toast.error('Failed to resolve workspace server URL');
+        setWsStatus('error');
+      }
+    } catch (err) {
+      if (newWindow) newWindow.close();
+      toast.error('Could not connect to VS Code server. Check backend status.');
+      setWsStatus('error');
+    }
+  };
+
   // Realtime compiler logic that parses script.js content to update shopping cart details
   useEffect(() => {
     try {
@@ -880,139 +931,48 @@ export const SandboxProject = () => {
           </div>
         </div>
 
-        {/* Column 3: VS Code Web Studio (col-span-4) */}
+        {/* Column 3: VS Code Web Studio Code Button Launcher (col-span-4) */}
         <div className="xl:col-span-4 flex flex-col gap-4">
-          <div className="border border-slate-200/60 bg-[#0d1117] rounded-2xl overflow-hidden shadow-sm flex-1 flex flex-col min-h-[780px] relative">
+          <div className="border border-slate-200/60 bg-[#0d1117] rounded-3xl p-8 shadow-md flex-1 flex flex-col items-center justify-center text-center relative min-h-[500px] overflow-hidden select-none">
+            {/* Background Gradient & Glow */}
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_40%,rgba(4,170,109,0.15)_0%,transparent_70%)] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(6,182,212,0.1)_0%,transparent_60%)] pointer-events-none" />
 
-            {/* ── Title Bar ── */}
-            <div className="h-10 px-4 bg-[#0d1117] border-b border-slate-800 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-2 font-mono text-[10px] uppercase font-bold tracking-wider">
-                {/* Animated status dot */}
-                {wsStatus === 'ready' && <span className="w-2 h-2 rounded-full bg-[#04AA6D]" />}
-                {(wsStatus === 'connecting' || wsStatus === 'retrying') && (
-                  <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-                )}
-                {wsStatus === 'error' && <span className="w-2 h-2 rounded-full bg-rose-500" />}
-                {wsStatus === 'idle' && <span className="w-2 h-2 rounded-full bg-slate-600" />}
-
-                <span className="text-white">VS Code Web Studio</span>
-
-                {/* Status badge */}
-                {wsStatus === 'ready' && (
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-[#04AA6D] text-[9px] border border-emerald-500/20 font-mono">
-                    Live
-                  </span>
-                )}
-                {(wsStatus === 'connecting') && (
-                  <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[9px] border border-amber-500/20 font-mono animate-pulse">
-                    Starting…
-                  </span>
-                )}
-                {wsStatus === 'retrying' && (
-                  <span className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-400 text-[9px] border border-amber-500/20 font-mono animate-pulse">
-                    Retrying…
-                  </span>
-                )}
-                {wsStatus === 'error' && (
-                  <span className="px-2 py-0.5 rounded bg-rose-500/10 text-rose-400 text-[9px] border border-rose-500/20 font-mono">
-                    Offline
-                  </span>
-                )}
+            <div className="relative z-10 flex flex-col items-center max-w-sm">
+              {/* Glowing Hexagon Icon Badge */}
+              <div className="w-20 h-20 rounded-3xl bg-[#04AA6D]/15 border border-[#04AA6D]/40 flex items-center justify-center text-[#04AA6D] mb-6 shadow-2xl shadow-emerald-950/80 backdrop-blur-md">
+                <Code2 className="w-10 h-10" />
               </div>
 
-              {wsStatus === 'ready' && (
-                <button
-                  onClick={handleOpenInNewTab}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-lg bg-[#04AA6D] hover:bg-[#03935e] text-white text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
-                  title="Open VS Code in a dedicated tab for full-screen editing"
-                >
-                  <ExternalLink size={11} />
-                  <span>Full Screen</span>
-                </button>
-              )}
+              <h3 className="text-xl font-black text-white font-mono uppercase tracking-wider">VS Code Web Studio</h3>
+              <p className="text-xs text-slate-400 mt-2.5 leading-relaxed font-sans">
+                Launch your dedicated cloud development workspace in a new browser tab to view and edit project files in real-time.
+              </p>
+
+              {/* Prominent Centered Code Button */}
+              <button
+                onClick={handleCodeButtonClick}
+                className="mt-8 px-10 py-4 bg-[#04AA6D] hover:bg-emerald-600 text-white font-black text-base uppercase tracking-widest rounded-2xl flex items-center gap-3 shadow-2xl shadow-emerald-950/80 cursor-pointer transition-all hover:scale-105 active:scale-95 border border-emerald-400/40 font-mono"
+              >
+                <Code2 className="w-6 h-6" />
+                <span>Code</span>
+                <ExternalLink className="w-4 h-4 opacity-80 ml-1" />
+              </button>
+
+              {/* Realtime Server Status Indicator */}
+              <div className="mt-8 flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-950/90 border border-slate-800 text-[11px] font-mono text-slate-300 shadow-md">
+                <span className={`w-2.5 h-2.5 rounded-full ${wsStatus === 'ready' ? 'bg-[#04AA6D]' : wsStatus === 'error' ? 'bg-rose-500' : 'bg-amber-400 animate-pulse'}`} />
+                <span>
+                  {wsStatus === 'ready' 
+                    ? 'VS Code Server Ready' 
+                    : wsStatus === 'connecting' || wsStatus === 'retrying'
+                    ? 'Launching Code Server...'
+                    : wsStatus === 'error'
+                    ? 'Server Offline (Click Code to Launch)'
+                    : 'Code Server Ready'}
+                </span>
+              </div>
             </div>
-
-            {/* ── Connecting / Starting state ── */}
-            {(wsStatus === 'connecting' || wsStatus === 'retrying') && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-[#0d1117]">
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full border-4 border-slate-700 border-t-[#04AA6D] animate-spin" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Code2 size={16} className="text-[#04AA6D]" />
-                  </div>
-                </div>
-                <div className="text-center">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-300 font-mono">
-                    {wsStatus === 'retrying'
-                      ? `Retrying (attempt ${wsRetryCount.current + 1}/3)…`
-                      : 'Launching VS Code Server…'}
-                  </p>
-                  <p className="text-[9px] text-slate-500 font-sans mt-1.5 max-w-[260px] leading-normal">
-                    Syncing your workspace files and starting the VS Code Web server. This takes a few seconds on first load.
-                  </p>
-                </div>
-                {/* Fake progress bar */}
-                <div className="w-48 h-1 bg-slate-800 rounded-full overflow-hidden">
-                  <div className="h-full bg-[#04AA6D] rounded-full animate-[indeterminate_1.5s_ease-in-out_infinite] w-1/3" />
-                </div>
-              </div>
-            )}
-
-            {/* ── Error state ── */}
-            {wsStatus === 'error' && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 bg-[#0d1117]">
-                <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
-                  <ShieldAlert size={22} className="text-rose-400" />
-                </div>
-                <div className="text-center">
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-slate-300 font-mono">VS Code Server Unavailable</p>
-                  <p className="text-[9px] text-slate-500 font-sans mt-1.5 max-w-[260px] leading-normal">
-                    The workspace server failed to start after 3 attempts. Check that the backend is running and try again.
-                  </p>
-                </div>
-                <button
-                  onClick={handleRetryWorkspace}
-                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-[#04AA6D] hover:bg-[#03935e] text-white text-[10px] font-bold uppercase tracking-wider transition-all cursor-pointer shadow-sm"
-                >
-                  <RotateCcw size={11} />
-                  Retry Connection
-                </button>
-              </div>
-            )}
-
-            {/* ── Ready: VS Code iframe ── */}
-            {wsStatus === 'ready' && iframeUrl && (
-              <div className="flex-1 flex flex-col w-full relative" style={{ minHeight: 0 }}>
-
-                {/* Slim info bar above iframe */}
-                <div className="bg-[#0B0F17] border-b border-slate-800/60 px-3 py-1.5 flex items-center justify-between shrink-0">
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Sparkles size={11} className="text-[#04AA6D]" />
-                    <span className="text-[10px] font-sans">
-                      Editing live — changes auto-save to your project every 15 s
-                    </span>
-                  </div>
-                  <button
-                    onClick={handleOpenInNewTab}
-                    className="flex items-center gap-1 text-[9.5px] font-bold text-[#04AA6D] hover:text-emerald-400 uppercase tracking-wider transition-colors cursor-pointer"
-                  >
-                    <ExternalLink size={10} />
-                    New Tab
-                  </button>
-                </div>
-
-                {/* The VS Code Web iframe */}
-                <iframe
-                  key={iframeUrl}
-                  src={iframeUrl}
-                  title="VS Code Web Studio"
-                  className="flex-1 w-full border-none"
-                  style={{ minHeight: '700px', height: '100%' }}
-                  allow="clipboard-read; clipboard-write; fullscreen"
-                />
-              </div>
-            )}
-
           </div>
         </div>
 

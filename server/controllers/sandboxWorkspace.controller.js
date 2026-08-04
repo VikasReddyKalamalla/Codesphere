@@ -149,6 +149,16 @@ const initWorkspace = asyncHandler(async (req, res) => {
     activeServers.delete(key);
   }
 
+  // 2b ── Check if Docker code-server (e.g. port 8107) is listening
+  const isDockerAlive = await isPortListening(8107);
+  if (isDockerAlive) {
+    console.log(`[vscode-web] Detected Docker code-server active on port 8107`);
+    return successResponse(res, 200, 'Docker VS Code Web server active', {
+      iframeUrl: 'http://localhost:8107/?folder=/home/coder',
+      port: 8107,
+    });
+  }
+
   // 3 ── Spawn new server
   const port = await findFreePort();
   const build = await resolveBuild();
