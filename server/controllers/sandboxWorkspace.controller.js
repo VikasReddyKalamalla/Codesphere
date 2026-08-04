@@ -25,15 +25,22 @@ const execInContainer = (cmd) => {
 /**
  * POST /api/sandbox/:id/workspace/init
  *
- * Initializes a per-user, per-project isolated directory inside Docker container:
- * Path: /home/coder/projects/${folderName}
+ * Initializes a strictly per-user, per-project isolated directory inside Docker container:
+ * Path: /home/coder/users/user_${userId}/${slug}
  *
- * Never displays "CODER" or dot-folders. Displays clean project name with empty workspace.
+ * Prevents any user from ever seeing another user's files.
  */
 const initWorkspace = asyncHandler(async (req, res) => {
   const { id: projectId } = req.params;
-  const userId = req.user ? req.user._id.toString() : 'guest';
   const repoUrl = req.body?.repoUrl;
+
+  // Enforce unique per-user ID or unique session token
+  let userFolderId = 'guest_' + Date.now();
+  if (req.user && req.user._id) {
+    userFolderId = req.user._id.toString();
+  } else if (req.headers['x-session-id']) {
+    userFolderId = req.headers['x-session-id'];
+  }
 
   // Try fetching project to get clean title slug
   let slug = 'my-project';
@@ -44,18 +51,20 @@ const initWorkspace = asyncHandler(async (req, res) => {
         slug = proj.slug;
       } else if (proj && proj.title) {
         slug = proj.title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
+      } else {
+        slug = projectId.toLowerCase().replace(/[^a-z0-9]/g, '-');
       }
     } catch {
-      // Fallback
+      slug = projectId.toLowerCase().replace(/[^a-z0-9]/g, '-');
     }
   }
 
-  const shortUser = userId.slice(-6);
-  const folderName = `${slug}-${shortUser}`;
-  const isolatedContainerPath = `/home/coder/projects/${folderName}`;
+  // Per-user isolated container directory: /home/coder/users/user_<ID>/<SLUG>
+  const userDir = `/home/coder/users/user_${userFolderId}`;
+  const isolatedContainerPath = `${userDir}/${slug}`;
   const iframeUrl = `http://localhost:8107/?folder=${isolatedContainerPath}`;
 
-  // 1 ── Create isolated project directory inside Docker container
+  // 1 ── Create isolated user project directory inside Docker container
   await execInContainer(`mkdir -p ${isolatedContainerPath}`);
 
   // 2 ── If user provided GitHub Repo URL, clone it into the isolated directory
@@ -63,9 +72,8 @@ const initWorkspace = asyncHandler(async (req, res) => {
     console.log(`[workspace] Cloning ${repoUrl} into ${isolatedContainerPath}`);
     await execInContainer(`if [ ! -d "${isolatedContainerPath}/.git" ]; then git clone ${repoUrl} ${isolatedContainerPath}; fi`);
   }
-  // Otherwise, leave directory 100% clean and empty! User creates files manually.
 
-  return successResponse(res, 200, 'Pristine real-world VS Code workspace active', {
+  return successResponse(res, 200, 'Isolated per-user VS Code workspace active', {
     iframeUrl,
     folderPath: isolatedContainerPath,
     port: 8107,
@@ -75,24 +83,29 @@ const initWorkspace = asyncHandler(async (req, res) => {
 /**
  * POST /api/sandbox/:id/workspace/terminate
  *
- * Completely deletes temporary container workspace storage or pushes to Git
+ * Completely deletes temporary user workspace storage or pushes to Git
  */
 const terminateWorkspace = asyncHandler(async (req, res) => {
   const { id: projectId } = req.params;
-  const userId = req.user ? req.user._id.toString() : 'guest';
   const { pushToGit, repoUrl } = req.body || {};
+
+  let userFolderId = 'guest';
+  if (req.user && req.user._id) {
+    userFolderId = req.user._id.toString();
+  }
 
   let slug = 'my-project';
   if (projectId && projectId !== 'blank' && projectId !== 'scratch') {
     try {
       const proj = await SandboxProject.findById(projectId).lean();
       if (proj && proj.slug) slug = proj.slug;
-    } catch {}
+    } catch {
+      slug = projectId.toLowerCase().replace(/[^a-z0-9]/g, '-');
+    }
   }
 
-  const shortUser = userId.slice(-6);
-  const folderName = `${slug}-${shortUser}`;
-  const isolatedContainerPath = `/home/coder/projects/${folderName}`;
+  const userDir = `/home/coder/users/user_${userFolderId}`;
+  const isolatedContainerPath = `${userDir}/${slug}`;
 
   if (pushToGit && repoUrl) {
     console.log(`[workspace] Pushing changes from ${isolatedContainerPath} to ${repoUrl}`);

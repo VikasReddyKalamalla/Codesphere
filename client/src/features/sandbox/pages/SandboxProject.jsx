@@ -277,10 +277,19 @@ export const SandboxProject = () => {
   // Handle clicking "YES, LET'S DO IT!" -> Initializes per-user isolated workspace & launches VS Code
   const handleLaunchVSCode = async (problem) => {
     const probId = problem?._id || 'scratch';
+    const userRaw = localStorage.getItem('codesphere_user');
+    let userId = 'user_guest';
+    try {
+      if (userRaw) {
+        const u = JSON.parse(userRaw);
+        if (u && (u._id || u.id)) userId = `user_${u._id || u.id}`;
+      }
+    } catch {}
+
     const toastId = toast.loading(`Preparing isolated VS Code workspace for "${problem.title}"...`);
     try {
       const res = await initWorkspaceAPI(probId, { repoUrl: activeRepoUrl });
-      const targetUrl = res?.data?.iframeUrl || `http://localhost:8107/?folder=/home/coder/workspaces/session_${probId}`;
+      const targetUrl = res?.data?.iframeUrl || `http://localhost:8107/?folder=/home/coder/users/${userId}/${probId}`;
       toast.success(`Opening VS Code Web Studio for "${problem.title}"!`, {
         id: toastId,
         icon: '🚀',
@@ -288,7 +297,7 @@ export const SandboxProject = () => {
       });
       window.open(targetUrl, '_blank', 'noopener,noreferrer');
     } catch {
-      window.open(`http://localhost:8107/?folder=/home/coder/workspaces/session_${probId}`, '_blank', 'noopener,noreferrer');
+      window.open(`http://localhost:8107/?folder=/home/coder/users/${userId}/${probId}`, '_blank', 'noopener,noreferrer');
       toast.dismiss(toastId);
     } finally {
       setSelectedProblem(null);
