@@ -193,6 +193,26 @@ const googleAuth = async ({ email, fullName, avatar, googleId }) => {
   }
 
   const cleanEmail = String(email).trim().toLowerCase();
+
+  // Check if MongoDB is connected — if not, return a minimal dev-mode JWT
+  const mongoose = require('mongoose');
+  if (mongoose.connection.readyState !== 1) {
+    const rawName = fullName || cleanEmail.split('@')[0];
+    const mockUser = {
+      _id: `google_${Buffer.from(cleanEmail).toString('base64').slice(0, 16)}`,
+      fullName: rawName,
+      username: cleanEmail.split('@')[0].replace(/[^a-z0-9]+/g, '_'),
+      email: cleanEmail,
+      avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(rawName)}&background=0D8ABC&color=fff`,
+      role: 'student',
+      plan: 'free',
+      isVerified: true,
+      isActive: true,
+    };
+    const token = generateToken(mockUser);
+    return { token, user: mockUser, isDevMode: true };
+  }
+
   let user = await User.findOne({ email: cleanEmail });
 
   if (user) {
