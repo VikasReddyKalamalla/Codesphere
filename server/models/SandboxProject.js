@@ -64,6 +64,17 @@ const sandboxProjectSchema = new mongoose.Schema(
     isPublished: { type: Boolean, default: false },
     isFeatured:  { type: Boolean, default: false },
 
+    // ─── Pitch & Problem Statement ─────────────────────────────────────────────
+    pitch: { type: String, default: '' },
+    points: { type: Number, default: 300 },
+    flashcards: [
+      {
+        title: { type: String, default: '' },
+        hint: { type: String, default: '' },
+      },
+    ],
+    starterFiles: [{ type: String, trim: true }],
+
     // ─── Stats ────────────────────────────────────────────────────────────────
     stepCount:       { type: Number, default: 0 },
     enrolledCount:   { type: Number, default: 0 },

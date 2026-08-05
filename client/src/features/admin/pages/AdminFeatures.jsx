@@ -36,12 +36,15 @@ export default function AdminFeaturesPage({ defaultTab }) {
   const [editingSandbox, setEditingSandbox] = useState(null);
   const [sandboxForm, setSandboxForm] = useState({
     title: '',
+    pitch: '',
     description: '',
-    category: 'Web Development',
+    category: 'Frontend & UI Systems',
     difficulty: 'beginner',
-    technologyStack: 'React, TailwindCSS, JavaScript',
-    templateType: 'react',
-    estimatedTime: 45,
+    technologyStack: 'HTML5, CSS3, JavaScript',
+    estimatedDuration: '2.5 Hours',
+    points: 300,
+    starterFiles: 'index.html, styles.css, script.js',
+    flashcards: [{ title: '', hint: '' }],
     isPublished: true,
   });
 
@@ -80,7 +83,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
     if (!sandboxForm.title) return toast.error('Title is required');
     const loader = toast.loading('Saving sandbox project...');
     try {
-      const rawCat = (sandboxForm.category || '').trim() || 'Full Stack';
+      const rawCat = (sandboxForm.category || '').trim() || 'Frontend & UI Systems';
 
       const payload = {
         ...sandboxForm,
@@ -90,6 +93,13 @@ export default function AdminFeaturesPage({ defaultTab }) {
         technologyStack: typeof sandboxForm.technologyStack === 'string'
           ? sandboxForm.technologyStack.split(',').map((s) => s.trim()).filter(Boolean)
           : sandboxForm.technologyStack,
+        starterFiles: typeof sandboxForm.starterFiles === 'string'
+          ? sandboxForm.starterFiles.split(',').map((s) => s.trim()).filter(Boolean)
+          : sandboxForm.starterFiles,
+        points: Number(sandboxForm.points) || 300,
+        flashcards: Array.isArray(sandboxForm.flashcards)
+          ? sandboxForm.flashcards.filter((f) => f && f.title.trim())
+          : [],
       };
 
       if (editingSandbox) {
@@ -513,7 +523,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
 
   const navTabs = [
     { key: 'learning', label: 'Learning Paths', icon: GraduationCap, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    { key: 'sandboxes', label: 'Sandboxes & Projects', icon: Code2, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    { key: 'sandboxes', label: 'Problem Statements', icon: Code2, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
     { key: 'tests', label: 'Practice Tests', icon: HelpCircle, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
     { key: 'events', label: 'Events & Workshops', icon: Calendar, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
     { key: 'resources', label: 'Knowledge Resources', icon: BookOpen, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
@@ -592,7 +602,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Sandboxes</span>
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Problem Statements</span>
                 <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center">
                   <Code2 size={18} />
                 </div>
@@ -639,7 +649,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search sandboxes..."
+                  placeholder="Search problem statements..."
                   value={sandboxSearch}
                   onChange={(e) => setSandboxSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && fetchSandboxes()}
@@ -652,17 +662,16 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 className="py-2 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium outline-none"
               >
                 <option value="">All Categories</option>
-                <option value="Java / Core Java">Java / Core Java</option>
-                <option value="App & Mobile Development">App & Mobile Development</option>
-                <option value="Web Development">Web Development</option>
-                <option value="Full Stack">Full Stack</option>
+                <option value="Frontend & UI Systems">Frontend & UI Systems</option>
+                <option value="Backend & APIs">Backend & APIs</option>
+                <option value="System Design & Compilers">System Design & Compilers</option>
                 <option value="Python & Data Science">Python & Data Science</option>
-                <option value="Frontend">Frontend</option>
-                <option value="Backend">Backend</option>
+                <option value="Full Stack">Full Stack</option>
+                <option value="Web Development">Web Development</option>
+                <option value="Java / Core Java">Java / Core Java</option>
                 <option value="AI & Machine Learning">AI & Machine Learning</option>
                 <option value="DevOps & Cloud">DevOps & Cloud</option>
                 <option value="Cybersecurity">Cybersecurity</option>
-                <option value="C / C++ Systems">C / C++ Systems</option>
                 <option value="Software Engineering">Software Engineering</option>
               </select>
               <select
@@ -680,19 +689,22 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 setEditingSandbox(null);
                 setSandboxForm({
                   title: '',
+                  pitch: '',
                   description: '',
-                  category: 'Web Development',
+                  category: 'Frontend & UI Systems',
                   difficulty: 'beginner',
-                  technologyStack: 'React, TailwindCSS, JavaScript',
-                  templateType: 'react',
-                  estimatedTime: 45,
+                  technologyStack: 'HTML5, CSS3, JavaScript',
+                  estimatedDuration: '2.5 Hours',
+                  points: 300,
+                  starterFiles: 'index.html, styles.css, script.js',
+                  flashcards: [{ title: '', hint: '' }],
                   isPublished: true,
                 });
                 setIsSandboxModalOpen(true);
               }}
               className="w-full sm:w-auto px-4 py-2.5 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
             >
-              <Plus size={16} /> Create Sandbox Project
+              <Plus size={16} /> Create Problem Statement
             </button>
           </div>
 
@@ -700,18 +712,18 @@ export default function AdminFeaturesPage({ defaultTab }) {
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
             {sandboxLoading ? (
               <div className="p-12 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-                <RefreshCw size={16} className="animate-spin text-[#04AA6D]" /> Loading sandboxes...
+                <RefreshCw size={16} className="animate-spin text-[#04AA6D]" /> Loading problem statements...
               </div>
             ) : sandboxes.length === 0 ? (
               <div className="p-12 text-center text-slate-400 text-xs">
-                No sandbox projects found. Click "Create Sandbox Project" to add one!
+                No problem statements found. Click "Create Problem Statement" to add one!
               </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase font-bold tracking-wider">
                     <tr>
-                      <th className="py-3.5 px-4">Sandbox Project</th>
+                      <th className="py-3.5 px-4">Problem Statement</th>
                       <th className="py-3.5 px-4">Category</th>
                       <th className="py-3.5 px-4">Tech Stack</th>
                       <th className="py-3.5 px-4">Difficulty</th>
@@ -728,7 +740,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
                           </div>
                           <div>
                             <p className="font-bold text-slate-900 dark:text-white">{item.title}</p>
-                            <p className="text-[10px] font-normal text-slate-400 truncate max-w-xs">{item.description}</p>
+                            <p className="text-[10px] font-normal text-slate-400 truncate max-w-xs">{item.pitch || item.description}</p>
                           </div>
                         </td>
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">{item.category}</td>
@@ -746,7 +758,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
                         <td className="py-3 px-4">
                           <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
                             item.difficulty === 'beginner' ? 'bg-emerald-100 text-emerald-700' :
-                            item.difficulty === 'intermediate' ? 'bg-amber-100 text-amber-700' : 'bg-rose-100 text-rose-700'
+                            item.difficulty === 'intermediate' ? 'bg-amber-100 text-amber-700' :
+                            item.difficulty === 'expert' ? 'bg-rose-100 text-rose-700' : 'bg-purple-100 text-purple-700'
                           }`}>
                             {item.difficulty}
                           </span>
@@ -769,12 +782,15 @@ export default function AdminFeaturesPage({ defaultTab }) {
                               setEditingSandbox(item);
                               setSandboxForm({
                                 title: item.title || '',
+                                pitch: item.pitch || '',
                                 description: item.description || '',
-                                category: item.category || 'Web Development',
+                                category: item.category || 'Frontend & UI Systems',
                                 difficulty: item.difficulty || 'beginner',
                                 technologyStack: Array.isArray(item.technologyStack) ? item.technologyStack.join(', ') : item.technologyStack || '',
-                                templateType: item.templateType || 'react',
-                                estimatedTime: item.estimatedTime || 45,
+                                estimatedDuration: item.estimatedDuration || '2.5 Hours',
+                                points: item.points || 300,
+                                starterFiles: Array.isArray(item.starterFiles) ? item.starterFiles.join(', ') : item.starterFiles || '',
+                                flashcards: Array.isArray(item.flashcards) && item.flashcards.length > 0 ? item.flashcards : [{ title: '', hint: '' }],
                                 isPublished: item.isPublished ?? true,
                               });
                               setIsSandboxModalOpen(true);
@@ -1438,23 +1454,27 @@ export default function AdminFeaturesPage({ defaultTab }) {
       {/* Sandbox Modal */}
       <AnimatePresence>
         {isSandboxModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-xl p-6 space-y-4 my-8">
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
                 <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
                   <Code2 size={18} className="text-[#04AA6D]" />
-                  {editingSandbox ? 'Edit Sandbox Project' : 'Create Sandbox Project'}
+                  {editingSandbox ? 'Edit Sandbox Problem Statement' : 'Create Sandbox Problem Statement'}
                 </h3>
                 <button onClick={() => setIsSandboxModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"><X size={16} /></button>
               </div>
-              <form onSubmit={handleSaveSandbox} className="space-y-3 text-xs">
+              <form onSubmit={handleSaveSandbox} className="space-y-3.5 text-xs max-h-[75vh] overflow-y-auto pr-1">
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Project Title</label>
-                  <input type="text" required value={sandboxForm.title} onChange={(e) => setSandboxForm({ ...sandboxForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Problem Title *</label>
+                  <input type="text" required value={sandboxForm.title} onChange={(e) => setSandboxForm({ ...sandboxForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="e.g. Build a Real-Time E-Commerce Shopping Cart System" />
                 </div>
                 <div>
-                  <label className="font-bold text-slate-700 dark:text-slate-300">Description</label>
-                  <textarea rows={2} value={sandboxForm.description} onChange={(e) => setSandboxForm({ ...sandboxForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Teaser Pitch (Short summary for card)</label>
+                  <input type="text" value={sandboxForm.pitch} onChange={(e) => setSandboxForm({ ...sandboxForm, pitch: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="e.g. Develop a responsive, stateful shopping cart system..." />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Full Description & Context</label>
+                  <textarea rows={3} value={sandboxForm.description} onChange={(e) => setSandboxForm({ ...sandboxForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="Detailed context, requirements, and background..." />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
@@ -1464,17 +1484,16 @@ export default function AdminFeaturesPage({ defaultTab }) {
                       onChange={(e) => setSandboxForm({ ...sandboxForm, category: e.target.value })}
                       className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none text-xs focus:border-[#04AA6D]"
                     >
-                      <option value="Java / Core Java">Java / Core Java</option>
-                      <option value="App & Mobile Development">App & Mobile Development</option>
-                      <option value="Web Development">Web Development</option>
-                      <option value="Full Stack">Full Stack</option>
+                      <option value="Frontend & UI Systems">Frontend & UI Systems</option>
+                      <option value="Backend & APIs">Backend & APIs</option>
+                      <option value="System Design & Compilers">System Design & Compilers</option>
                       <option value="Python & Data Science">Python & Data Science</option>
-                      <option value="Frontend Engineering">Frontend Engineering</option>
-                      <option value="Backend Engineering">Backend Engineering</option>
+                      <option value="Full Stack">Full Stack</option>
+                      <option value="Web Development">Web Development</option>
+                      <option value="Java / Core Java">Java / Core Java</option>
                       <option value="AI & Machine Learning">AI & Machine Learning</option>
                       <option value="DevOps & Cloud">DevOps & Cloud</option>
                       <option value="Cybersecurity">Cybersecurity</option>
-                      <option value="C / C++ Systems">C / C++ Systems</option>
                       <option value="Software Engineering">Software Engineering</option>
                     </select>
                   </div>
@@ -1484,13 +1503,89 @@ export default function AdminFeaturesPage({ defaultTab }) {
                       <option value="beginner">Beginner</option>
                       <option value="intermediate">Intermediate</option>
                       <option value="advanced">Advanced</option>
+                      <option value="expert">Expert</option>
                     </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Estimated Duration</label>
+                    <input type="text" value={sandboxForm.estimatedDuration} onChange={(e) => setSandboxForm({ ...sandboxForm, estimatedDuration: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="e.g. 2.5 Hours" />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">XP Points</label>
+                    <input type="number" value={sandboxForm.points} onChange={(e) => setSandboxForm({ ...sandboxForm, points: Number(e.target.value) })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="250" />
                   </div>
                 </div>
                 <div>
                   <label className="font-bold text-slate-700 dark:text-slate-300">Tech Stack (comma separated)</label>
-                  <input type="text" value={sandboxForm.technologyStack} onChange={(e) => setSandboxForm({ ...sandboxForm, technologyStack: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="React, Node.js, MongoDB" />
+                  <input type="text" value={sandboxForm.technologyStack} onChange={(e) => setSandboxForm({ ...sandboxForm, technologyStack: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="HTML5, CSS3, JavaScript (ES6+), Local Storage" />
                 </div>
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Starter Files (comma separated)</label>
+                  <input type="text" value={sandboxForm.starterFiles} onChange={(e) => setSandboxForm({ ...sandboxForm, starterFiles: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="index.html, styles.css, script.js" />
+                </div>
+
+                {/* Flashcards section */}
+                <div className="pt-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Architectural Flashcards & Hints</label>
+                    <button
+                      type="button"
+                      onClick={() => setSandboxForm({
+                        ...sandboxForm,
+                        flashcards: [...(sandboxForm.flashcards || []), { title: '', hint: '' }]
+                      })}
+                      className="text-[11px] font-bold text-[#04AA6D] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus size={13} /> Add Flashcard
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {(sandboxForm.flashcards || []).map((fc, idx) => (
+                      <div key={idx} className="p-2.5 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl relative space-y-1.5">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[10px] font-bold text-slate-400 font-mono">Flashcard #{idx + 1}</span>
+                          {(sandboxForm.flashcards || []).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => setSandboxForm({
+                                ...sandboxForm,
+                                flashcards: sandboxForm.flashcards.filter((_, i) => i !== idx)
+                              })}
+                              className="text-slate-400 hover:text-rose-500 p-0.5 cursor-pointer"
+                            >
+                              <X size={13} />
+                            </button>
+                          )}
+                        </div>
+                        <input
+                          type="text"
+                          value={fc.title}
+                          onChange={(e) => {
+                            const nextFc = [...sandboxForm.flashcards];
+                            nextFc[idx].title = e.target.value;
+                            setSandboxForm({ ...sandboxForm, flashcards: nextFc });
+                          }}
+                          className="w-full p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-[#04AA6D]"
+                          placeholder="Flashcard Title (e.g. 💡 State Management)"
+                        />
+                        <textarea
+                          rows={2}
+                          value={fc.hint}
+                          onChange={(e) => {
+                            const nextFc = [...sandboxForm.flashcards];
+                            nextFc[idx].hint = e.target.value;
+                            setSandboxForm({ ...sandboxForm, flashcards: nextFc });
+                          }}
+                          className="w-full p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-xs outline-none focus:border-[#04AA6D]"
+                          placeholder="Architectural hint or guidance..."
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2 pt-2">
                   <input type="checkbox" id="sandPub" checked={sandboxForm.isPublished} onChange={(e) => setSandboxForm({ ...sandboxForm, isPublished: e.target.checked })} className="accent-[#04AA6D] cursor-pointer" />
                   <label htmlFor="sandPub" className="font-bold text-slate-700 dark:text-slate-300 cursor-pointer">Publish Immediately</label>

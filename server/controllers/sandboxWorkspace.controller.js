@@ -8,6 +8,7 @@ const { syncDbToDisk, syncDiskToDb } = require('../utils/workspaceSync');
 const { successResponse, errorResponse } = require('../utils/apiResponse');
 const asyncHandler = require('../utils/asyncHandler');
 const SandboxProject = require('../models/SandboxProject');
+const UserSandboxWorkspace = require('../models/UserSandboxWorkspace');
 
 /**
  * Helper to execute docker exec commands inside container 8aaeaec7c507
@@ -59,23 +60,89 @@ const initWorkspace = asyncHandler(async (req, res) => {
     }
   }
 
-  // Per-user isolated container directory: /home/coder/users/user_<ID>/<SLUG>
-  const userDir = `/home/coder/users/user_${userFolderId}`;
+  // Isolated container storage path & clean public UI path
+  const userDir = `/home/coder/workspaces/user_${userFolderId}`;
   const isolatedContainerPath = `${userDir}/${slug}`;
-  const iframeUrl = `http://localhost:8107/?folder=${isolatedContainerPath}`;
+  const cleanPublicPath = `/home/coder/projects/${slug}`;
+  const iframeUrl = `http://localhost:8107/?folder=${cleanPublicPath}`;
 
-  // 1 ── Create isolated user project directory inside Docker container
-  await execInContainer(`mkdir -p ${isolatedContainerPath}`);
+  // Persist workspace metadata in MongoDB UserSandboxWorkspace collection
+  if (req.user && req.user._id) {
+    try {
+      await UserSandboxWorkspace.findOneAndUpdate(
+        { userId: req.user._id, projectId: String(projectId) },
+        {
+          slug,
+          containerPath: isolatedContainerPath,
+          isActive: true,
+          lastAccessedAt: new Date(),
+        },
+        { upsert: true, new: true }
+      );
+    } catch (dbErr) {
+      console.warn('[UserSandboxWorkspace] MongoDB record save warning:', dbErr.message);
+    }
+  }
 
-  // 2 ── If user provided GitHub Repo URL, clone it into the isolated directory
+  let projTitle = 'CodeSphere Problem Statement';
+  let projDesc = 'Welcome to your isolated VS Code Web workspace.';
+  if (projectId && projectId !== 'blank' && projectId !== 'scratch') {
+    try {
+      const proj = await SandboxProject.findById(projectId).lean();
+      if (proj) {
+        projTitle = proj.title || projTitle;
+        projDesc = proj.pitch || proj.description || projDesc;
+      }
+    } catch {}
+  }
+
+  // Single-pass atomic setup script (<50ms execution time)
+  const setupCmd = `
+    mkdir -p "${isolatedContainerPath}"
+    mkdir -p /home/coder/projects
+    rm -rf "${cleanPublicPath}"
+    ln -sfn "${isolatedContainerPath}" "${cleanPublicPath}"
+    if [ ! -f "${isolatedContainerPath}/index.html" ]; then
+      cat << 'EOF' > "${isolatedContainerPath}/index.html"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${projTitle}</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>${projTitle}</h1>
+  <p>${projDesc}</p>
+  <script src="script.js"></script>
+</body>
+</html>
+EOF
+      cat << 'EOF' > "${isolatedContainerPath}/script.js"
+// ${projTitle}
+console.log("Welcome to CodeSphere Web Studio!");
+EOF
+      cat << 'EOF' > "${isolatedContainerPath}/styles.css"
+/* ${projTitle} */
+body {
+  font-family: system-ui, sans-serif;
+  background: #0f172a;
+  color: #f8fafc;
+  padding: 2rem;
+}
+EOF
+    fi
+  `;
+
   if (repoUrl && repoUrl.startsWith('http')) {
-    console.log(`[workspace] Cloning ${repoUrl} into ${isolatedContainerPath}`);
-    await execInContainer(`if [ ! -d "${isolatedContainerPath}/.git" ]; then git clone ${repoUrl} ${isolatedContainerPath}; fi`);
+    await execInContainer(`if [ ! -d "${isolatedContainerPath}/.git" ]; then git clone ${repoUrl} ${isolatedContainerPath}; fi && ${setupCmd}`);
+  } else {
+    await execInContainer(setupCmd);
   }
 
   return successResponse(res, 200, 'Isolated per-user VS Code workspace active', {
     iframeUrl,
-    folderPath: isolatedContainerPath,
+    folderPath: cleanPublicPath,
     port: 8107,
   });
 });
@@ -104,8 +171,9 @@ const terminateWorkspace = asyncHandler(async (req, res) => {
     }
   }
 
-  const userDir = `/home/coder/users/user_${userFolderId}`;
+  const userDir = `/home/coder/workspaces/user_${userFolderId}`;
   const isolatedContainerPath = `${userDir}/${slug}`;
+  const cleanPublicPath = `/home/coder/projects/${slug}`;
 
   if (pushToGit && repoUrl) {
     console.log(`[workspace] Pushing changes from ${isolatedContainerPath} to ${repoUrl}`);
@@ -114,7 +182,7 @@ const terminateWorkspace = asyncHandler(async (req, res) => {
 
   // Wipe temporary directory from cloud container storage
   console.log(`[workspace] Cleaning up storage path: ${isolatedContainerPath}`);
-  await execInContainer(`rm -rf ${isolatedContainerPath}`);
+  await execInContainer(`rm -rf "${isolatedContainerPath}" "${cleanPublicPath}"`);
 
   return successResponse(res, 200, 'Session terminated and cloud storage cleaned', { terminated: true });
 });

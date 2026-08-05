@@ -20,6 +20,7 @@ import {
 } from '../services/sandboxAPI.js';
 import { SessionManagerModal } from '../../../components/SessionManagerModal.jsx';
 import toast from 'react-hot-toast';
+import { socket } from '../../../socket/socket.js';
 
 // ─── Default Problem Statements & Flashcards Catalog ──────────────────────────
 const FEATURED_PROBLEM_STATEMENTS = [
@@ -210,24 +211,40 @@ export const SandboxProject = () => {
     setLoading(true);
     try {
       const data = await fetchSandboxProjectsAPI();
-      const fetchedProjects = data?.projects || (Array.isArray(data) ? data : []);
-      if (fetchedProjects && fetchedProjects.length > 0) {
-        const formatted = fetchedProjects.map((p, idx) => ({
+      const root = data?.data;
+      const fetchedProjects = Array.isArray(root?.projects)
+        ? root.projects
+        : Array.isArray(data?.projects)
+        ? data.projects
+        : Array.isArray(root)
+        ? root
+        : Array.isArray(data)
+        ? data
+        : [];
+
+      const listToUse = fetchedProjects.length > 0 ? fetchedProjects : FEATURED_PROBLEM_STATEMENTS;
+
+      const formatted = listToUse.map((p, idx) => ({
           _id: p._id || `ps-${idx}`,
           title: p.title,
           category: p.category || 'Full Stack',
           difficulty: p.difficulty || 'intermediate',
-          pitch: p.description || 'Interactive hands-on programming challenge.',
-          description: p.description || 'Build a production-grade application or microservice.',
-          technologyStack: Array.isArray(p.technologyStack) ? p.technologyStack : ['JavaScript', 'HTML5'],
-          estimatedDuration: p.estimatedDuration || '2 Hours',
+          pitch: p.pitch || p.description || 'Interactive hands-on programming challenge.',
+          description: p.description || p.pitch || 'Build a production-grade application or microservice.',
+          technologyStack: Array.isArray(p.technologyStack)
+            ? p.technologyStack
+            : (typeof p.technologyStack === 'string' ? p.technologyStack.split(',').map(s => s.trim()).filter(Boolean) : ['JavaScript', 'HTML5']),
+          estimatedDuration: p.estimatedDuration || '2.5 Hours',
           points: p.points || 300,
-          enrolledCount: p.enrolledCount || '1.5K',
-          flashcards: p.flashcards || FEATURED_PROBLEM_STATEMENTS[idx % FEATURED_PROBLEM_STATEMENTS.length].flashcards,
-          starterFiles: p.starterFiles || ['index.html', 'script.js', 'styles.css']
+          enrolledCount: p.enrolledCount ? (typeof p.enrolledCount === 'number' ? (p.enrolledCount >= 1000 ? `${(p.enrolledCount / 1000).toFixed(1)}K` : String(p.enrolledCount)) : p.enrolledCount) : '1.5K',
+          flashcards: (Array.isArray(p.flashcards) && p.flashcards.length > 0)
+            ? p.flashcards
+            : FEATURED_PROBLEM_STATEMENTS[idx % FEATURED_PROBLEM_STATEMENTS.length].flashcards,
+          starterFiles: Array.isArray(p.starterFiles)
+            ? p.starterFiles
+            : (typeof p.starterFiles === 'string' ? p.starterFiles.split(',').map(s => s.trim()).filter(Boolean) : ['index.html', 'script.js', 'styles.css'])
         }));
         setProblems(formatted);
-      }
     } catch {
       // Quiet fallback
     } finally {
@@ -237,6 +254,25 @@ export const SandboxProject = () => {
 
   useEffect(() => {
     loadProblemStatements();
+
+    const handleSandboxChanged = (evt) => {
+      const entity = evt?.entity;
+      if (!entity || entity === 'sandbox' || entity === 'all') {
+        loadProblemStatements();
+        toast.success('Problem Statements updated in real-time!', {
+          icon: '⚡',
+          style: { background: '#0F172A', color: '#04AA6D', border: '1px solid #04AA6D' }
+        });
+      }
+    };
+
+    socket.on('admin:data_changed', handleSandboxChanged);
+    socket.on('sandbox:changed', handleSandboxChanged);
+
+    return () => {
+      socket.off('admin:data_changed', handleSandboxChanged);
+      socket.off('sandbox:changed', handleSandboxChanged);
+    };
   }, []);
 
   // Warn user before closing tab or navigating away to push code to GitHub
@@ -289,7 +325,7 @@ export const SandboxProject = () => {
     const toastId = toast.loading(`Preparing isolated VS Code workspace for "${problem.title}"...`);
     try {
       const res = await initWorkspaceAPI(probId, { repoUrl: activeRepoUrl });
-      const targetUrl = res?.data?.iframeUrl || `http://localhost:8107/?folder=/home/coder/users/${userId}/${probId}`;
+      const targetUrl = res?.data?.iframeUrl || res?.iframeUrl || `http://localhost:8107/?folder=/home/coder/users/${userId}/${probId}`;
       toast.success(`Opening VS Code Web Studio for "${problem.title}"!`, {
         id: toastId,
         icon: '🚀',

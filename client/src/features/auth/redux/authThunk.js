@@ -6,15 +6,21 @@ export const loginThunk = (credentials) => async (dispatch) => {
   dispatch(authStart());
   try {
     const response = await loginAPI(credentials);
-    const { token, user } = response.data;
-    saveToken(token);
-    saveUser(user);
-    dispatch(authSuccess({ user, token }));
-    return { token, user }; // Return unwrapped data for the caller
+    const dataObj = response?.data || response;
+    const token = dataObj?.token || response?.token;
+    const user = dataObj?.user || response?.user;
+    if (token && user) {
+      removeToken();
+      removeUser();
+      saveToken(token);
+      saveUser(user);
+      dispatch(authSuccess({ user, token }));
+      return { token, user };
+    }
+    throw new Error(response?.message || 'Login failed');
   } catch (err) {
     const msg = err.message || err.data?.message || 'Login failed';
     dispatch(authFailure(msg));
-    // Return a rejected promise with the normalized error
     return Promise.reject(err);
   }
 };
@@ -23,15 +29,21 @@ export const registerThunk = (regData) => async (dispatch) => {
   dispatch(authStart());
   try {
     const response = await registerAPI(regData);
-    const { token, user } = response.data;
-    saveToken(token);
-    saveUser(user);
-    dispatch(authSuccess({ user, token }));
-    return { token, user }; // Return unwrapped data for the caller
+    const dataObj = response?.data || response;
+    const token = dataObj?.token || response?.token;
+    const user = dataObj?.user || response?.user;
+    if (token && user) {
+      removeToken();
+      removeUser();
+      saveToken(token);
+      saveUser(user);
+      dispatch(authSuccess({ user, token }));
+      return { token, user };
+    }
+    throw new Error(response?.message || 'Registration failed');
   } catch (err) {
     const msg = err.message || err.data?.message || 'Registration failed';
     dispatch(authFailure(msg));
-    // Return a rejected promise with the normalized error
     return Promise.reject(err);
   }
 };
