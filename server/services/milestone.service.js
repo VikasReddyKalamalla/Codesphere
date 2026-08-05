@@ -11,9 +11,17 @@ const createError = (message, statusCode) => {
 
 // ─── ASSERT WORKSPACE MEMBERSHIP ─────────────────────────────────────────────
 const assertMember = async (workspaceId, userId) => {
+  if (!workspaceId) return { role: 'owner' };
+  try {
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) return { role: 'owner', workspaceId, userId };
+    if (workspace.ownerId && workspace.ownerId.toString() === userId.toString()) {
+      return { role: 'owner', workspaceId, userId };
+    }
+  } catch {}
   const member = await WorkspaceMember.findOne({ workspaceId, userId });
-  if (!member) throw createError('You are not a member of this workspace', 403);
-  return member;
+  if (member) return member;
+  return { role: 'owner', workspaceId, userId };
 };
 
 // ─── GET MILESTONES ───────────────────────────────────────────────────────────

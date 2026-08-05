@@ -18,16 +18,16 @@ export const SidebarItem = ({
       to={path}
       onClick={onClick}
       className={clsx(
-        'group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 select-none relative',
+        'group flex items-center rounded-xl px-3 py-2 text-xs font-bold font-mono transition-all duration-200 select-none relative',
         isActive
-          ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400'
-          : 'text-slate-650 hover:bg-slate-50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-white'
+          ? 'bg-[#04AA6D]/10 text-[#04AA6D] dark:text-[#04AA6D] border border-[#04AA6D]/20 shadow-xs'
+          : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-800/60 dark:hover:text-white border border-transparent'
       )}
     >
       {Icon && (
         <Icon className={clsx(
-          'w-5 h-5 shrink-0 transition-colors',
-          isActive ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200'
+          'w-4 h-4 shrink-0 transition-colors',
+          isActive ? 'text-[#04AA6D]' : 'text-slate-400 group-hover:text-slate-700 dark:group-hover:text-slate-200'
         )} />
       )}
       {!collapsed && <span className="ml-3 truncate">{label}</span>}

@@ -25,6 +25,7 @@ import { ActivityFeed } from '../components/ActivityFeed.jsx';
 import { WorkspaceAnalytics } from '../components/WorkspaceAnalytics.jsx';
 import { KanbanBoard } from '../components/KanbanBoard.jsx';
 import { TaskModal } from '../components/TaskModal.jsx';
+import { APITester } from '../components/APITester.jsx';
 import { SessionManagerModal } from '../../../components/SessionManagerModal.jsx';
 import { BackButton } from '@components/common/BackButton.jsx';
 import { Button } from '@components/common/Button.jsx';
@@ -1106,23 +1107,27 @@ export const Workspace = () => {
 
                 {/* Preview view */}
                 <div className="flex-1 bg-slate-50 dark:bg-slate-950/20 p-3 flex flex-col overflow-hidden">
-                  <div className="flex-1 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl flex flex-col overflow-hidden">
-                    <div className="h-7 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-850 flex items-center px-3 gap-2 shrink-0">
-                      <div className="flex gap-1 shrink-0">
-                        <span className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
-                        <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
-                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                  {previewTab === 'api' ? (
+                    <APITester />
+                  ) : (
+                    <div className="flex-1 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl flex flex-col overflow-hidden">
+                      <div className="h-7 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-850 flex items-center px-3 gap-2 shrink-0">
+                        <div className="flex gap-1 shrink-0">
+                          <span className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
+                        </div>
+                        <div className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-855 rounded text-[8.5px] font-mono text-slate-400 dark:text-slate-500 px-3 py-0.5 select-text truncate text-left">
+                          https://codesphere.live/e-commerce-platform
+                        </div>
                       </div>
-                      <div className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-855 rounded text-[8.5px] font-mono text-slate-400 dark:text-slate-500 px-3 py-0.5 select-text truncate text-left">
-                        https://codesphere.live/e-commerce-platform
-                      </div>
+                      <iframe
+                        src={previewUrl}
+                        title="Live sandbox compiler frame"
+                        className="flex-1 border-none bg-slate-950"
+                      />
                     </div>
-                    <iframe
-                      src={previewUrl}
-                      title="Live sandbox compiler frame"
-                      className="flex-1 border-none bg-slate-950"
-                    />
-                  </div>
+                  )}
                 </div>
               </div>
 

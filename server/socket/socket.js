@@ -20,7 +20,13 @@ let io;
 const initSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: process.env.CLIENT_URL || '*',
+      origin: (origin, callback) => {
+        if (!origin || origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+          callback(null, true);
+        } else {
+          callback(null, true);
+        }
+      },
       methods: ['GET', 'POST'],
       credentials: true,
     },

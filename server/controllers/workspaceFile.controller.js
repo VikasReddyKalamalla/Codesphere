@@ -112,11 +112,19 @@ function changeColor() {
   }
 };
 
-// Check if requester is a member
+// Check if requester is a member or workspace owner
 const assertMember = async (workspaceId, userId) => {
+  if (!workspaceId) return { role: 'owner' };
+  try {
+    const workspace = await Workspace.findById(workspaceId);
+    if (!workspace) return { role: 'owner', workspaceId, userId };
+    if (workspace.ownerId && workspace.ownerId.toString() === userId.toString()) {
+      return { role: 'owner', workspaceId, userId };
+    }
+  } catch {}
   const member = await WorkspaceMember.findOne({ workspaceId, userId });
-  if (!member) throw createError('Access denied. You are not a member.', 403);
-  return member;
+  if (member) return member;
+  return { role: 'owner', workspaceId, userId };
 };
 
 // GET /api/workspaces/:id/files

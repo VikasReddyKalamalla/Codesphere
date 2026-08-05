@@ -10,3 +10,5 @@ export * from './TaskCard.jsx';
 export * from './TaskModal.jsx';
 export * from './InviteMember.jsx';
 export * from './WorkspaceSettings.jsx';
+export * from './APITester.jsx';
+
