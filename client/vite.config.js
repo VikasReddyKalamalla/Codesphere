@@ -10,6 +10,12 @@ const __dirname = dirname(__filename);
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    headers: {
+      // Allow Firebase Auth popup to communicate back to parent window.
+      // 'same-origin' (Chrome default in some configs) blocks window.closed polling.
+      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      'Cross-Origin-Embedder-Policy': 'unsafe-none',
+    },
     proxy: {
       '/workspace-proxy': {
         target: 'http://127.0.0.1:5000',

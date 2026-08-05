@@ -1,7 +1,8 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getAuth,
-  setPersistence,
+  initializeAuth,
+  inMemoryPersistence,
   browserSessionPersistence,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
@@ -24,30 +25,39 @@ const firebaseConfig = {
 export const isFirebaseConfigured = () =>
   Boolean(firebaseConfig.apiKey && firebaseConfig.authDomain);
 
-// Initialize app (singleton-safe)
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+// Initialize Firebase App (singleton-safe across Vite HMR reloads)
+const appInstance = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Use session persistence to avoid Chrome's IndexedDB "Database is closing/hidden" error.
-// Session persistence stores the token in sessionStorage (no IndexedDB), which is safe
-// across HMR reloads and tab-visibility changes.
-const auth = getAuth(app);
-setPersistence(auth, browserSessionPersistence).catch(() => {});
+// Use sessionStorage + inMemory persistence — completely avoids IndexedDB.
+// This eliminates "Database is closing/hidden" from Chrome throttling IndexedDB
+// when the Google popup window steals and returns focus.
+// The app backend issues its own JWT, so persistent Firebase auth is not needed.
+let auth;
+const existingApp = getApps()[0];
+try {
+  auth = initializeAuth(appInstance, {
+    persistence: [browserSessionPersistence, inMemoryPersistence],
+  });
+} catch (_e) {
+  // Already initialized (Vite HMR) — just get existing auth instance
+  auth = getAuth(appInstance);
+}
 
-const db = getFirestore(app);
+const db = getFirestore(appInstance);
 
-// Analytics — only loaded in browser, non-blocking
 let analytics = null;
 if (typeof window !== 'undefined') {
   isSupported()
-    .then((ok) => { if (ok) analytics = getAnalytics(app); })
+    .then((ok) => { if (ok) analytics = getAnalytics(appInstance); })
     .catch(() => {});
 }
 
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
 
+export const app = appInstance;
+
 export {
-  app,
   auth,
   db,
   analytics,
