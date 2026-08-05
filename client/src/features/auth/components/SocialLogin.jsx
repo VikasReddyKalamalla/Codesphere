@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { useAuth } from '../hooks/useAuth.js';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
-import { auth, googleProvider, isFirebaseConfigured, signInWithPopup, signInWithRedirect, getRedirectResult } from '@config/firebase.js';
+import { signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { auth, googleProvider, isFirebaseConfigured } from '@config/firebase.js';
+import { googleAuthThunk } from '../redux/authThunk.js';
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -15,68 +17,80 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const navigateAfterLogin = (user, from, navigate) => {
+  const dest =
+    user?.role === 'admin'      ? '/admin/dashboard' :
+    user?.role === 'instructor' ? '/instructor/dashboard' :
+    from || '/dashboard';
+  // Small delay to allow Redux state to propagate before navigation
+  setTimeout(() => navigate(dest, { replace: true }), 50);
+};
+
 export const SocialLogin = () => {
-  const { googleAuth } = useAuth();
+  const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
+  const from = location.state?.from?.pathname || '/dashboard';
 
+  // Handle redirect result (when popup was blocked and redirect was used)
   useEffect(() => {
     if (!auth) return;
-    try {
-      getRedirectResult(auth)
-        .then(async (result) => {
-          if (result && result.user) {
-            await googleAuth(result.user);
+    getRedirectResult(auth)
+      .then(async (result) => {
+        if (result?.user) {
+          const outcome = await dispatch(googleAuthThunk(result.user));
+          if (outcome?.token && outcome?.user) {
             toast.success(`Signed in as ${result.user.displayName || result.user.email}!`);
-            const from = location.state?.from?.pathname || '/dashboard';
-            navigate(from, { replace: true });
+            navigateAfterLogin(outcome.user, from, navigate);
           }
-        })
-        .catch(() => {
-          // Ignore redirect result check when no redirect sign-in was performed
-        });
-    } catch (e) {}
-  }, [auth, googleAuth, location, navigate]);
+        }
+      })
+      .catch(() => {});
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleGoogleSignIn = async () => {
     if (!isFirebaseConfigured() || !auth) {
-      toast.error('Firebase Authentication is not configured yet. Please check your credentials in .env.development.');
+      toast.error('Firebase not configured. Check your .env.development file.');
       return;
     }
 
     setLoading(true);
     try {
-      let googleUser = null;
+      let firebaseUser = null;
+
       try {
         const result = await signInWithPopup(auth, googleProvider);
-        googleUser = result.user;
+        firebaseUser = result.user;
       } catch (popupErr) {
         if (popupErr.code === 'auth/popup-blocked') {
-          toast.error('Popup blocked. Attempting redirect sign-in...');
+          toast('Popup blocked — redirecting to Google sign-in...');
           await signInWithRedirect(auth, googleProvider);
-          return;
+          return; // page will reload after redirect
         }
         throw popupErr;
       }
 
-      if (googleUser) {
-        await googleAuth(googleUser);
-        const displayName = googleUser.displayName || googleUser.email;
-        toast.success(`Signed in as ${displayName}!`);
-        const from = location.state?.from?.pathname || '/dashboard';
-        navigate(from, { replace: true });
+      if (!firebaseUser) return;
+
+      // Dispatch to backend → save token & user in Redux + localStorage
+      const outcome = await dispatch(googleAuthThunk(firebaseUser));
+
+      if (outcome?.token && outcome?.user) {
+        toast.success(`Welcome, ${firebaseUser.displayName || firebaseUser.email}! 🎉`);
+        navigateAfterLogin(outcome.user, from, navigate);
+      } else {
+        throw new Error('Authentication succeeded but no session was created.');
       }
     } catch (err) {
       console.error('[Google Auth Error]:', err);
-      if (err.code === 'auth/popup-closed-by-user') {
-        toast.error('Sign-in popup was closed before completing authentication.');
-      } else if (err.code === 'auth/unauthorized-domain') {
-        toast.error('This domain is not authorized in your Firebase console. Please add localhost to Authorized Domains in Firebase Authentication settings.');
-      } else if (err.code === 'auth/argument-error') {
-        toast.error('Firebase Auth initialization error. Please try again.');
+      const code = err?.code || '';
+      if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+        // User closed popup — silently ignore
+      } else if (code === 'auth/unauthorized-domain') {
+        toast.error('Localhost is not in your Firebase Authorized Domains. Add it in the Firebase console.');
       } else {
-        toast.error(err.message || 'Failed to sign in with Google');
+        toast.error(err.message || 'Google sign-in failed. Please try again.');
       }
     } finally {
       setLoading(false);
