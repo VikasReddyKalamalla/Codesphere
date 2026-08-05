@@ -4,6 +4,7 @@ import {
   initializeAuth,
   inMemoryPersistence,
   browserSessionPersistence,
+  browserPopupRedirectResolver,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
@@ -28,18 +29,17 @@ export const isFirebaseConfigured = () =>
 // Initialize Firebase App (singleton-safe across Vite HMR reloads)
 const appInstance = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// Use sessionStorage + inMemory persistence — completely avoids IndexedDB.
-// This eliminates "Database is closing/hidden" from Chrome throttling IndexedDB
-// when the Google popup window steals and returns focus.
-// The app backend issues its own JWT, so persistent Firebase auth is not needed.
+// initializeAuth with:
+//   - browserSessionPersistence/inMemoryPersistence → bypass IndexedDB (no "Database closing" error)
+//   - browserPopupRedirectResolver → required for signInWithPopup to work
 let auth;
-const existingApp = getApps()[0];
 try {
   auth = initializeAuth(appInstance, {
     persistence: [browserSessionPersistence, inMemoryPersistence],
+    popupRedirectResolver: browserPopupRedirectResolver,
   });
 } catch (_e) {
-  // Already initialized (Vite HMR) — just get existing auth instance
+  // Already initialized (Vite HMR double-init) — reuse existing instance
   auth = getAuth(appInstance);
 }
 
