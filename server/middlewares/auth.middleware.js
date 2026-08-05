@@ -36,10 +36,11 @@ const protect = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
+    console.warn('[Auth Middleware 401]:', error.message);
     if (error.name === 'TokenExpiredError') {
       return errorResponse(res, 401, 'Session expired. Please log in again.');
     }
-    return errorResponse(res, 401, 'Invalid token. Please log in again.');
+    return errorResponse(res, 401, `Invalid token: ${error.message}`);
   }
 };
 

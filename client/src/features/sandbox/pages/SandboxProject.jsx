@@ -433,7 +433,7 @@ export const SandboxProject = () => {
           </button>
 
           <button
-            onClick={() => handleLaunchVSCode({ _id: 'blank', title: 'New Workspace Project' })}
+            onClick={() => handlePromptWorkspaceModal({ _id: 'blank', title: 'New Workspace Project' })}
             className="flex items-center gap-2.5 px-5 py-3 bg-[#04AA6D] hover:bg-emerald-600 text-white font-bold text-xs rounded-2xl transition-all cursor-pointer shadow-md shadow-emerald-950/20 border border-emerald-500/30"
           >
             <Code2 size={16} />

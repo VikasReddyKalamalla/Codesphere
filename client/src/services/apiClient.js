@@ -36,14 +36,8 @@ apiClient.interceptors.response.use(
     const status  = error.response?.status;
     const message = error.response?.data?.message || error.message || 'Something went wrong';
 
-    // Session expired — clear local storage and redirect to login (except for auth requests)
-    const isAuthRoute = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/register');
-    if (status === 401 && !isAuthRoute) {
-      localStorage.removeItem(API_CONFIG.TOKEN_KEY);
-      localStorage.removeItem(API_CONFIG.USER_KEY);
-      if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
-        window.location.href = '/login';
-      }
+    if (status === 401) {
+      console.warn('[ApiClient 401 Unauthorized]:', error.config?.url, message);
     }
 
     return Promise.reject({ message, status, data: error.response?.data });
