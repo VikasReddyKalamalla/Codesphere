@@ -28,6 +28,8 @@ lerna-debug.log*
 
 # Uploads and temporary files
 server/uploads/
+server/data/
+
 
 # IDEs/Editors
 .vscode/

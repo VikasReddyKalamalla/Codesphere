@@ -16,11 +16,13 @@ const protect = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
 
-    // 2. Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    // 2. Verify token using consistent secret fallback
+    const secret = process.env.JWT_SECRET || 'codesphere_secret_key_2025';
+    const decoded = jwt.verify(token, secret);
 
     // 3. Fetch user — password excluded via schema select:false
-    const user = await User.findById(decoded.id);
+    const userId = decoded.id || decoded._id;
+    const user = await User.findById(userId);
     if (!user) {
       return errorResponse(res, 401, 'User belonging to this token no longer exists.');
     }
