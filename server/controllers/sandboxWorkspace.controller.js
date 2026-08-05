@@ -60,11 +60,10 @@ const initWorkspace = asyncHandler(async (req, res) => {
     }
   }
 
-  // Isolated container storage path & clean public UI path
-  const userDir = `/home/coder/workspaces/user_${userFolderId}`;
+  // Strictly isolated container storage path per-user
+  const userDir = `/home/coder/users/${userFolderId}`;
   const isolatedContainerPath = `${userDir}/${slug}`;
-  const cleanPublicPath = `/home/coder/projects/${slug}`;
-  const iframeUrl = `http://localhost:8107/?folder=${cleanPublicPath}`;
+  const iframeUrl = `http://localhost:8107/?folder=${isolatedContainerPath}`;
 
   // Persist workspace metadata in MongoDB UserSandboxWorkspace collection
   if (req.user && req.user._id) {
@@ -96,12 +95,10 @@ const initWorkspace = asyncHandler(async (req, res) => {
     } catch {}
   }
 
-  // Single-pass atomic setup script (<50ms execution time)
+  // Single-pass atomic setup script (<50ms execution time, strict isolation)
   const setupCmd = `
+    rm -rf /home/coder/projects
     mkdir -p "${isolatedContainerPath}"
-    mkdir -p /home/coder/projects
-    rm -rf "${cleanPublicPath}"
-    ln -sfn "${isolatedContainerPath}" "${cleanPublicPath}"
     if [ ! -f "${isolatedContainerPath}/index.html" ]; then
       cat << 'EOF' > "${isolatedContainerPath}/index.html"
 <!DOCTYPE html>
@@ -142,7 +139,7 @@ EOF
 
   return successResponse(res, 200, 'Isolated per-user VS Code workspace active', {
     iframeUrl,
-    folderPath: cleanPublicPath,
+    folderPath: isolatedContainerPath,
     port: 8107,
   });
 });
@@ -171,9 +168,8 @@ const terminateWorkspace = asyncHandler(async (req, res) => {
     }
   }
 
-  const userDir = `/home/coder/workspaces/user_${userFolderId}`;
+  const userDir = `/home/coder/users/${userFolderId}`;
   const isolatedContainerPath = `${userDir}/${slug}`;
-  const cleanPublicPath = `/home/coder/projects/${slug}`;
 
   if (pushToGit && repoUrl) {
     console.log(`[workspace] Pushing changes from ${isolatedContainerPath} to ${repoUrl}`);
@@ -182,7 +178,7 @@ const terminateWorkspace = asyncHandler(async (req, res) => {
 
   // Wipe temporary directory from cloud container storage
   console.log(`[workspace] Cleaning up storage path: ${isolatedContainerPath}`);
-  await execInContainer(`rm -rf "${isolatedContainerPath}" "${cleanPublicPath}"`);
+  await execInContainer(`rm -rf "${isolatedContainerPath}"`);
 
   return successResponse(res, 200, 'Session terminated and cloud storage cleaned', { terminated: true });
 });
