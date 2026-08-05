@@ -41,4 +41,26 @@ const protect = async (req, res, next) => {
   }
 };
 
-module.exports = { protect };
+/**
+ * optionalAuth — attempts to decode Bearer JWT in Authorization header if present.
+ * If valid, attaches req.user. If invalid or missing, continues without error.
+ */
+const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'codesphere_jwt_secret');
+      const user = await User.findById(decoded.id);
+      if (user && user.isActive) {
+        req.user = user;
+      }
+    }
+  } catch (error) {
+    // Ignore error for optional auth
+  }
+  next();
+};
+
+module.exports = { protect, optionalAuth };
+

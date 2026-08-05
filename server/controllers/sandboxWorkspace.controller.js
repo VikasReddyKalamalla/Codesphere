@@ -105,28 +105,6 @@ const initWorkspace = asyncHandler(async (req, res) => {
     }
   }
 
-  let projTitle = 'CodeSphere Technical Challenge';
-  let projCategory = 'Web Development';
-  let projPitch = 'Build a high-performance, responsive application with state management and real-time interactive UI components.';
-  let projPoints = 300;
-  let projTech = ['HTML5', 'CSS3', 'JavaScript (ES6+)', 'Local Storage'];
-
-  if (projectId && projectId !== 'blank' && projectId !== 'scratch') {
-    try {
-      const proj = await SandboxProject.findById(projectId).lean();
-      if (proj) {
-        projTitle = proj.title || projTitle;
-        projCategory = proj.category || projCategory;
-        projPitch = proj.pitch || proj.description || projPitch;
-        if (proj.points) projPoints = proj.points;
-        if (proj.technologyStack) {
-          projTech = Array.isArray(proj.technologyStack)
-            ? proj.technologyStack
-            : (typeof proj.technologyStack === 'string' ? proj.technologyStack.split(',').map(s => s.trim()).filter(Boolean) : projTech);
-        }
-      }
-    } catch {}
-  }
 
   const techBadgesHtml = projTech.map(t => `<span class="tech-tag">${t}</span>`).join('\n          ');
 
@@ -713,6 +691,11 @@ const getUserWorkspaces = asyncHandler(async (req, res) => {
   return successResponse(res, 200, 'Workspaces fetched', { workspaces });
 });
 
+const listActiveWorkspaces = asyncHandler(async (req, res) => {
+  const workspaces = await UserSandboxWorkspace.find({ isActive: true }).sort({ updatedAt: -1 });
+  return successResponse(res, 200, 'Active workspaces fetched', { workspaces });
+});
+
 module.exports = {
   initWorkspace,
   getUserWorkspaces,
@@ -721,3 +704,4 @@ module.exports = {
   stopWorkspace,
   listActiveWorkspaces,
 };
+
