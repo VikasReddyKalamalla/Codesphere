@@ -139,16 +139,23 @@ export const InvoiceManagerView = () => {
 
             <div className="flex justify-end gap-3">
               <button
-                onClick={() => alert('Printing invoice simulation...')}
+                onClick={() => window.print()}
                 className="px-4 py-2 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-900 dark:text-white text-xs font-bold rounded-xl flex items-center gap-2 cursor-pointer"
               >
                 <Printer className="w-4 h-4" /> Print
               </button>
               <button
-                onClick={() => alert('Downloading PDF invoice...')}
+                onClick={() => {
+                  const token = localStorage.getItem('codesphere_token');
+                  if (selectedInvoice?._id) {
+                    window.open(`/api/payments/invoices/${selectedInvoice._id}/download?token=${token}`, '_blank');
+                  } else {
+                    alert('Generating downloadable PDF tax invoice...');
+                  }
+                }}
                 className="px-4 py-2 bg-[#04AA6D] hover:bg-[#03935e] text-white text-xs font-bold rounded-xl flex items-center gap-2 shadow-md shadow-emerald-500/20 cursor-pointer"
               >
-                <Download className="w-4 h-4" /> Download PDF
+                <Download className="w-4 h-4" /> Download PDF Tax Invoice
               </button>
             </div>
           </div>
