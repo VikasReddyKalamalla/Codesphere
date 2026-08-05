@@ -22,28 +22,27 @@ export const SocialLogin = () => {
   const location = useLocation();
   const [loading, setLoading] = useState(false);
 
-  // Handle redirect sign-in result if redirect method was triggered
   useEffect(() => {
     if (!auth) return;
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result && result.user) {
-          await googleAuth(result.user);
-          toast.success(`Signed in as ${result.user.displayName || result.user.email}!`);
-          const from = location.state?.from?.pathname || '/dashboard';
-          navigate(from, { replace: true });
-        }
-      })
-      .catch((err) => {
-        if (err.code !== 'auth/popup-closed-by-user') {
-          console.warn('[Redirect Auth Notice]:', err.message);
-        }
-      });
+    try {
+      getRedirectResult(auth)
+        .then(async (result) => {
+          if (result && result.user) {
+            await googleAuth(result.user);
+            toast.success(`Signed in as ${result.user.displayName || result.user.email}!`);
+            const from = location.state?.from?.pathname || '/dashboard';
+            navigate(from, { replace: true });
+          }
+        })
+        .catch(() => {
+          // Ignore redirect result check when no redirect sign-in was performed
+        });
+    } catch (e) {}
   }, [auth, googleAuth, location, navigate]);
 
   const handleGoogleSignIn = async () => {
     if (!isFirebaseConfigured() || !auth) {
-      toast.error('Firebase Authentication is not configured yet. Please set your VITE_FIREBASE_* credentials in .env.development.');
+      toast.error('Firebase Authentication is not configured yet. Please check your credentials in .env.development.');
       return;
     }
 
@@ -74,7 +73,9 @@ export const SocialLogin = () => {
       if (err.code === 'auth/popup-closed-by-user') {
         toast.error('Sign-in popup was closed before completing authentication.');
       } else if (err.code === 'auth/unauthorized-domain') {
-        toast.error('This domain is not authorized in your Firebase console.');
+        toast.error('This domain is not authorized in your Firebase console. Please add localhost to Authorized Domains in Firebase Authentication settings.');
+      } else if (err.code === 'auth/argument-error') {
+        toast.error('Firebase Auth initialization error. Please try again.');
       } else {
         toast.error(err.message || 'Failed to sign in with Google');
       }
