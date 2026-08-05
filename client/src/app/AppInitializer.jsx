@@ -6,24 +6,22 @@ import LoadingScreen from './LoadingScreen.jsx';
 
 export const AppInitializer = ({ children }) => {
   const dispatch = useDispatch();
-  const [initialized, setInitialized] = useState(false);
-
-  useEffect(() => {
+  // Synchronously check if we have a stored session.
+  // This avoids the 400ms flash where guards see isAuthenticated=false.
+  const [initialized] = useState(() => {
     const token = getToken();
     const user = getUser();
-    if (token && user) {
-      dispatch(authSuccess({ token, user }));
+    return { ready: true, token, user };
+  });
+
+  useEffect(() => {
+    if (initialized.token && initialized.user) {
+      dispatch(authSuccess({ token: initialized.token, user: initialized.user }));
     }
-    const timer = setTimeout(() => {
-      setInitialized(true);
-    }, 400);
-    return () => clearTimeout(timer);
-  }, [dispatch]);
+  }, [dispatch, initialized]);
 
-  if (!initialized) {
-    return <LoadingScreen />;
-  }
-
+  // Always render children — no delay, no loading screen flash.
+  // Auth state is synchronously available from localStorage via initialState in authSlice.
   return children;
 };
 export default AppInitializer;
