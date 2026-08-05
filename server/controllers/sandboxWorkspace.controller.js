@@ -31,9 +31,18 @@ const execInContainer = (cmd) => {
  *
  * Prevents any user from ever seeing another user's files.
  */
+/**
+ * POST /api/sandbox/:id/workspace/init
+ *
+ * Initializes a strictly per-user, per-workspace isolated directory inside Docker container:
+ * Path: /home/coder/users/user_${userId}/workspaces/${workspaceName}
+ *
+ * Prevents any user from ever seeing another user's files.
+ */
 const initWorkspace = asyncHandler(async (req, res) => {
   const { id: projectId } = req.params;
   const repoUrl = req.body?.repoUrl;
+  const customWsName = req.body?.workspaceName;
 
   // Enforce unique per-user ID or unique session token
   let userFolderId = 'guest_' + Date.now();
@@ -44,34 +53,47 @@ const initWorkspace = asyncHandler(async (req, res) => {
   }
 
   // Try fetching project to get clean title slug
-  let slug = 'my-project';
+  let projTitle = 'CodeSphere Technical Challenge';
+  let projCategory = 'Web Development';
+  let projPitch = 'Build a high-performance, responsive application with state management and real-time interactive UI components.';
+  let projPoints = 300;
+  let projTech = ['HTML5', 'CSS3', 'JavaScript (ES6+)', 'Local Storage'];
+
   if (projectId && projectId !== 'blank' && projectId !== 'scratch') {
     try {
       const proj = await SandboxProject.findById(projectId).lean();
-      if (proj && proj.slug) {
-        slug = proj.slug;
-      } else if (proj && proj.title) {
-        slug = proj.title.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-');
-      } else {
-        slug = projectId.toLowerCase().replace(/[^a-z0-9]/g, '-');
+      if (proj) {
+        projTitle = proj.title || projTitle;
+        projCategory = proj.category || projCategory;
+        projPitch = proj.pitch || proj.description || projPitch;
+        if (proj.points) projPoints = proj.points;
+        if (proj.technologyStack) {
+          projTech = Array.isArray(proj.technologyStack)
+            ? proj.technologyStack
+            : (typeof proj.technologyStack === 'string' ? proj.technologyStack.split(',').map(s => s.trim()).filter(Boolean) : projTech);
+        }
       }
-    } catch {
-      slug = projectId.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    }
+    } catch {}
   }
 
-  // Strictly isolated container storage path per-user
-  const userDir = `/home/coder/users/${userFolderId}`;
-  const isolatedContainerPath = `${userDir}/${slug}`;
+  // Determine Workspace Name
+  let workspaceName = customWsName
+    ? customWsName.trim().replace(/[^a-zA-Z0-9_-]/g, '-').replace(/-+/g, '-')
+    : `${projTitle.toUpperCase().replace(/[^A-Z0-9]/g, '-')}-${Date.now().toString().slice(-6)}`;
+
+  // Strictly isolated container storage path per-user & per-workspace
+  const userWorkspacesDir = `/home/coder/users/user_${userFolderId}/workspaces`;
+  const isolatedContainerPath = `${userWorkspacesDir}/${workspaceName}`;
   const iframeUrl = `http://localhost:8107/?folder=${isolatedContainerPath}`;
 
   // Persist workspace metadata in MongoDB UserSandboxWorkspace collection
   if (req.user && req.user._id) {
     try {
       await UserSandboxWorkspace.findOneAndUpdate(
-        { userId: req.user._id, projectId: String(projectId) },
+        { userId: req.user._id, projectId: String(projectId), workspaceName },
         {
-          slug,
+          workspaceName,
+          slug: workspaceName,
           containerPath: isolatedContainerPath,
           isActive: true,
           lastAccessedAt: new Date(),
@@ -674,14 +696,26 @@ const stopWorkspace = asyncHandler(async (req, res) => {
 });
 
 /**
- * GET /api/sandbox/workspace/status
+ * GET /api/sandbox/:id/workspaces
+ * Fetch all workspaces created by the current user for this problem statement
  */
-const listActiveWorkspaces = asyncHandler(async (_req, res) => {
-  return successResponse(res, 200, 'Active workspaces', { count: 0, servers: [] });
+const getUserWorkspaces = asyncHandler(async (req, res) => {
+  const { id: projectId } = req.params;
+  if (!req.user || !req.user._id) {
+    return successResponse(res, 200, 'Workspaces fetched', { workspaces: [] });
+  }
+
+  const workspaces = await UserSandboxWorkspace.find({
+    userId: req.user._id,
+    projectId: String(projectId),
+  }).sort({ updatedAt: -1 });
+
+  return successResponse(res, 200, 'Workspaces fetched', { workspaces });
 });
 
 module.exports = {
   initWorkspace,
+  getUserWorkspaces,
   terminateWorkspace,
   syncWorkspace,
   stopWorkspace,

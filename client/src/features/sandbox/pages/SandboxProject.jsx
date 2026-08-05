@@ -16,6 +16,7 @@ import {
   removeBookmarkAPI,
   getBookmarkStatusAPI,
   initWorkspaceAPI,
+  fetchUserWorkspacesAPI,
   terminateWorkspaceAPI,
 } from '../services/sandboxAPI.js';
 import { SessionManagerModal } from '../../../components/SessionManagerModal.jsx';
@@ -310,9 +311,33 @@ export const SandboxProject = () => {
     });
   }, [problems, searchQuery, activeTab, difficultyFilter]);
 
-  // Handle clicking "YES, LET'S DO IT!" -> Initializes per-user isolated workspace & launches VS Code
-  const handleLaunchVSCode = async (problem) => {
+  // Prompt workspace modal when clicking "YES, LET'S DO IT!"
+  const handlePromptWorkspaceModal = async (problem) => {
+    setWorkspaceTargetProblem(problem);
+    const defaultName = `${(problem?.title || 'PROJECT').toUpperCase().replace(/[^A-Z0-9]/g, '-')}-${Date.now().toString().slice(-6)}`;
+    setWorkspaceNameInput(defaultName);
+    setWorkspaceModalOpen(true);
+
     const probId = problem?._id || 'scratch';
+    setLoadingWorkspaces(true);
+    try {
+      const res = await fetchUserWorkspacesAPI(probId);
+      setUserWorkspacesList(res?.data?.workspaces || res?.workspaces || []);
+    } catch {
+      setUserWorkspacesList([]);
+    } finally {
+      setLoadingWorkspaces(false);
+    }
+  };
+
+  // Confirm and launch VS Code Web with custom workspace name
+  const handleConfirmLaunchWorkspace = async (customName = null) => {
+    if (!workspaceTargetProblem) return;
+    const problem = workspaceTargetProblem;
+    const probId = problem?._id || 'scratch';
+
+    const finalWsName = customName || workspaceNameInput.trim() || `${(problem?.title || 'PROJECT').toUpperCase().replace(/[^A-Z0-9]/g, '-')}-${Date.now().toString().slice(-6)}`;
+
     const userRaw = localStorage.getItem('codesphere_user');
     let userId = 'user_guest';
     try {
@@ -322,21 +347,23 @@ export const SandboxProject = () => {
       }
     } catch {}
 
-    const toastId = toast.loading(`Preparing isolated VS Code workspace for "${problem.title}"...`);
+    setWorkspaceModalOpen(false);
+    setSelectedProblem(null);
+    const toastId = toast.loading(`Preparing VS Code workspace "${finalWsName}"...`);
+
     try {
-      const res = await initWorkspaceAPI(probId, { repoUrl: activeRepoUrl });
-      const targetUrl = res?.data?.iframeUrl || res?.iframeUrl || `http://localhost:8107/?folder=/home/coder/users/${userId}/${probId}`;
-      toast.success(`Opening VS Code Web Studio for "${problem.title}"!`, {
+      const res = await initWorkspaceAPI(probId, { workspaceName: finalWsName, repoUrl: activeRepoUrl });
+      const targetUrl = res?.data?.iframeUrl || res?.iframeUrl || `http://localhost:8107/?folder=/home/coder/users/${userId}/workspaces/${finalWsName}`;
+      toast.success(`Opening VS Code Web Studio for "${finalWsName}"!`, {
         id: toastId,
         icon: '🚀',
         style: { background: '#0B0F17', color: '#04AA6D', border: '1px solid #04AA6D' }
       });
       window.open(targetUrl, '_blank', 'noopener,noreferrer');
     } catch {
-      window.open(`http://localhost:8107/?folder=/home/coder/users/${userId}/${probId}`, '_blank', 'noopener,noreferrer');
+      const targetUrl = `http://localhost:8107/?folder=/home/coder/users/${userId}/workspaces/${finalWsName}`;
+      window.open(targetUrl, '_blank', 'noopener,noreferrer');
       toast.dismiss(toastId);
-    } finally {
-      setSelectedProblem(null);
     }
   };
 
@@ -633,7 +660,7 @@ export const SandboxProject = () => {
 
               {/* YES, LET'S DO IT! BUTTON */}
               <button
-                onClick={() => handleLaunchVSCode(selectedProblem)}
+                onClick={() => handlePromptWorkspaceModal(selectedProblem)}
                 className="flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#04AA6D] hover:bg-emerald-600 text-white font-black text-sm tracking-wide transition-all cursor-pointer shadow-lg shadow-emerald-950/20 border border-emerald-500/30"
               >
                 <CheckCircle2 size={18} />
@@ -642,6 +669,95 @@ export const SandboxProject = () => {
               </button>
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* ── WORKSPACE CREATION & MANAGEMENT MODAL ── */}
+      {workspaceModalOpen && workspaceTargetProblem && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn">
+          <div className="bg-[#0B0F17] border border-[#1E293B] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 text-xl font-bold">
+                  ⚡
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Create Your Workspace</h3>
+                  <p className="text-xs text-slate-400 truncate max-w-[280px]">
+                    {workspaceTargetProblem.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setWorkspaceModalOpen(false)}
+                className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Workspace Name Input */}
+            <div className="space-y-2">
+              <label className="block text-[11px] font-bold text-slate-300 uppercase tracking-wider font-mono">
+                Workspace Name / Reference
+              </label>
+              <input
+                type="text"
+                value={workspaceNameInput}
+                onChange={(e) => setWorkspaceNameInput(e.target.value)}
+                placeholder="e.g. ECOMMERCE-OBJECT-17859044434313"
+                className="w-full bg-[#161F33] border border-white/10 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:border-emerald-500 transition font-mono"
+              />
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                This name creates your isolated project folder (e.g. <code className="text-emerald-400 font-mono">{workspaceNameInput || 'ECOMMERCE-OBJECT-17859044434313'}</code>) inside VS Code Web Studio.
+              </p>
+            </div>
+
+            {/* User Previous Workspaces List */}
+            {userWorkspacesList.length > 0 && (
+              <div className="space-y-2 pt-2 border-t border-white/5">
+                <label className="block text-[11px] font-bold text-slate-400 uppercase tracking-wider font-mono">
+                  Your Saved Workspaces for this Challenge
+                </label>
+                <div className="max-h-40 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
+                  {userWorkspacesList.map((ws) => (
+                    <div
+                      key={ws._id}
+                      onClick={() => handleConfirmLaunchWorkspace(ws.workspaceName)}
+                      className="flex items-center justify-between p-3 rounded-xl bg-[#161F33]/60 hover:bg-[#161F33] border border-white/5 hover:border-emerald-500/40 cursor-pointer transition group"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Terminal className="w-4 h-4 text-emerald-400" />
+                        <span className="text-xs font-semibold text-slate-200 group-hover:text-emerald-400 font-mono">
+                          {ws.workspaceName}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-slate-400 flex items-center gap-1 font-mono font-bold">
+                        Resume <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+              <button
+                onClick={() => setWorkspaceModalOpen(false)}
+                className="px-4 py-2.5 rounded-xl border border-white/10 text-slate-300 hover:bg-white/5 text-xs font-bold transition"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleConfirmLaunchWorkspace()}
+                className="px-5 py-2.5 rounded-xl bg-[#04AA6D] hover:bg-emerald-600 text-white text-xs font-black shadow-lg shadow-emerald-950/20 flex items-center gap-2 transition cursor-pointer"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                <span>🚀 Launch Workspace</span>
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -19,7 +19,7 @@ const { getProgress, startProject, updateProgress, resetProgress, getMyProgress 
 const { submitProject, getProjectSubmissions, getMySubmissions } = require('../controllers/sandboxSubmission.controller');
 const { addBookmark, removeBookmark, getUserBookmarks, isBookmarked } = require('../controllers/sandboxBookmark.controller');
 const { getProjectTemplates }                                              = require('../controllers/sandboxTemplate.controller');
-const { initWorkspace, terminateWorkspace, syncWorkspace, stopWorkspace, listActiveWorkspaces } = require('../controllers/sandboxWorkspace.controller');
+const { initWorkspace, getUserWorkspaces, terminateWorkspace, syncWorkspace, stopWorkspace, listActiveWorkspaces } = require('../controllers/sandboxWorkspace.controller');
 
 const { protect }    = require('../middlewares/auth.middleware');
 const { restrictTo } = require('../middlewares/role.middleware');
@@ -66,6 +66,7 @@ router.get   ('/:id/bookmark-status', protect, isBookmarked);
 router.get('/:id/templates', getProjectTemplates);
 
 // ─── Workspace VS Code Server ────────────────────────────────────────────────
+router.get   ('/:id/workspaces',          protect, getUserWorkspaces);
 router.post  ('/:id/workspace/init',      protect, initWorkspace);
 router.post  ('/:id/workspace/terminate', protect, terminateWorkspace);
 router.post  ('/:id/workspace/sync',      protect, syncWorkspace);
