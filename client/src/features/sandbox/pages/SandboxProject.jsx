@@ -207,6 +207,13 @@ export const SandboxProject = () => {
   const [isGitHubImported, setIsGitHubImported]     = useState(false);
   const [activeRepoUrl, setActiveRepoUrl]           = useState('');
 
+  // Workspace Creation Modal state
+  const [workspaceModalOpen, setWorkspaceModalOpen]         = useState(false);
+  const [workspaceTargetProblem, setWorkspaceTargetProblem] = useState(null);
+  const [workspaceNameInput, setWorkspaceNameInput]         = useState('');
+  const [userWorkspacesList, setUserWorkspacesList]         = useState([]);
+  const [loadingWorkspaces, setLoadingWorkspaces]           = useState(false);
+
   // Load problem statements from backend MongoDB API
   const loadProblemStatements = async () => {
     setLoading(true);
