@@ -26,6 +26,12 @@ const updateProfile = asyncHandler(async (req, res) => {
   return successResponse(res, 200, 'Profile updated successfully', data);
 });
 
+// POST /api/auth/google
+const googleAuth = asyncHandler(async (req, res) => {
+  const data = await authService.googleAuth(req.body);
+  return successResponse(res, 200, 'Google login successful', data);
+});
+
 // POST /api/auth/logout  (protected)
 const logout = asyncHandler(async (req, res) => {
   // Stateless JWT — client must discard the token.
@@ -33,4 +39,5 @@ const logout = asyncHandler(async (req, res) => {
   return successResponse(res, 200, 'Logged out successfully');
 });
 
-module.exports = { register, login, getMe, updateProfile, logout };
+module.exports = { register, login, getMe, updateProfile, googleAuth, logout };
+

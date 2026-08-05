@@ -16,7 +16,19 @@ export const registerAPI = async (data) => {
   return res.data;
 };
 
+export const googleAuthAPI = async (googleUser) => {
+  const payload = {
+    email: googleUser.email,
+    fullName: googleUser.displayName || googleUser.email.split('@')[0],
+    avatar: googleUser.photoURL,
+    googleId: googleUser.uid,
+  };
+  const res = await apiClient.post('/auth/google', payload);
+  return res.data;
+};
+
 export const fetchCurrentUserAPI = async () => {
   const res = await apiClient.get('/auth/me');
   return res.data;
 };
+

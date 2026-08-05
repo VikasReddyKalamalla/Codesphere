@@ -252,8 +252,69 @@ const updateProfile = async (userId, body) => {
     { new: true, runValidators: true }
   );
 
-  if (!user) throw createError('User not found', 404);
-  return sanitizeUser(user);
+// ─── Google / Firebase Auth ──────────────────────────────────────────────────
+const googleAuth = async ({ email, fullName, avatar, googleId }) => {
+  if (!email) {
+    throw createError('Email is required for Google authentication', 400);
+  }
+
+  const cleanEmail = String(email).trim().toLowerCase();
+  const model = getUserModel();
+  const mockDB = require('./mockDatabase');
+  let user = null;
+
+  if (mongoose.connection && mongoose.connection.readyState === 1) {
+    user = await model.findOne({ email: cleanEmail }).catch(() => null);
+  }
+  if (!user) {
+    user = await mockDB.findOne({ email: cleanEmail }).catch(() => null);
+  }
+
+  if (user) {
+    let updated = false;
+    if (avatar && !user.avatar) { user.avatar = avatar; updated = true; }
+    if (updated && user.save) {
+      await user.save().catch(() => null);
+    }
+  } else {
+    const rawName = fullName || cleanEmail.split('@')[0];
+    const defaultUsername = cleanEmail.split('@')[0].replace(/[^a-z0-9]+/g, '_') + '_' + Math.floor(100 + Math.random() * 900);
+    const hashedPassword = await bcrypt.hash(googleId || 'GoogleOAuthPass123!', 12);
+
+    const userPayload = {
+      fullName: rawName,
+      username: defaultUsername,
+      email: cleanEmail,
+      password: hashedPassword,
+      avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(rawName)}&background=0D8ABC&color=fff`,
+      role: 'student',
+      plan: 'free',
+      isVerified: true,
+      isActive: true,
+    };
+
+    if (mongoose.connection && mongoose.connection.readyState === 1) {
+      try {
+        user = await model.create(userPayload);
+      } catch (err) {
+        user = await mockDB.create(userPayload);
+      }
+    } else {
+      user = await mockDB.create(userPayload);
+    }
+
+    try {
+      await mockDB.create({ ...userPayload, _id: user._id ? String(user._id) : undefined });
+    } catch (e) {}
+  }
+
+  if (user.isActive === false) {
+    throw createError('Your account has been deactivated', 403);
+  }
+
+  const token = generateToken(user);
+  return { token, user: sanitizeUser(user) };
 };
 
-module.exports = { register, login, getMe, updateProfile };
+module.exports = { register, login, getMe, updateProfile, googleAuth };
+

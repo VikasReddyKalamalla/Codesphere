@@ -1,4 +1,4 @@
-import { loginAPI, registerAPI, fetchCurrentUserAPI } from '../services/authAPI.js';
+import { loginAPI, registerAPI, googleAuthAPI, fetchCurrentUserAPI } from '../services/authAPI.js';
 import { authStart, authSuccess, authFailure, logout as logoutAction } from './authSlice.js';
 import { saveToken, saveUser, removeToken, removeUser } from '../utils/authHelpers.js';
 
@@ -36,8 +36,25 @@ export const registerThunk = (regData) => async (dispatch) => {
   }
 };
 
+export const googleAuthThunk = (googleUser) => async (dispatch) => {
+  dispatch(authStart());
+  try {
+    const response = await googleAuthAPI(googleUser);
+    const { token, user } = response.data;
+    saveToken(token);
+    saveUser(user);
+    dispatch(authSuccess({ user, token }));
+    return { token, user };
+  } catch (err) {
+    const msg = err.message || err.data?.message || 'Google authentication failed';
+    dispatch(authFailure(msg));
+    return Promise.reject(err);
+  }
+};
+
 export const logoutThunk = () => (dispatch) => {
   removeToken();
   removeUser();
   dispatch(logoutAction());
 };
+
