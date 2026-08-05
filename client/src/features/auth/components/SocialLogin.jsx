@@ -4,8 +4,7 @@ import { useAuth } from '../hooks/useAuth.js';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { Loader2 } from 'lucide-react';
-import { auth, googleProvider, isFirebaseConfigured } from '@config/firebase.js';
-import { signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
+import { auth, googleProvider, isFirebaseConfigured, signInWithPopup, signInWithRedirect, getRedirectResult } from '@config/firebase.js';
 
 const GoogleIcon = () => (
   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
