@@ -1,11 +1,21 @@
 import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut } from 'firebase/auth';
+import { 
+  getAuth, 
+  initializeAuth, 
+  browserLocalPersistence, 
+  browserSessionPersistence, 
+  inMemoryPersistence, 
+  GoogleAuthProvider, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut 
+} from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || '967891413630',
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || 'velfound-d7c7d',
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '967891413630',
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
@@ -20,6 +30,17 @@ export const isFirebaseConfigured = () => {
   );
 };
 
+// Create Auth instance with robust persistence fallbacks to prevent IndexedDB locks
+const createAuthWithPersistenceFallback = (appInstance) => {
+  try {
+    return initializeAuth(appInstance, {
+      persistence: [browserLocalPersistence, browserSessionPersistence, inMemoryPersistence]
+    });
+  } catch (err) {
+    return getAuth(appInstance);
+  }
+};
+
 // Initialize Firebase safely
 let app;
 let auth;
@@ -27,12 +48,12 @@ let db;
 
 if (isFirebaseConfigured()) {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  auth = getAuth(app);
+  auth = createAuthWithPersistenceFallback(app);
   db = getFirestore(app);
 } else {
   try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-    auth = getAuth(app);
+    auth = createAuthWithPersistenceFallback(app);
     db = getFirestore(app);
   } catch (err) {
     console.warn('[Firebase] Config keys missing or invalid:', err.message);
