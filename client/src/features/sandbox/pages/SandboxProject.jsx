@@ -402,19 +402,19 @@ export const SandboxProject = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto font-sans pb-16 text-slate-800 select-none">
+    <div className="flex flex-col gap-6 w-full max-w-7xl mx-auto font-sans pb-16 text-slate-900 dark:text-slate-100 select-none">
       
       {/* ── Top Header & Platform Statistics Banner ── */}
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-5 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-xs transition-colors">
         <div>
           <div className="flex items-center gap-2 text-xs font-mono font-bold uppercase tracking-wider text-[#04AA6D]">
             <Sparkles size={16} />
             <span>CodeSphere Hands-On Challenges</span>
           </div>
-          <h1 className="text-2xl font-black text-slate-800 tracking-tight mt-1">
+          <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight mt-1">
             Problem Statements & Technical Challenges
           </h1>
-          <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
             Select a problem statement, review interactive architectural flashcards & requirements, and launch your dedicated online VS Code Web workspace with 1 click.
           </p>
         </div>
@@ -426,9 +426,9 @@ export const SandboxProject = () => {
               setSessionModalMode('end');
               setIsSessionModalOpen(true);
             }}
-            className="flex items-center gap-2 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-2xl transition-all cursor-pointer border border-slate-200"
+            className="flex items-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-2xl transition-all cursor-pointer border border-slate-200 dark:border-slate-700"
           >
-            <FolderGit2 size={16} className="text-purple-600" />
+            <FolderGit2 size={16} className="text-purple-500" />
             <span>End Session / GitHub Sync</span>
           </button>
 
@@ -444,10 +444,10 @@ export const SandboxProject = () => {
       </div>
 
       {/* ── Filter Bar & Search Box ── */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-2xl p-3 shadow-sm">
+      <div className="flex flex-col md:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-3 shadow-xs transition-colors">
         
         {/* Category Tabs */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
+        <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-950 p-1 rounded-xl w-full md:w-auto overflow-x-auto">
           {[
             { key: 'all', label: 'All Problem Statements' },
             { key: 'frontend', label: 'Frontend & UI' },
@@ -460,8 +460,8 @@ export const SandboxProject = () => {
               onClick={() => setActiveTab(tab.key)}
               className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap font-mono ${
                 activeTab === tab.key
-                  ? 'bg-white text-slate-800 shadow-sm border border-slate-200/60'
-                  : 'text-slate-500 hover:text-slate-800'
+                  ? 'bg-white dark:bg-slate-800 text-[#04AA6D] shadow-xs border border-slate-200/60 dark:border-slate-700'
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
               {tab.label}
@@ -474,7 +474,7 @@ export const SandboxProject = () => {
           <select
             value={difficultyFilter}
             onChange={(e) => setDifficultyFilter(e.target.value)}
-            className="px-3 py-1.5 text-xs font-bold font-mono bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#04AA6D]"
+            className="px-3 py-1.5 text-xs font-bold font-mono bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#04AA6D]"
           >
             <option value="all">All Difficulties</option>
             <option value="beginner">Beginner</option>
@@ -490,7 +490,7 @@ export const SandboxProject = () => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search problems or tech stack..."
-              className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:border-[#04AA6D] focus:bg-white transition-all"
+              className="w-full pl-9 pr-4 py-1.5 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#04AA6D] focus:bg-white dark:focus:bg-slate-900 transition-all"
             />
           </div>
         </div>
@@ -502,15 +502,15 @@ export const SandboxProject = () => {
         {filteredProblems.length > 0 ? (
           filteredProblems.map((prob) => {
             const diff = (prob.difficulty || 'beginner').toLowerCase();
-            const diffColor = diff === 'expert' ? 'bg-rose-500/10 text-rose-600 border-rose-500/20'
-                            : diff === 'advanced' ? 'bg-purple-500/10 text-purple-600 border-purple-500/20'
-                            : diff === 'intermediate' ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+            const diffColor = diff === 'expert' ? 'bg-rose-500/10 text-rose-500 border-rose-500/20'
+                            : diff === 'advanced' ? 'bg-purple-500/10 text-purple-500 border-purple-500/20'
+                            : diff === 'intermediate' ? 'bg-amber-500/10 text-amber-500 border-amber-500/20'
                             : 'bg-emerald-500/10 text-[#04AA6D] border-emerald-500/20';
 
             return (
               <div
                 key={prob._id}
-                className="bg-white border border-slate-200/80 rounded-3xl p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden group border-t-4 border-t-[#04AA6D]"
+                className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-xs hover:shadow-md transition-all flex flex-col justify-between relative overflow-hidden group border-t-4 border-t-[#04AA6D]"
               >
                 <div>
                   {/* Top Badge Row */}

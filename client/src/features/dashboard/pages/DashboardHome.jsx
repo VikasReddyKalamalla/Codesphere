@@ -122,20 +122,20 @@ export const DashboardHome = () => {
       .catch(() => {});
   }, []);
 
-  const cardClass = "bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)]";
+  const cardClass = "bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs transition-colors duration-200";
 
   return (
-    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 w-full text-left bg-[#F8FAFC]">
+    <div className="grid grid-cols-1 xl:grid-cols-4 gap-6 w-full text-left bg-slate-50 dark:bg-slate-950 transition-colors duration-200">
 
       {/* Main middle dashboard content (3 cols wide) */}
       <div className="xl:col-span-3 flex flex-col gap-6">
 
         {/* Welcome Banner */}
         <div className="flex flex-col gap-1.5">
-          <h1 className="text-xl sm:text-2xl font-black text-slate-800 tracking-tight font-mono-origin flex items-center gap-2">
-            Welcome back, {user?.fullName?.split(' ')[0] || 'Arjun'}! 👋
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white tracking-tight font-mono flex items-center gap-2">
+            Welcome back, {user?.fullName?.split(' ')[0] || 'Developer'}! 👋
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 font-sans-origin font-medium">Keep learning, keep building, keep growing.</p>
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-sans font-medium">Keep learning, keep building, keep growing.</p>
         </div>
 
         {/* Stats widgets Row */}
@@ -148,14 +148,14 @@ export const DashboardHome = () => {
             { label: 'Resources Saved', value: String(dbData?.stats?.resourcesSaved ?? 0), sub: 'Saved articles & tools', color: 'rose', icon: User },
           ].map(({ label, value, sub, color, icon: Icon, pin }) => {
             const colors = {
-              indigo:  'bg-indigo-50 border-indigo-100/50 text-indigo-500',
-              amber:   'bg-amber-50 border-amber-100/50 text-amber-500',
-              blue:    'bg-blue-50 border-blue-100/50 text-blue-500',
-              emerald: 'bg-emerald-50 border-emerald-100/50 text-emerald-500',
-              rose:    'bg-rose-50 border-rose-100/50 text-rose-500',
+              indigo:  'bg-indigo-50 dark:bg-indigo-950/40 border-indigo-100 dark:border-indigo-900/50 text-indigo-500',
+              amber:   'bg-amber-50 dark:bg-amber-950/40 border-amber-100 dark:border-amber-900/50 text-amber-500',
+              blue:    'bg-blue-50 dark:bg-blue-950/40 border-blue-100 dark:border-blue-900/50 text-blue-500',
+              emerald: 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-900/50 text-emerald-500',
+              rose:    'bg-rose-50 dark:bg-rose-950/40 border-rose-100 dark:border-rose-900/50 text-rose-500',
             };
             return (
-              <div key={label} className="relative bg-white border border-slate-100 rounded-2xl p-4 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] flex items-center gap-3.5 select-none">
+              <div key={label} className="relative bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs flex items-center gap-3.5 select-none transition-colors">
                 {pin && (
                   <Pin size={10} className="absolute top-2.5 right-2.5 text-slate-400 rotate-45" />
                 )}
@@ -163,9 +163,9 @@ export const DashboardHome = () => {
                   <Icon size={16} />
                 </div>
                 <div>
-                  <p className="text-[9.5px] font-bold text-slate-400 uppercase tracking-wider font-mono-origin leading-none">{label}</p>
-                  <p className="text-xl font-extrabold text-slate-800 mt-1 font-mono-origin leading-none">{value}</p>
-                  <p className="text-[9px] font-bold text-slate-400/80 mt-1.5 font-sans-origin leading-none">{sub}</p>
+                  <p className="text-[9.5px] font-bold text-slate-400 dark:text-slate-400 uppercase tracking-wider font-mono leading-none">{label}</p>
+                  <p className="text-xl font-extrabold text-slate-900 dark:text-white mt-1 font-mono leading-none">{value}</p>
+                  <p className="text-[9px] font-bold text-slate-400 dark:text-slate-400 mt-1.5 font-sans leading-none">{sub}</p>
                 </div>
               </div>
             );
