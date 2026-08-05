@@ -11,6 +11,7 @@ import {
   signOut 
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
+import { getAnalytics, isSupported } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -19,6 +20,7 @@ const firebaseConfig = {
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || '967891413630',
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || 'G-GCYTEBV4YJ',
 };
 
 // Helper to check if Firebase is configured
@@ -45,11 +47,18 @@ const createAuthWithPersistenceFallback = (appInstance) => {
 let app;
 let auth;
 let db;
+let analytics = null;
 
 if (isFirebaseConfigured()) {
   app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
   auth = createAuthWithPersistenceFallback(app);
   db = getFirestore(app);
+  
+  isSupported().then((supported) => {
+    if (supported && app) {
+      analytics = getAnalytics(app);
+    }
+  }).catch(() => {});
 } else {
   try {
     app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
@@ -70,6 +79,7 @@ export {
   app,
   auth,
   db,
+  analytics,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signOut,
