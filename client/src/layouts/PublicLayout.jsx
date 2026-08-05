@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, Sun, Moon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import clsx from 'clsx';
 import Logo from '../components/Logo.jsx';
+import { ThemeContext } from '../providers/ThemeProvider.jsx';
 
 const navLinks = [
   { label: 'Features', href: '/features', public: true  },
@@ -47,6 +48,7 @@ const isLoggedIn = () =>
 const PublicLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled]     = useState(false);
+  const { theme, toggleTheme }     = useContext(ThemeContext) || {};
   const location  = useLocation();
   const navigate  = useNavigate();
 
@@ -66,32 +68,32 @@ const PublicLayout = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: '#ffffff', color: '#333333' }}>
+    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
 
       {/* ── Navbar ── */}
       <header className={clsx(
-        'sticky top-0 z-50 transition-all duration-300',
+        'sticky top-0 z-50 transition-all duration-300 backdrop-blur-md border-b',
         scrolled
-          ? 'bg-white/95 backdrop-blur-md shadow-sm border-b border-slate-200'
-          : 'bg-white border-b border-slate-100',
+          ? 'bg-white/90 dark:bg-slate-900/90 shadow-xs border-slate-200 dark:border-slate-800'
+          : 'bg-white/80 dark:bg-slate-900/80 border-slate-200/60 dark:border-slate-800/60',
       )}>
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between gap-6">
 
           {/* Logo */}
-          <Logo size="w-8 h-8" textColor="text-slate-800" />
+          <Logo size="w-8 h-8" textColor="text-slate-900 dark:text-white" />
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-1 font-mono-origin">
+          <nav className="hidden md:flex items-center gap-1 font-mono">
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 to={link.href}
                 onClick={(e) => handleNavClick(e, link)}
                 className={clsx(
-                  'px-3 py-1.5 rounded-md text-xs font-bold tracking-wider uppercase transition-colors',
+                  'px-3.5 py-1.5 rounded-xl text-xs font-bold tracking-wider uppercase transition-all',
                   location.pathname === link.href
-                    ? 'text-[#04AA6D] bg-green-50 border border-green-200/60'
-                    : 'text-slate-600 hover:text-[#04AA6D] hover:bg-slate-100/50',
+                    ? 'text-[#04AA6D] bg-emerald-500/10 border border-emerald-500/20'
+                    : 'text-slate-600 dark:text-slate-400 hover:text-[#04AA6D] dark:hover:text-[#04AA6D] hover:bg-slate-100 dark:hover:bg-slate-800/60',
                 )}
               >
                 {link.label}
@@ -100,22 +102,32 @@ const PublicLayout = () => {
           </nav>
 
           {/* Auth buttons */}
-          <div className="flex items-center gap-2 font-mono-origin">
+          <div className="flex items-center gap-3 font-mono">
+            {toggleTheme && (
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-xl text-slate-400 hover:text-amber-500 dark:hover:text-amber-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                title="Toggle Theme"
+              >
+                {theme === 'dark' ? <Sun size={16} className="text-amber-400" /> : <Moon size={16} className="text-slate-600" />}
+              </button>
+            )}
+
             <Link
               to="/login"
-              className="hidden md:inline text-xs font-bold text-slate-600 hover:text-[#04AA6D] px-3 py-1.5 transition-colors uppercase tracking-wider"
+              className="hidden md:inline text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-[#04AA6D] dark:hover:text-[#04AA6D] px-3 py-1.5 transition-colors uppercase tracking-wider"
             >
               Sign in
             </Link>
             <Link
               to="/register"
-              className="hidden md:inline text-xs font-bold px-4 py-2 rounded-lg bg-[#04AA6D] hover:bg-[#03935e] text-white transition-colors uppercase tracking-wider"
+              className="hidden md:inline text-xs font-bold px-4 py-2 rounded-xl bg-[#04AA6D] hover:bg-emerald-600 text-white transition-colors uppercase tracking-wider shadow-md shadow-emerald-500/20"
             >
               Get started
             </Link>
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="md:hidden p-2 rounded-lg text-slate-600 hover:text-[#04AA6D] hover:bg-slate-100 transition-colors"
+              className="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-[#04AA6D] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
               aria-label="Toggle menu"
             >
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -132,7 +144,7 @@ const PublicLayout = () => {
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
               transition={{ duration: 0.2 }}
-              className="md:hidden overflow-hidden border-t border-slate-200 bg-white"
+              className="md:hidden overflow-hidden border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900"
             >
               <div className="px-4 py-4 flex flex-col gap-1">
                 {navLinks.map((link) => (
@@ -140,14 +152,14 @@ const PublicLayout = () => {
                     key={link.href}
                     to={link.href}
                     onClick={(e) => handleNavClick(e, link)}
-                    className="px-3 py-2.5 rounded-lg text-sm text-slate-700 hover:text-[#04AA6D] hover:bg-slate-50 transition-colors"
+                    className="px-3 py-2.5 rounded-xl text-sm font-bold font-mono text-slate-700 dark:text-slate-200 hover:text-[#04AA6D] hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                   >
                     {link.label}
                   </Link>
                 ))}
-                <div className="mt-3 pt-3 border-t border-slate-200 flex flex-col gap-2">
-                  <Link to="/login" className="px-3 py-2.5 text-sm text-slate-600 hover:text-[#04AA6D] text-center rounded-lg hover:bg-slate-50 transition-colors font-bold">Sign in</Link>
-                  <Link to="/register" className="px-3 py-2.5 text-sm font-semibold bg-[#04AA6D] hover:bg-[#03935e] text-white text-center rounded-lg transition-colors font-bold">Get started</Link>
+                <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
+                  <Link to="/login" className="px-3 py-2.5 text-sm font-bold font-mono text-slate-600 dark:text-slate-300 hover:text-[#04AA6D] text-center rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Sign in</Link>
+                  <Link to="/register" className="px-3 py-2.5 text-sm font-bold font-mono bg-[#04AA6D] hover:bg-emerald-600 text-white text-center rounded-xl transition-colors">Get started</Link>
                 </div>
               </div>
             </motion.div>
@@ -158,27 +170,27 @@ const PublicLayout = () => {
       {/* ── Page ── */}
       <main className="flex-1"><Outlet /></main>
 
-      <footer className="border-t border-slate-200 py-14 px-6" style={{ background: '#fcfcfc' }}>
+      <footer className="border-t border-slate-200 dark:border-slate-800 py-14 px-6 bg-slate-100/50 dark:bg-slate-900/50 transition-colors">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-10 mb-12 text-left">
             <div className="col-span-2 md:col-span-1">
               <div className="mb-4">
-                <Logo size="w-7 h-7" textColor="text-slate-800" />
+                <Logo size="w-7 h-7" textColor="text-slate-900 dark:text-white" />
               </div>
-              <p className="text-sm text-slate-500 leading-relaxed max-w-xs">
+              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs font-sans">
                 Collaborative compiler sandboxes and online workspaces for engineering teams and classrooms.
               </p>
             </div>
             {footerCols.map(({ title, links }) => (
               <div key={title}>
-                <p className="text-xs font-bold text-[#111] uppercase tracking-widest mb-4">{title}</p>
+                <p className="text-xs font-mono font-black text-slate-900 dark:text-white uppercase tracking-widest mb-4">{title}</p>
                 <ul className="flex flex-col gap-2.5">
                   {links.map((link) => (
                     <li key={link.href}>
                       <Link
                         to={link.href}
                         onClick={(e) => handleNavClick(e, link)}
-                        className="text-sm text-[#666] hover:text-[#111] transition-colors"
+                        className="text-xs font-sans text-slate-600 dark:text-slate-400 hover:text-[#04AA6D] dark:hover:text-[#04AA6D] transition-colors"
                       >
                         {link.label}
                       </Link>
@@ -188,9 +200,9 @@ const PublicLayout = () => {
               </div>
             ))}
           </div>
-          <div className="border-t border-black/10 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2">
-            <p className="text-xs text-[#999]">© {new Date().getFullYear()} CodeSphere. All rights reserved.</p>
-            <p className="text-xs text-[#999]">Built for engineers, by engineers.</p>
+          <div className="border-t border-slate-200 dark:border-slate-800 pt-6 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs font-mono text-slate-400">
+            <p>© {new Date().getFullYear()} CodeSphere. All rights reserved.</p>
+            <p>Built for engineers, by engineers.</p>
           </div>
         </div>
       </footer>

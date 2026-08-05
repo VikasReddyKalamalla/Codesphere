@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
-export const Logo = ({ size = 'w-8 h-8', showText = true, textColor = 'text-slate-800', isLight = true }) => {
+export const Logo = ({ size = 'w-8 h-8', showText = true, textColor = 'text-slate-800 dark:text-white', isLight = true }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleLogoClick = (e) => {
