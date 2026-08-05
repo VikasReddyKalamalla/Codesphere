@@ -13,6 +13,11 @@ const userSandboxWorkspaceSchema = new mongoose.Schema(
       required: true,
       index: true,
     },
+    workspaceName: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     slug: {
       type: String,
       required: true,
@@ -33,6 +38,6 @@ const userSandboxWorkspaceSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSandboxWorkspaceSchema.index({ userId: 1, projectId: 1 }, { unique: true });
+userSandboxWorkspaceSchema.index({ userId: 1, projectId: 1, workspaceName: 1 }, { unique: true });
 
 module.exports = mongoose.model('UserSandboxWorkspace', userSandboxWorkspaceSchema);
