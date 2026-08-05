@@ -29,8 +29,7 @@ const testSchema = new mongoose.Schema(
 
     // ─── Classification ───────────────────────────────────────────────────────
     category: {
-      type:    mongoose.Schema.Types.ObjectId,
-      ref:     'QuestionCategory',
+      type:    mongoose.Schema.Types.Mixed,
       default: null,
     },
     difficulty: {

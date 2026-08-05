@@ -35,11 +35,8 @@ const sandboxProjectSchema = new mongoose.Schema(
     },
     category: {
       type:    String,
-      enum:    {
-        values:  ['frontend', 'backend', 'fullstack', 'ai_ml', 'devops', 'cybersecurity', 'mobile', 'blockchain', 'cloud'],
-        message: '{VALUE} is not a valid category',
-      },
       default: 'fullstack',
+      trim:    true,
     },
     technologyStack:  [{ type: String, trim: true }],
     prerequisites:    [{ type: String, trim: true }],
@@ -67,6 +64,17 @@ const sandboxProjectSchema = new mongoose.Schema(
     isPublished: { type: Boolean, default: false },
     isFeatured:  { type: Boolean, default: false },
 
+    // ─── Pitch & Problem Statement ─────────────────────────────────────────────
+    pitch: { type: String, default: '' },
+    points: { type: Number, default: 300 },
+    flashcards: [
+      {
+        title: { type: String, default: '' },
+        hint: { type: String, default: '' },
+      },
+    ],
+    starterFiles: [{ type: String, trim: true }],
+
     // ─── Stats ────────────────────────────────────────────────────────────────
     stepCount:       { type: Number, default: 0 },
     enrolledCount:   { type: Number, default: 0 },
@@ -79,7 +87,7 @@ const sandboxProjectSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ─── Auto-generate slug before save ──────────────────────────────────────────
+// ─── Auto-generate slug and sync status before save ──────────────────────────
 sandboxProjectSchema.pre('save', function () {
   if (this.isModified('title') || !this.slug) {
     this.slug = this.title
@@ -88,6 +96,11 @@ sandboxProjectSchema.pre('save', function () {
       .trim()
       .replace(/\s+/g, '-')
       + '-' + Date.now();
+  }
+  if (this.isPublished) {
+    this.status = 'published';
+  } else if (this.status === 'published') {
+    this.isPublished = true;
   }
 });
 

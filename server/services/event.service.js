@@ -30,7 +30,10 @@ const getAllEvents = async (query) => {
     order = 'asc',
   } = query;
 
-  const filter = { isPublished: true };
+  const filter = {};
+  if (query.all !== 'true') {
+    filter.isPublished = true;
+  }
 
   // Search
   if (search) filter.$text = { $search: search };
@@ -55,13 +58,7 @@ const getAllEvents = async (query) => {
     filter.status = 'completed';
   }
 
-  let total = await Event.countDocuments(filter).catch(() => 0);
-  if (total === 0) {
-    const { autoSeedIfEmpty } = require('../utils/autoSeed');
-    await autoSeedIfEmpty().catch(() => {});
-    total = await Event.countDocuments(filter).catch(() => 0);
-  }
-
+  const total = await Event.countDocuments(filter);
   const { skip, ...meta } = getPagination(page, limit, total);
 
   // Sorting
@@ -117,34 +114,86 @@ const getEventBySlug = async (slug) => {
   return event;
 };
 
+// Preset global coordinates for quick lookup by city/country
+const PRESET_COORDINATES = {
+  'mountain view': { lat: 37.422, lng: -122.084, country: 'United States', city: 'Mountain View' },
+  'san francisco': { lat: 37.7749, lng: -122.4194, country: 'United States', city: 'San Francisco' },
+  'new york': { lat: 40.7128, lng: -74.0060, country: 'United States', city: 'New York' },
+  'london': { lat: 51.5074, lng: -0.1278, country: 'United Kingdom', city: 'London' },
+  'bengaluru': { lat: 12.9716, lng: 77.5946, country: 'India', city: 'Bengaluru' },
+  'bangalore': { lat: 12.9716, lng: 77.5946, country: 'India', city: 'Bengaluru' },
+  'hyderabad': { lat: 17.3850, lng: 78.4867, country: 'India', city: 'Hyderabad' },
+  'mumbai': { lat: 19.0760, lng: 72.8777, country: 'India', city: 'Mumbai' },
+  'delhi': { lat: 28.6139, lng: 77.2090, country: 'India', city: 'New Delhi' },
+  'new delhi': { lat: 28.6139, lng: 77.2090, country: 'India', city: 'New Delhi' },
+  'chennai': { lat: 13.0827, lng: 80.2707, country: 'India', city: 'Chennai' },
+  'pune': { lat: 18.5204, lng: 73.8567, country: 'India', city: 'Pune' },
+  'kolkata': { lat: 22.5726, lng: 88.3639, country: 'India', city: 'Kolkata' },
+  'tokyo': { lat: 35.6762, lng: 139.6503, country: 'Japan', city: 'Tokyo' },
+  'berlin': { lat: 52.5200, lng: 13.4050, country: 'Germany', city: 'Berlin' },
+  'paris': { lat: 48.8566, lng: 2.3522, country: 'France', city: 'Paris' },
+  'singapore': { lat: 1.3521, lng: 103.8198, country: 'Singapore', city: 'Singapore' },
+  'sydney': { lat: -33.8688, lng: 151.2093, country: 'Australia', city: 'Sydney' },
+  'dubai': { lat: 25.2048, lng: 55.2708, country: 'United Arab Emirates', city: 'Dubai' },
+  'toronto': { lat: 43.6532, lng: -79.3832, country: 'Canada', city: 'Toronto' },
+  'amsterdam': { lat: 52.3676, lng: 4.9041, country: 'Netherlands', city: 'Amsterdam' },
+  'sao paulo': { lat: -23.5505, lng: -46.6333, country: 'Brazil', city: 'São Paulo' },
+  'tel aviv': { lat: 32.0853, lng: 34.7818, country: 'Israel', city: 'Tel Aviv' },
+  'zurich': { lat: 47.3769, lng: 8.5417, country: 'Switzerland', city: 'Zurich' },
+  'cape town': { lat: -33.9249, lng: 18.4241, country: 'South Africa', city: 'Cape Town' },
+};
+
+
 // ─── CREATE EVENT ─────────────────────────────────────────────────────────────
 const createEvent = async (body, userId) => {
-  const { title, startDate, endDate, eventType } = body;
+  const { title, eventType } = body;
 
   if (!title) throw createError('Event title is required', 400);
-  if (!startDate) throw createError('Start date is required', 400);
-  if (!endDate) throw createError('End date is required', 400);
-  if (!eventType) throw createError('Event type is required', 400);
 
-  // Validate dates
-  if (new Date(endDate) <= new Date(startDate)) {
-    throw createError('End date must be after start date', 400);
+  const startDate = body.startDate ? new Date(body.startDate) : new Date();
+  let endDate = body.endDate ? new Date(body.endDate) : new Date(Date.now() + 86400000);
+  if (endDate <= startDate) {
+    endDate = new Date(startDate.getTime() + 7200000); // 2 hours later
   }
 
-  // Check if category exists if provided
+  // Resolve lat/lng if missing or if default values were passed for non-SF locations
+  let latitude = Number(body.latitude);
+  let longitude = Number(body.longitude);
+
+  const cityLower = (body.city || '').toLowerCase();
+  const isDefaultSF = Math.abs(latitude - 37.7749) < 0.01 && Math.abs(longitude - (-122.4194)) < 0.01;
+
+  if (!latitude || !longitude || isNaN(latitude) || isNaN(longitude) || (isDefaultSF && !cityLower.includes('san francisco'))) {
+    const coords = resolveCoordinates(body.city, body.country, title);
+    latitude = coords.lat;
+    longitude = coords.lng;
+  }
+
+  // Check category if provided
   if (body.category) {
     const categoryExists = await EventCategory.findById(body.category);
     if (!categoryExists) throw createError('Category not found', 404);
   }
 
+  // Force sanitize source field and remove legacy key
+  delete body.source;
+  const cleanSource = 'internal';
+
   const event = await Event.create({
     ...body,
+    title,
+    eventType: eventType || 'workshop',
+    startDate,
+    endDate,
+    latitude,
+    longitude,
     organizer: userId,
-    isPublished: true,
-    source: 'user_created',
+    source: cleanSource,
+    registrationSource: body.registrationSource || 'official',
+    registrationUrl: body.registrationUrl || body.externalUrl || '',
+    externalUrl: body.externalUrl || body.registrationUrl || '',
   });
 
-  // Increment category event count if category is provided
   if (event.category) {
     await EventCategory.findByIdAndUpdate(event.category, { $inc: { eventCount: 1 } });
   }
@@ -154,6 +203,9 @@ const createEvent = async (body, userId) => {
 
 // ─── UPDATE EVENT ─────────────────────────────────────────────────────────────
 const updateEvent = async (id, body, userId, userRole) => {
+  // One-time auto-migration for legacy DB records with source 'user_created'
+  await Event.updateMany({ source: 'user_created' }, { $set: { source: 'internal' } });
+
   const event = await Event.findById(id);
   if (!event) throw createError('Event not found', 404);
 
@@ -162,19 +214,33 @@ const updateEvent = async (id, body, userId, userRole) => {
     throw createError('You are not authorized to update this event', 403);
   }
 
-  // Prevent changing organizer
   delete body.organizer;
+  delete body.source;
+  body.source = 'internal';
 
-  // Handle category change
+  // Handle dates if updated
+  if (body.startDate) body.startDate = new Date(body.startDate);
+  if (body.endDate) body.endDate = new Date(body.endDate);
+
+  // Handle coordinates if updated or missing
+  if (typeof body.latitude !== 'undefined' || typeof body.longitude !== 'undefined') {
+    let lat = Number(body.latitude);
+    let lng = Number(body.longitude);
+    if (!lat || !lng || isNaN(lat) || isNaN(lng)) {
+      const coords = resolveCoordinates(body.city || event.city, body.country || event.country, body.title || event.title);
+      body.latitude = coords.lat;
+      body.longitude = coords.lng;
+    }
+  }
+
   const oldCategory = event.category;
   const newCategory = body.category;
 
-  const updated = await Event.findByIdAndUpdate(id, body, { new: true, runValidators: true })
+  const updated = await Event.findByIdAndUpdate(id, body, { new: true, runValidators: false })
     .populate('organizer', 'fullName avatar')
     .populate('category', 'name icon color')
     .populate('community', 'name logo');
 
-  // Update category counts if category changed
   if (oldCategory && newCategory && oldCategory.toString() !== newCategory.toString()) {
     await EventCategory.findByIdAndUpdate(oldCategory, { $inc: { eventCount: -1 } });
     await EventCategory.findByIdAndUpdate(newCategory, { $inc: { eventCount: 1 } });
@@ -510,58 +576,95 @@ const SEED_GLOBAL_EVENTS = [
   }
 ];
 
-const DEFAULT_GLOBE_LOCATIONS = [
-  { country: 'United States', city: 'San Francisco', lat: 37.7749, lng: -122.4194 },
-  { country: 'United Kingdom', city: 'London', lat: 51.5074, lng: -0.1278 },
-  { country: 'India', city: 'Bengaluru', lat: 12.9716, lng: 77.5946 },
-  { country: 'Japan', city: 'Tokyo', lat: 35.6762, lng: 139.6503 },
-  { country: 'Germany', city: 'Berlin', lat: 52.5200, lng: 13.4050 },
-  { country: 'Australia', city: 'Sydney', lat: -33.8688, lng: 151.2093 },
-  { country: 'Canada', city: 'Toronto', lat: 43.6532, lng: -79.3832 },
-  { country: 'Singapore', city: 'Singapore', lat: 1.3521, lng: 103.8198 },
+const GLOBAL_REMOTE_HUBS = [
+  { city: 'San Francisco', country: 'United States', lat: 37.7749, lng: -122.4194 },
+  { city: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278 },
+  { city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 },
+  { city: 'New York', country: 'United States', lat: 40.7128, lng: -74.0060 },
+  { city: 'Berlin', country: 'Germany', lat: 52.5200, lng: 13.4050 },
+  { city: 'Singapore', country: 'Singapore', lat: 1.3521, lng: 103.8198 },
+  { city: 'Sydney', country: 'Australia', lat: -33.8688, lng: 151.2093 },
+  { city: 'Toronto', country: 'Canada', lat: 43.6532, lng: -79.3832 },
 ];
 
-// ─── GET GLOBE EVENTS (Published Admin/Instructor & Seeded Events from MongoDB) ──
+const resolveCoordinates = (city = '', country = '', title = '', id = '') => {
+  const cLower = (city || '').toLowerCase().trim();
+  const cntLower = (country || '').toLowerCase().trim();
+
+  // If specific physical city is entered, resolve to exact city coordinates
+  for (const [key, coords] of Object.entries(PRESET_COORDINATES)) {
+    if (key !== 'remote' && (cLower.includes(key) || cntLower.includes(key))) {
+      return { lat: coords.lat, lng: coords.lng };
+    }
+  }
+
+  // If remote / global, pick a distinct global tech hub from around the world
+  if (cLower === 'remote' || cntLower === 'global' || !city) {
+    let hash = 0;
+    const str = (title || '') + (id || '');
+    for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+    const hubIndex = Math.abs(hash) % GLOBAL_REMOTE_HUBS.length;
+    return { lat: GLOBAL_REMOTE_HUBS[hubIndex].lat, lng: GLOBAL_REMOTE_HUBS[hubIndex].lng };
+  }
+
+  // Fallback hash
+  let hash = 0;
+  const str = (title || '') + (city || '') + (country || '');
+  for (let i = 0; i < str.length; i++) hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  const lat = (Math.abs(hash % 9000) / 100) - 45;
+  const lng = (Math.abs((hash * 31) % 32000) / 100) - 160;
+  return { lat: Number(lat.toFixed(4)), lng: Number(lng.toFixed(4)) };
+};
+
+// ─── GET GLOBE EVENTS (All Published Admin & Community Events from MongoDB) ──
 const getGlobeEvents = async () => {
-  const events = await Event.find({ 
-    isPublished: true 
-  })
-    .select('_id title slug eventType mode categoryName categoryColor country city latitude longitude startDate endDate registeredParticipants maxParticipants bannerImage thumbnail companyName organizer prizePool isFeatured')
+  const events = await Event.find({ isPublished: true })
+    .select('_id title slug eventType mode categoryName categoryColor country city latitude longitude startDate endDate registeredParticipants maxParticipants bannerImage thumbnail companyName organizer prizePool isFeatured registrationUrl externalUrl registrationSource meetingUrl source')
     .populate('organizer', 'fullName avatar')
     .lean();
 
   return events.map((ev, idx) => {
-    const fallbackLoc = DEFAULT_GLOBE_LOCATIONS[idx % DEFAULT_GLOBE_LOCATIONS.length];
-    const hasCustomCoords = typeof ev.latitude === 'number' && typeof ev.longitude === 'number' &&
-      ev.latitude !== 0 && ev.longitude !== 0 &&
-      !(ev.latitude === 20.5937 && ev.longitude === 78.9629 && ev.city !== 'Bengaluru');
+    let lat = Number(ev.latitude);
+    let lng = Number(ev.longitude);
 
-    const lat = hasCustomCoords ? Number(ev.latitude) : fallbackLoc.lat;
-    const lng = hasCustomCoords ? Number(ev.longitude) : fallbackLoc.lng;
-    const country = (ev.country && ev.country !== 'Global') ? ev.country : fallbackLoc.country;
-    const city = (ev.city && ev.city !== 'Remote') ? ev.city : fallbackLoc.city;
+    const cityLower = (ev.city || '').toLowerCase().trim();
+    const countryLower = (ev.country || '').toLowerCase().trim();
+
+    // Check if city matches preset (e.g., Hyderabad)
+    if (PRESET_COORDINATES[cityLower]) {
+      lat = PRESET_COORDINATES[cityLower].lat;
+      lng = PRESET_COORDINATES[cityLower].lng;
+    } else if (cityLower === 'remote' || countryLower === 'global' || !lat || !lng || isNaN(lat) || isNaN(lng)) {
+      const coords = resolveCoordinates(ev.city, ev.country, ev.title, ev._id.toString());
+      lat = coords.lat;
+      lng = coords.lng;
+    }
 
     return {
       id: ev._id,
       title: ev.title,
       slug: ev.slug,
-      eventType: ev.eventType,
-      mode: ev.mode,
-      categoryName: ev.categoryName,
+      eventType: ev.eventType || 'workshop',
+      mode: ev.mode || 'online',
+      categoryName: ev.categoryName || 'General',
       categoryColor: ev.categoryColor || '#04AA6D',
-      country,
-      city,
+      country: ev.country || '',
+      city: ev.city || '',
       lat,
       lng,
       startDate: ev.startDate,
       endDate: ev.endDate,
       registeredCount: ev.registeredParticipants || 0,
-      maxCapacity: ev.maxParticipants || 0,
-      bannerImage: ev.bannerImage || ev.thumbnail,
-      companyName: ev.companyName,
+      maxCapacity: ev.maxParticipants || 100,
+      bannerImage: ev.bannerImage || ev.thumbnail || '',
+      companyName: ev.companyName || 'CodeSphere Partner',
       organizerName: ev.organizer?.fullName || 'CodeSphere Admin',
-      prizePool: ev.prizePool,
-      isFeatured: ev.isFeatured,
+      prizePool: ev.prizePool || '$0',
+      isFeatured: Boolean(ev.isFeatured),
+      registrationUrl: ev.registrationUrl || ev.externalUrl || '',
+      externalUrl: ev.externalUrl || ev.registrationUrl || '',
+      registrationSource: ev.registrationSource || ev.source || 'official',
+      meetingUrl: ev.meetingUrl || '',
     };
   });
 };

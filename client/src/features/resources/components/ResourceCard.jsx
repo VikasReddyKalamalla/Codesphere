@@ -7,6 +7,8 @@ import {
 
 const TYPE_CONFIG = {
   pdf: { label: 'PDF Notes', icon: FileText, color: 'text-red-500 bg-red-500/10 border-red-500/30' },
+  ppt: { label: 'PowerPoint (.ppt)', icon: FileText, color: 'text-orange-500 bg-orange-500/10 border-orange-500/30' },
+  word: { label: 'Word Doc (.docx)', icon: FileText, color: 'text-blue-600 bg-blue-600/10 border-blue-600/30' },
   video: { label: 'Video Tutorial', icon: Video, color: 'text-blue-500 bg-blue-500/10 border-blue-500/30' },
   source_code: { label: 'Source Code', icon: Code, color: 'text-emerald-500 bg-emerald-500/10 border-emerald-500/30' },
   github: { label: 'GitHub Repo', icon: GitBranch, color: 'text-purple-500 bg-purple-500/10 border-purple-500/30' },

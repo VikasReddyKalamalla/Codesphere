@@ -567,7 +567,7 @@ export const InstructorSandbox = () => {
                 type="submit"
                 className="w-full bg-blue-600 hover:bg-blue-500 text-white font-semibold text-xs py-3 rounded-lg shadow-lg hover:shadow-blue-600/20 transition-all mt-4"
               >
-                {editingProject ? 'Save Project Details' : 'Create Sandbox Project'}
+                {editingProject ? 'Save Project Details' : 'Create Problem Statement'}
               </button>
             </form>
           </div>

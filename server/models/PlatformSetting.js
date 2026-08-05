@@ -76,6 +76,25 @@ const platformSettingSchema = new mongoose.Schema(
       github: { type: String, default: '', maxlength: 200 },
       discord: { type: String, default: '', maxlength: 200 },
     },
+    security: {
+      rateLimitRequestsPerMin: { type: Number, default: 100 },
+      maxFailedLogins: { type: Number, default: 5 },
+      require2FA: { type: Boolean, default: false },
+      corsAllowedOrigins: { type: String, default: '*' },
+    },
+    infrastructure: {
+      webSocketPort: { type: Number, default: 5000 },
+      compileMemoryLimitMB: { type: Number, default: 512 },
+      cacheTtlSeconds: { type: Number, default: 3600 },
+      autoBackupEnabled: { type: Boolean, default: true },
+    },
+    smtp: {
+      smtpHost: { type: String, default: 'smtp.codesphere.com' },
+      smtpPort: { type: Number, default: 587 },
+      smtpSecure: { type: Boolean, default: true },
+      smtpUser: { type: String, default: 'notifications@codesphere.com' },
+      smtpSender: { type: String, default: 'CodeSphere System <noreply@codesphere.com>' },
+    },
     lastUpdatedBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',

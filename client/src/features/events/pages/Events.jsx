@@ -14,6 +14,8 @@ import { EventCalendarView } from '../components/EventCalendarView.jsx';
 import { EventAnalyticsDashboard } from '../components/EventAnalyticsDashboard.jsx';
 import { CreateEventModal } from '../components/CreateEventModal.jsx';
 
+import { socket } from '../../../socket/socket.js';
+
 import {
   fetchEventsThunk,
   fetchGlobeMarkersThunk,
@@ -71,6 +73,23 @@ export const Events = () => {
     dispatch(fetchGlobeMarkersThunk());
     dispatch(fetchUserMetadataThunk());
     dispatch(fetchAnalyticsSummaryThunk());
+
+    const handleEventChange = (evt) => {
+      const entity = evt?.entity;
+      if (!entity || entity === 'event') {
+        dispatch(fetchEventsThunk());
+        dispatch(fetchGlobeMarkersThunk());
+        dispatch(fetchAnalyticsSummaryThunk());
+      }
+    };
+
+    socket.on('admin:data_changed', handleEventChange);
+    socket.on('event:changed', handleEventChange);
+
+    return () => {
+      socket.off('admin:data_changed', handleEventChange);
+      socket.off('event:changed', handleEventChange);
+    };
   }, [dispatch]);
 
   const handleSelectEvent = (event) => {
@@ -85,6 +104,17 @@ export const Events = () => {
   const handleRegister = (event) => {
     const isRegistered = userRegistrations.includes(event._id || event.id);
     dispatch(toggleRegistrationThunk(event._id || event.id, isRegistered));
+
+    const targetUrl = event.registrationUrl || event.externalUrl || event.url || event.registrationLink;
+    if (targetUrl) {
+      const sourceName = (event.registrationSource || event.source || 'official').toUpperCase();
+      toast.success(`Redirecting to ${sourceName} official registration portal...`);
+      setTimeout(() => {
+        window.open(targetUrl, '_blank', 'noopener,noreferrer');
+      }, 500);
+    } else {
+      toast.success(isRegistered ? 'Registration cancelled' : 'Successfully registered on CodeSphere!');
+    }
   };
 
   const handleCreateSubmit = (newEventData) => {

@@ -1,4 +1,5 @@
 const PlatformAnalytics = require('../models/PlatformAnalytics');
+const AnalyticsEvent = require('../models/AnalyticsEvent');
 const User = require('../models/User');
 const LearningPath = require('../models/LearningPath');
 const Community = require('../models/Community');
@@ -8,8 +9,7 @@ const Test = require('../models/Test');
 const LiveSession = require('../models/LiveSession');
 const Payment = require('../models/Payment');
 const Workspace = require('../models/Workspace');
-const Progress = require('../models/Progress');
-const TestAttempt = require('../models/TestAttempt');
+const analyticsRealtimeService = require('./analyticsRealtime.service');
 
 const createError = (message, statusCode) => {
   const err = new Error(message);
@@ -102,4 +102,70 @@ const generateAnalytics = async (adminId) => {
   return record;
 };
 
-module.exports = { getAnalytics, generateAnalytics };
+/**
+ * Fetch real-time snapshot payload
+ */
+const getRealtimeAnalytics = async (query = {}) => {
+  return await analyticsRealtimeService.getRealtimeAnalyticsSnapshot(query);
+};
+
+/**
+ * Fetch historical/paginated analytics events with category & search filters
+ */
+const getAnalyticsEvents = async (query = {}) => {
+  const { category, search, page = 1, limit = 30 } = query;
+  const filter = {};
+
+  if (category && category !== 'all') {
+    filter.category = category;
+  }
+
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } },
+      { userName: { $regex: search, $options: 'i' } },
+    ];
+  }
+
+  const skip = (Number(page) - 1) * Number(limit);
+
+  const [events, total] = await Promise.all([
+    AnalyticsEvent.find(filter).sort({ timestamp: -1 }).skip(skip).limit(Number(limit)).lean(),
+    AnalyticsEvent.countDocuments(filter),
+  ]);
+
+  return {
+    events,
+    pagination: {
+      page: Number(page),
+      limit: Number(limit),
+      total,
+      pages: Math.ceil(total / Number(limit)),
+    },
+  };
+};
+
+/**
+ * Trigger simulated traffic event
+ */
+const simulateTrafficEvent = async (category) => {
+  return await analyticsRealtimeService.simulateTrafficEvent(category);
+};
+
+/**
+ * Seed initial analytics data
+ */
+const seedAnalyticsData = async () => {
+  const events = await analyticsRealtimeService.seedInitialAnalyticsEvents();
+  return { seededEventsCount: events.length };
+};
+
+module.exports = {
+  getAnalytics,
+  generateAnalytics,
+  getRealtimeAnalytics,
+  getAnalyticsEvents,
+  simulateTrafficEvent,
+  seedAnalyticsData,
+};

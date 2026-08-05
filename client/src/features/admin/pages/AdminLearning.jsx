@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { socket } from '../../../socket/socket.js';
 
 export default function AdminLearning() {
   const navigate = useNavigate();
@@ -96,14 +97,14 @@ export default function AdminLearning() {
 
       // Extract general counts for the learning dashboard
       const dashboardRes = await apiClient.get('/admin/dashboard');
-      const d = dashboardRes.data.data;
+      const d = dashboardRes.data.data || {};
       setStats({
         totalPaths: res.data.data.pagination.total,
         published: res.data.data.learningPaths.filter((p) => p.isPublished).length,
         draft: res.data.data.learningPaths.filter((p) => !p.isPublished).length,
-        totalModules: d.totalLearningPaths * 3, // fallback estimation
-        totalLessons: d.totalLearningPaths * 10, // fallback estimation
-        enrollments: d.totalUsers * 2, // fallback estimation
+        totalModules: (d.totalCourses || 0) * 3, // fallback estimation
+        totalLessons: (d.totalCourses || 0) * 10, // fallback estimation
+        enrollments: (d.totalUsers || 0) * 2, // fallback estimation
         avgCompletions: '42%',
         mostPopular: 'Full-Stack JavaScript Development'
       });
@@ -116,6 +117,21 @@ export default function AdminLearning() {
 
   useEffect(() => {
     fetchPaths();
+
+    // Listen for real-time socket events across the platform
+    const handleSocketEvent = () => {
+      fetchPaths();
+    };
+    socket.on('learning_path_changed', handleSocketEvent);
+    socket.on('learning:changed', handleSocketEvent);
+    socket.on('admin:data_changed', (evt) => {
+      if (!evt || evt.entity === 'learning') handleSocketEvent();
+    });
+    return () => {
+      socket.off('learning_path_changed', handleSocketEvent);
+      socket.off('learning:changed', handleSocketEvent);
+      socket.off('admin:data_changed');
+    };
   }, [page, category, difficulty, statusFilter]);
 
   // Debounced search trigger
@@ -464,12 +480,18 @@ export default function AdminLearning() {
                       <tr key={p._id} className="hover:bg-slate-50/50 transition-colors">
                         <td className="py-3.5 px-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-14 h-9 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-slate-100">
-                              <img
-                                src={p.thumbnail || 'https://images.unsplash.com/photo-1516116211223-5c359a36298a?auto=format&fit=crop&w=150&h=90&q=80'}
-                                alt="course"
-                                className="w-full h-full object-cover"
-                              />
+                            <div className="w-14 h-9 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center relative">
+                              <GraduationCap size={18} className="text-emerald-600 dark:text-emerald-400 absolute" />
+                              {p.thumbnail ? (
+                                <img
+                                  src={p.thumbnail}
+                                  alt={p.title || 'course'}
+                                  className="w-full h-full object-cover relative z-10"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              ) : null}
                             </div>
                             <div>
                               <p className="font-extrabold text-slate-800 text-xs line-clamp-1">{p.title}</p>
@@ -1218,9 +1240,12 @@ export default function AdminLearning() {
                                   <div className="flex items-center gap-2">
                                     <div className="w-6 h-6 rounded-full overflow-hidden border border-slate-250 shrink-0">
                                       <img
-                                        src={rl.avatar || 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=50&h=50&q=80'}
+                                        src={rl.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=50&h=50&q=80'}
                                         alt="avatar"
                                         className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          e.currentTarget.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=50&h=50&q=80';
+                                        }}
                                       />
                                     </div>
                                     <div className="truncate">

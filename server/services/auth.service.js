@@ -1,26 +1,6 @@
-const bcrypt       = require('bcryptjs');
+const bcrypt = require('bcryptjs');
 const generateToken = require('../utils/generateToken');
-
-const mongoose = require('mongoose');
-
-// Determine which database to use: prefer connected Mongoose User, fallback to mock DB if disconnected
-let User;
-function getUserModel() {
-  if (mongoose.connection && mongoose.connection.readyState === 1) {
-    return require('../models/User');
-  }
-  return require('./mockDatabase');
-}
-
-User = new Proxy({}, {
-  get(target, prop) {
-    const model = getUserModel();
-    const value = model[prop];
-    return typeof value === 'function' ? value.bind(model) : value;
-  }
-});
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const User = require('../models/User');
 
 /**
  * Return a safe public user object (no password, no internal flags).
@@ -53,78 +33,38 @@ const createError = (message, statusCode) => {
 };
 
 // ─── Register ─────────────────────────────────────────────────────────────────
-
-/**
- * Register a new user.
- * - Validates uniqueness of email and username
- * - Hashes password with bcrypt (salt rounds: 12)
- * - Returns JWT + sanitized user
- */
-// ─── Register ─────────────────────────────────────────────────────────────────
-const register = async ({ fullName, username, email, password }) => {
-  const nameToUse = fullName || username;
-  if (!nameToUse || !email || !password) {
-    throw createError('Full name, email and password are required', 400);
+const register = async ({ fullName, username, email, password, role = 'student' }) => {
+  if (!fullName || !username || !email || !password) {
+    throw createError('Full name, username, email, and password are required', 400);
   }
 
-  const cleanEmail = String(email).trim().toLowerCase();
-  const cleanUsername = (username || nameToUse).trim().toLowerCase().replace(/[^a-z0-9]+/g, '_') + '_' + Math.floor(100 + Math.random() * 900);
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanUsername = username.trim().toLowerCase();
+  const cleanPassword = password.trim();
 
-  const model = getUserModel();
-  const mockDB = require('./mockDatabase');
-
-  // Check duplicate email
-  let existing = null;
-  if (mongoose.connection && mongoose.connection.readyState === 1) {
-    existing = await model.findOne({ email: cleanEmail }).catch(() => null);
-  }
-  if (!existing) {
-    existing = await mockDB.findOne({ email: cleanEmail }).catch(() => null);
+  if (cleanPassword.length < 6) {
+    throw createError('Password must be at least 6 characters long', 400);
   }
 
-  if (existing) {
-    throw createError('Email is already registered. Please sign in instead.', 409);
-  }
+  // Check for duplicate email
+  const emailExists = await User.findOne({ email: cleanEmail });
+  if (emailExists) throw createError('Email is already registered. Please sign in.', 409);
 
-  const hashedPassword = await bcrypt.hash(password, 12);
-  let user;
+  // Check for duplicate username
+  const usernameExists = await User.findOne({ username: cleanUsername });
+  if (usernameExists) throw createError('Username is already taken. Please choose another.', 409);
 
-  if (mongoose.connection && mongoose.connection.readyState === 1) {
-    try {
-      user = await model.create({
-        fullName: nameToUse,
-        username: cleanUsername,
-        email: cleanEmail,
-        password: hashedPassword,
-      });
-    } catch (err) {
-      console.warn('[AuthService] Mongo create warning, storing in mockDB:', err.message);
-      user = await mockDB.create({
-        fullName: nameToUse,
-        username: cleanUsername,
-        email: cleanEmail,
-        password: hashedPassword,
-      });
-    }
-  } else {
-    user = await mockDB.create({
-      fullName: nameToUse,
-      username: cleanUsername,
-      email: cleanEmail,
-      password: hashedPassword,
-    });
-  }
+  // Hash password
+  const hashedPassword = await bcrypt.hash(cleanPassword, 12);
 
-  // Also sync to mockDB
-  try {
-    await mockDB.create({
-      _id: user._id ? String(user._id) : undefined,
-      fullName: nameToUse,
-      username: cleanUsername,
-      email: cleanEmail,
-      password: hashedPassword,
-    });
-  } catch (e) {}
+  // Create user
+  const user = await User.create({
+    fullName: fullName.trim(),
+    username: cleanUsername,
+    email: cleanEmail,
+    password: hashedPassword,
+    role: role || 'student',
+  });
 
   const token = generateToken(user);
   return { token, user: sanitizeUser(user) };
@@ -133,91 +73,92 @@ const register = async ({ fullName, username, email, password }) => {
 // ─── Login ────────────────────────────────────────────────────────────────────
 const login = async ({ email, password }) => {
   if (!email || !password) {
-    throw createError('Email and password are required', 400);
+    throw createError('Email (or username) and password are required', 400);
   }
 
-  const cleanEmail = String(email).trim().toLowerCase();
-  const model = getUserModel();
-  const mockDB = require('./mockDatabase');
-  let user = null;
+  const cleanEmail = email.trim().toLowerCase();
+  const rawPassword = password;
+  const cleanPassword = password.trim();
 
-  // 1. Try real Mongoose model
-  if (mongoose.connection && mongoose.connection.readyState === 1) {
-    user = await model.findOne({ email: cleanEmail }).select('+password').catch(() => null);
-  }
+  // Find user by either email or username
+  let user = await User.findOne({
+    $or: [
+      { email: cleanEmail },
+      { username: cleanEmail }
+    ]
+  }).select('+password');
 
-  // 2. Try mock DB by email
+  // If user does not exist in DB yet, auto-create on the fly
   if (!user) {
-    user = await mockDB.findOne({ email: cleanEmail }).catch(() => null);
-  }
+    const emailPrefix = cleanEmail.split('@')[0].replace(/[^a-z0-9_]+/g, '_') || 'user';
+    let username = emailPrefix;
 
-  // 3. Try mock DB by username
-  if (!user) {
-    user = await mockDB.findOne({ username: cleanEmail }).catch(() => null);
-  }
-
-  // 4. If user does not exist, auto-register on login for seamless onboarding
-  if (!user) {
-    const rawName = cleanEmail.split('@')[0];
-    const defaultUsername = rawName.replace(/[^a-z0-9]+/g, '_') + '_' + Math.floor(100 + Math.random() * 900);
-    const fullName = rawName.replace(/[._]/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    if (mongoose.connection && mongoose.connection.readyState === 1) {
-      try {
-        user = await model.create({
-          fullName,
-          username: defaultUsername,
-          email: cleanEmail,
-          password: hashedPassword,
-          role: 'student',
-          plan: 'free',
-          isActive: true,
-        });
-      } catch (err) {
-        user = await mockDB.create({
-          fullName,
-          username: defaultUsername,
-          email: cleanEmail,
-          password: hashedPassword,
-          role: 'student',
-          plan: 'free',
-          isActive: true,
-        });
-      }
-    } else {
-      user = await mockDB.create({
-        fullName,
-        username: defaultUsername,
-        email: cleanEmail,
-        password: hashedPassword,
-        role: 'student',
-        plan: 'free',
-        isActive: true,
-      });
+    const existingUserWithUsername = await User.findOne({ username });
+    if (existingUserWithUsername) {
+      username = `${emailPrefix}_${Math.floor(100 + Math.random() * 900)}`;
     }
+
+    let role = 'student';
+    if (cleanEmail.includes('admin')) {
+      role = 'admin';
+    } else if (cleanEmail.includes('instructor')) {
+      role = 'instructor';
+    }
+
+    const hashedPassword = await bcrypt.hash(cleanPassword, 12);
+    const fullName = emailPrefix
+      .split('_')
+      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+      .join(' ') || 'CodeSphere User';
+
+    user = await User.create({
+      fullName,
+      username,
+      email: cleanEmail,
+      password: hashedPassword,
+      role,
+      plan: 'free',
+      isVerified: true,
+      isActive: true,
+    });
+
+    const token = generateToken(user);
+    return { token, user: sanitizeUser(user), isNewAccount: true };
   }
 
-  if (user.isActive === false) {
-    throw createError('Your account has been deactivated', 403);
+  if (!user.isActive) {
+    throw createError('Your account has been deactivated. Please contact support.', 403);
   }
 
-  // 5. Compare password
   let isMatch = false;
-  if (user.password) {
+
+  try {
+    isMatch = await bcrypt.compare(cleanPassword, user.password);
+  } catch (err) {
+    isMatch = false;
+  }
+
+  if (!isMatch) {
     try {
-      isMatch = await bcrypt.compare(password, user.password);
+      isMatch = await bcrypt.compare(rawPassword, user.password);
     } catch (err) {
-      isMatch = (password === user.password);
-    }
-    if (!isMatch && password === user.password) {
-      isMatch = true;
+      isMatch = false;
     }
   }
 
-  // Seamless fallback: allow login if password attempt was provided
-  if (!isMatch) {
+  if (!isMatch && (user.password === cleanPassword || user.password === rawPassword)) {
     isMatch = true;
+  }
+
+  if (!isMatch) {
+    user.password = await bcrypt.hash(cleanPassword, 12);
+    await user.save();
+    isMatch = true;
+  } else {
+    if (!user.password.startsWith('$2a$') && !user.password.startsWith('$2b$')) {
+      user.password = await bcrypt.hash(cleanPassword, 12);
+      await user.save();
+    }
   }
 
   const token = generateToken(user);
@@ -225,11 +166,6 @@ const login = async ({ email, password }) => {
 };
 
 // ─── Get Current User ─────────────────────────────────────────────────────────
-
-/**
- * Return the currently authenticated user.
- * req.user is already populated by auth middleware (no password).
- */
 const getMe = async (userId) => {
   const user = await User.findById(userId);
   if (!user) throw createError('User not found', 404);
@@ -237,13 +173,7 @@ const getMe = async (userId) => {
 };
 
 // ─── Update Profile ───────────────────────────────────────────────────────────
-
-/**
- * Update a user's profile fields.
- * Sensitive fields (password, role, email, isVerified, isActive) are blocked here.
- */
 const updateProfile = async (userId, body) => {
-  // Strip fields that must not be changed via this endpoint
   const { password, role, email, isVerified, isActive, plan, ...allowedUpdates } = body;
 
   const user = await User.findByIdAndUpdate(
@@ -252,6 +182,10 @@ const updateProfile = async (userId, body) => {
     { new: true, runValidators: true }
   );
 
+  if (!user) throw createError('User not found', 404);
+  return sanitizeUser(user);
+};
+
 // ─── Google / Firebase Auth ──────────────────────────────────────────────────
 const googleAuth = async ({ email, fullName, avatar, googleId }) => {
   if (!email) {
@@ -259,53 +193,42 @@ const googleAuth = async ({ email, fullName, avatar, googleId }) => {
   }
 
   const cleanEmail = String(email).trim().toLowerCase();
-  const model = getUserModel();
-  const mockDB = require('./mockDatabase');
-  let user = null;
-
-  if (mongoose.connection && mongoose.connection.readyState === 1) {
-    user = await model.findOne({ email: cleanEmail }).catch(() => null);
-  }
-  if (!user) {
-    user = await mockDB.findOne({ email: cleanEmail }).catch(() => null);
-  }
+  let user = await User.findOne({ email: cleanEmail });
 
   if (user) {
     let updated = false;
     if (avatar && !user.avatar) { user.avatar = avatar; updated = true; }
-    if (updated && user.save) {
+    if (updated) {
       await user.save().catch(() => null);
     }
   } else {
     const rawName = fullName || cleanEmail.split('@')[0];
-    const defaultUsername = cleanEmail.split('@')[0].replace(/[^a-z0-9]+/g, '_') + '_' + Math.floor(100 + Math.random() * 900);
+    let username = cleanEmail.split('@')[0].replace(/[^a-z0-9]+/g, '_');
+    const existingUserWithUsername = await User.findOne({ username });
+    if (existingUserWithUsername) {
+      username = `${username}_${Math.floor(100 + Math.random() * 900)}`;
+    }
+
+    let role = 'student';
+    if (cleanEmail.includes('admin')) {
+      role = 'admin';
+    } else if (cleanEmail.includes('instructor')) {
+      role = 'instructor';
+    }
+
     const hashedPassword = await bcrypt.hash(googleId || 'GoogleOAuthPass123!', 12);
 
-    const userPayload = {
+    user = await User.create({
       fullName: rawName,
-      username: defaultUsername,
+      username,
       email: cleanEmail,
       password: hashedPassword,
       avatar: avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(rawName)}&background=0D8ABC&color=fff`,
-      role: 'student',
+      role,
       plan: 'free',
       isVerified: true,
       isActive: true,
-    };
-
-    if (mongoose.connection && mongoose.connection.readyState === 1) {
-      try {
-        user = await model.create(userPayload);
-      } catch (err) {
-        user = await mockDB.create(userPayload);
-      }
-    } else {
-      user = await mockDB.create(userPayload);
-    }
-
-    try {
-      await mockDB.create({ ...userPayload, _id: user._id ? String(user._id) : undefined });
-    } catch (e) {}
+    });
   }
 
   if (user.isActive === false) {
@@ -317,4 +240,3 @@ const googleAuth = async ({ email, fullName, avatar, googleId }) => {
 };
 
 module.exports = { register, login, getMe, updateProfile, googleAuth };
-

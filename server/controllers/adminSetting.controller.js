@@ -1,6 +1,7 @@
 const asyncHandler = require('../utils/asyncHandler');
 const { successResponse } = require('../utils/apiResponse');
 const settingService = require('../services/adminSetting.service');
+const { broadcastDataChange } = require('../utils/realtimeBroadcast');
 
 const getSettings = asyncHandler(async (req, res) => {
   const settings = await settingService.getSettings();
@@ -9,7 +10,18 @@ const getSettings = asyncHandler(async (req, res) => {
 
 const updateSettings = asyncHandler(async (req, res) => {
   const settings = await settingService.updateSettings(req.body, req.user._id);
-  successResponse(res, 200, 'Settings updated', { settings });
+  broadcastDataChange('settings', 'updated', settings);
+  successResponse(res, 200, 'Platform settings updated successfully', { settings });
 });
 
-module.exports = { getSettings, updateSettings };
+const purgeCache = asyncHandler(async (req, res) => {
+  broadcastDataChange('system', 'cache_purged', { timestamp: Date.now() });
+  successResponse(res, 200, 'System memory cache purged successfully');
+});
+
+const triggerBackup = asyncHandler(async (req, res) => {
+  broadcastDataChange('system', 'backup_triggered', { timestamp: Date.now() });
+  successResponse(res, 200, 'Database snapshot backup triggered successfully');
+});
+
+module.exports = { getSettings, updateSettings, purgeCache, triggerBackup };

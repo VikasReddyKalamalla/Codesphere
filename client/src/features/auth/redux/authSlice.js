@@ -1,5 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { getUser, getToken, saveUser } from '../utils/authHelpers.js';
+import { getUser, getToken, saveUser, removeToken, removeUser } from '../utils/authHelpers.js';
 
 const initialState = {
   user: getUser(),
@@ -19,9 +19,9 @@ const authSlice = createSlice({
     },
     authSuccess: (state, action) => {
       state.status = 'succeeded';
-      state.user = action.payload.user;
-      state.token = action.payload.token;
-      state.isAuthenticated = true;
+      if (action.payload.user !== undefined) state.user = action.payload.user;
+      if (action.payload.token !== undefined) state.token = action.payload.token;
+      state.isAuthenticated = !!state.token;
     },
     authFailure: (state, action) => {
       state.status = 'failed';
@@ -34,6 +34,8 @@ const authSlice = createSlice({
       }
     },
     logout: (state) => {
+      removeToken();
+      removeUser();
       state.user = null;
       state.token = null;
       state.isAuthenticated = false;

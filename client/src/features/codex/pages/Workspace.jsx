@@ -25,6 +25,7 @@ import { ActivityFeed } from '../components/ActivityFeed.jsx';
 import { WorkspaceAnalytics } from '../components/WorkspaceAnalytics.jsx';
 import { KanbanBoard } from '../components/KanbanBoard.jsx';
 import { TaskModal } from '../components/TaskModal.jsx';
+import { SessionManagerModal } from '../../../components/SessionManagerModal.jsx';
 import { BackButton } from '@components/common/BackButton.jsx';
 import { Button } from '@components/common/Button.jsx';
 
@@ -123,11 +124,49 @@ export const Workspace = () => {
   // Search/Filters states
   const [globalSearch, setGlobalSearch] = useState('');
 
+  // Session Manager Modal states
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [sessionModalMode, setSessionModalMode]     = useState('start'); // 'start' | 'end'
+  const [isGitHubImported, setIsGitHubImported]     = useState(false);
+  const [activeRepoUrl, setActiveRepoUrl]           = useState('');
+
+  const handleStartSessionFlow = ({ isGitHub, repoUrl }) => {
+    setIsGitHubImported(isGitHub);
+    setActiveRepoUrl(repoUrl);
+    setIsSessionModalOpen(false);
+    if (isGitHub && repoUrl) {
+      toast.success(`GitHub Repository "${repoUrl}" connected to session!`);
+    }
+  };
+
+  const handleEndSessionFlow = ({ pushToGit, repoUrl, terminateStorage }) => {
+    setIsSessionModalOpen(false);
+    if (pushToGit && repoUrl) {
+      toast.success(`Session edits pushed to GitHub "${repoUrl}"!`);
+    }
+    if (terminateStorage) {
+      toast.success('Workspace session terminated. Cloud storage cleared.');
+      navigate('/dashboard');
+    }
+  };
+
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
   const decorRef = useRef([]);
 
 
+
+  // Warn user before closing tab or navigating away to push code to GitHub
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      const msg = 'You have active workspace edits! Make sure to push your code to your GitHub repository before closing this tab.';
+      e.preventDefault();
+      e.returnValue = msg;
+      return msg;
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, []);
 
   // Load Initial API Data
   useEffect(() => {
@@ -726,6 +765,17 @@ export const Workspace = () => {
             </button>
           </div>
 
+          <button
+            onClick={() => {
+              setSessionModalMode('end');
+              setIsSessionModalOpen(true);
+            }}
+            className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-mono font-bold rounded-lg cursor-pointer flex items-center gap-1.5 transition-all border border-slate-300 dark:border-slate-700"
+          >
+            <GitBranch size={13} className="text-purple-500" />
+            <span>End Session / GitHub Sync</span>
+          </button>
+
           <button 
             onClick={handleInviteUser}
             className="px-3.5 py-1.5 bg-[#04AA6D] hover:bg-[#4f46e5] active:scale-95 text-white text-xs font-mono font-bold rounded-lg shadow-lg shadow-indigo-500/10 cursor-pointer flex items-center gap-1.5 transition-all"
@@ -1294,6 +1344,17 @@ export const Workspace = () => {
         onDelete={handleDeleteTask}
         task={selectedTask}
         members={members}
+      />
+
+      {/* Session Manager Modal (Start & End of Session GitHub/Storage Workflow) */}
+      <SessionManagerModal
+        isOpen={isSessionModalOpen}
+        mode={sessionModalMode}
+        isGitHubImported={isGitHubImported}
+        githubRepoUrl={activeRepoUrl}
+        onStartSession={handleStartSessionFlow}
+        onEndSession={handleEndSessionFlow}
+        onClose={() => setIsSessionModalOpen(false)}
       />
     </div>
   );

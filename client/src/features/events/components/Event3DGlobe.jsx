@@ -16,6 +16,44 @@ const MARKER_COLORS = {
   default: '#04AA6D'
 };
 
+const CITY_COORDINATES = {
+  'hyderabad': { lat: 17.3850, lng: 78.4867 },
+  'bengaluru': { lat: 12.9716, lng: 77.5946 },
+  'bangalore': { lat: 12.9716, lng: 77.5946 },
+  'mumbai': { lat: 19.0760, lng: 72.8777 },
+  'delhi': { lat: 28.6139, lng: 77.2090 },
+  'new delhi': { lat: 28.6139, lng: 77.2090 },
+  'chennai': { lat: 13.0827, lng: 80.2707 },
+  'pune': { lat: 18.5204, lng: 73.8567 },
+  'kolkata': { lat: 22.5726, lng: 88.3639 },
+  'san francisco': { lat: 37.7749, lng: -122.4194 },
+  'mountain view': { lat: 37.4220, lng: -122.0840 },
+  'new york': { lat: 40.7128, lng: -74.0060 },
+  'london': { lat: 51.5074, lng: -0.1278 },
+  'tokyo': { lat: 35.6762, lng: 139.6503 },
+  'berlin': { lat: 52.5200, lng: 13.4050 },
+  'paris': { lat: 48.8566, lng: 2.3522 },
+  'singapore': { lat: 1.3521, lng: 103.8198 },
+  'sydney': { lat: -33.8688, lng: 151.2093 },
+  'dubai': { lat: 25.2048, lng: 55.2708 },
+  'toronto': { lat: 43.6532, lng: -79.3832 },
+  'seattle': { lat: 47.6062, lng: -122.3321 },
+  'austin': { lat: 30.2672, lng: -97.7431 },
+  'chicago': { lat: 41.8781, lng: -87.6298 },
+  'remote': { lat: 20.5937, lng: 78.9629 },
+};
+
+const GLOBAL_HUBS_FALLBACK = [
+  { city: 'San Francisco', lat: 37.7749, lng: -122.4194 },
+  { city: 'London', lat: 51.5074, lng: -0.1278 },
+  { city: 'Tokyo', lat: 35.6762, lng: 139.6503 },
+  { city: 'New York', lat: 40.7128, lng: -74.0060 },
+  { city: 'Berlin', lat: 52.5200, lng: 13.4050 },
+  { city: 'Singapore', lat: 1.3521, lng: 103.8198 },
+  { city: 'Sydney', lat: -33.8688, lng: 151.2093 },
+  { city: 'Toronto', lat: 43.6532, lng: -79.3832 },
+];
+
 export const Event3DGlobe = ({ markers = [], onSelectEvent }) => {
   const globeContainerRef = useRef();
   const globeEl = useRef();
@@ -56,20 +94,78 @@ export const Event3DGlobe = ({ markers = [], onSelectEvent }) => {
   const processedMarkers = useMemo(() => {
     if (!Array.isArray(markers) || markers.length === 0) return [];
 
-    return markers.map(m => {
+    const regionMap = {};
+
+    return markers.map((m, idx) => {
       const color = m.categoryColor || MARKER_COLORS[m.eventType] || MARKER_COLORS.default;
-      const displayLocation = (m.city && m.city !== 'Remote') 
-        ? m.city 
-        : (m.country && m.country !== 'Global' ? m.country : (m.title ? m.title.split(' ')[0] : 'EVENT'));
+      
+      let lat = Number(m.lat || m.latitude || 0);
+      let lng = Number(m.lng || m.longitude || 0);
+
+      const cityKey = (m.city || '').toLowerCase().trim();
+      const countryKey = (m.country || '').toLowerCase().trim();
+
+      // Priority 1: Physical city match
+      if (CITY_COORDINATES[cityKey]) {
+        lat = CITY_COORDINATES[cityKey].lat;
+        lng = CITY_COORDINATES[cityKey].lng;
+      } else if (CITY_COORDINATES[countryKey]) {
+        lat = CITY_COORDINATES[countryKey].lat;
+        lng = CITY_COORDINATES[countryKey].lng;
+      }
+
+      // Priority 2: If Remote/Global or unassigned, pick a distinct global hub
+      if (cityKey === 'remote' || countryKey === 'global' || (!lat && !lng)) {
+        const hub = GLOBAL_HUBS_FALLBACK[idx % GLOBAL_HUBS_FALLBACK.length];
+        lat = hub.lat;
+        lng = hub.lng;
+      }
+
+      // Clean Display Label
+      let displayLocation = 'EVENT';
+      if (m.city && m.city !== 'Remote') {
+        displayLocation = m.city.toUpperCase();
+      } else if (m.country && m.country !== 'Global') {
+        displayLocation = m.country.toUpperCase();
+      } else {
+        const matchedHub = GLOBAL_HUBS_FALLBACK.find(h => Math.abs(h.lat - lat) < 2 && Math.abs(h.lng - lng) < 2);
+        displayLocation = matchedHub ? `GLOBAL (${matchedHub.city.toUpperCase()})` : 'GLOBAL WEBINAR';
+      }
+
+      // Prevent clustering: Check region bucket (approx 5 degrees radius)
+      const regionKey = `${Math.round(lat / 5)},${Math.round(lng / 5)}`;
+      let staggerTransform = 'translate(-50%, -100%)';
+      if (regionMap[regionKey]) {
+        const count = regionMap[regionKey];
+        regionMap[regionKey] += 1;
+        
+        // Offset coordinates into distinct nearby space
+        const angle = count * 2.3;
+        const dist = 7.0 * Math.sqrt(count);
+        lat += dist * Math.cos(angle);
+        lng += dist * Math.sin(angle);
+
+        // Stagger pill orientation around marker pin
+        const transforms = [
+          'translate(-50%, -115%)',
+          'translate(-50%, 20px)',
+          'translate(15px, -50%)',
+          'translate(-115%, -50%)'
+        ];
+        staggerTransform = transforms[count % transforms.length];
+      } else {
+        regionMap[regionKey] = 1;
+      }
 
       return {
         ...m,
         id: m.id || m._id,
-        lat: Number(m.lat || m.latitude || 0),
-        lng: Number(m.lng || m.longitude || 0),
-        size: m.isFeatured ? 0.6 : 0.45,
+        lat: Number(lat.toFixed(4)),
+        lng: Number(lng.toFixed(4)),
+        size: m.isFeatured ? 0.65 : 0.5,
         color: color,
         displayLocation,
+        staggerTransform,
         maxRadius: 10,
         propagationSpeed: 3.5,
         repeatPeriod: 800,
@@ -87,10 +183,16 @@ export const Event3DGlobe = ({ markers = [], onSelectEvent }) => {
       controls.minDistance = 150;
       controls.maxDistance = 480;
 
-      // Initial POV centered smoothly
-      globeEl.current.pointOfView({ lat: 20, lng: 10, altitude: 2.1 }, 1000);
+      // Auto-center POV around published markers if available
+      if (processedMarkers.length > 0) {
+        const avgLat = processedMarkers.reduce((acc, curr) => acc + curr.lat, 0) / processedMarkers.length;
+        const avgLng = processedMarkers.reduce((acc, curr) => acc + curr.lng, 0) / processedMarkers.length;
+        globeEl.current.pointOfView({ lat: avgLat || 20, lng: avgLng || 10, altitude: 2.1 }, 1200);
+      } else {
+        globeEl.current.pointOfView({ lat: 20, lng: 10, altitude: 2.1 }, 1000);
+      }
     }
-  }, []);
+  }, [processedMarkers]);
 
   const handlePointHover = (point) => {
     setHoveredPoint(point);
@@ -115,21 +217,28 @@ export const Event3DGlobe = ({ markers = [], onSelectEvent }) => {
     const el = document.createElement('div');
     el.style.pointerEvents = 'auto';
     el.style.cursor = 'pointer';
-    el.style.transform = 'translate(-50%, -100%)';
+    el.style.transform = d.staggerTransform || 'translate(-50%, -100%)';
+    el.style.zIndex = '20';
     
     el.innerHTML = `
       <div class="relative group flex flex-col items-center">
         <!-- Popping Location Badge in CodeSphere Emerald -->
-        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950/95 border border-[#04AA6D]/80 shadow-2xl shadow-emerald-950/90 backdrop-blur-md transition-all group-hover:scale-125">
-          <span class="w-2.5 h-2.5 rounded-full animate-ping" style="background-color: ${d.color}"></span>
-          <span class="text-[10px] font-black uppercase text-white tracking-widest font-mono">${d.displayLocation}</span>
+        <div class="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-950/95 border border-[#04AA6D] shadow-2xl shadow-emerald-950/90 backdrop-blur-md transition-all duration-200 group-hover:scale-125 group-hover:bg-slate-900 group-hover:border-emerald-400">
+          <span class="w-2.5 h-2.5 rounded-full animate-ping shrink-0" style="background-color: ${d.color}"></span>
+          <span class="text-[10px] font-black uppercase text-white tracking-widest font-mono whitespace-nowrap">${d.displayLocation}</span>
         </div>
       </div>
     `;
 
     el.onclick = () => handlePointClick(d);
-    el.onmouseenter = () => handlePointHover(d);
-    el.onmouseleave = () => handlePointHover(null);
+    el.onmouseenter = () => {
+      el.style.zIndex = '100';
+      handlePointHover(d);
+    };
+    el.onmouseleave = () => {
+      el.style.zIndex = '20';
+      handlePointHover(null);
+    };
 
     return el;
   };

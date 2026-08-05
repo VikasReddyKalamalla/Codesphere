@@ -1,189 +1,229 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  Bell, Send, Megaphone, CheckCircle2, Clock, 
-  RefreshCw, Filter, Sparkles, AlertCircle 
-} from 'lucide-react';
-import toast from 'react-hot-toast';
-import { fetchAnnouncementsAPI, createAnnouncementAPI } from '../services/adminAPI.js';
-import { BackButton } from '@components/common/BackButton.jsx';
+import React, { useState, useEffect, useCallback } from 'react';
+import apiClient from '../../../api/axios.js';
+import { AnnouncementComposer } from '../components/announcements/AnnouncementComposer.jsx';
+import { AnnouncementCard } from '../components/announcements/AnnouncementCard.jsx';
+import { AnnouncementSidebar } from '../components/announcements/AnnouncementSidebar.jsx';
+import { Megaphone, Search, RefreshCw, Sparkles, Bell } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 
 export default function AdminAnnouncementsPage() {
-  const [announcements, setAnnouncements] = useState([
-    { _id: 'anc1', title: 'CodeSphere 2.0 System Update', message: 'Platform maintenance scheduled for Saturday at 02:00 UTC. Compiler services may be paused briefly.', category: 'Maintenance', targetRole: 'All Users', priority: 'High', createdAt: new Date().toISOString() },
-    { _id: 'anc2', title: 'National Hackathon 2026 Registration Open', message: 'Submissions are now open for all student developer teams. Cash prizes and AWS credits available!', category: 'Event', targetRole: 'Students', priority: 'Medium', createdAt: new Date(Date.now() - 86400000).toISOString() }
-  ]);
-  const [loading, setLoading] = useState(true);
-  const [form, setForm] = useState({
-    title: '',
-    message: '',
-    category: 'System',
-    targetRole: 'All Users',
-    priority: 'Medium'
-  });
+  const [announcements, setAnnouncements] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const loadAnnouncements = async () => {
-    setLoading(true);
+  // Fetch announcements from backend API
+  const fetchAnnouncements = useCallback(async () => {
+    setIsLoading(true);
     try {
-      const data = await fetchAnnouncementsAPI();
-      const list = Array.isArray(data) ? data : (data?.announcements || []);
-      if (list.length > 0) setAnnouncements(list);
-    } catch {
-      // Keep defaults
+      const res = await apiClient.get('/announcements', {
+        params: {
+          category: selectedCategory !== 'all' ? selectedCategory : undefined,
+          search: searchQuery.trim() || undefined,
+        },
+        suppressErrorToast: true,
+      });
+
+      if (res.data?.announcements) {
+        setAnnouncements(res.data.announcements);
+      }
+    } catch (err) {
+      console.warn('[Announcements] Load skipped:', err.message);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
-  };
+  }, [selectedCategory, searchQuery]);
 
   useEffect(() => {
-    loadAnnouncements();
-  }, []);
+    fetchAnnouncements();
+  }, [fetchAnnouncements]);
 
-  const handleCreate = async (e) => {
-    e.preventDefault();
-    if (!form.title.trim() || !form.message.trim()) {
-      toast.error('Title and message are required');
-      return;
-    }
-    const newAnc = { _id: 'anc_' + Date.now(), ...form, createdAt: new Date().toISOString() };
+  // Handle new Announcement submission
+  const handlePostAnnouncement = async (formData) => {
+    setIsSubmitting(true);
     try {
-      await createAnnouncementAPI(form);
-      toast.success('Broadcast announcement created!');
-    } catch {
-      toast.success('Broadcast announcement created!');
+      const res = await apiClient.post('/announcements', formData);
+      if (res.data?.announcement) {
+        toast.success('Announcement published live to CodeSphere!', {
+          icon: '📢',
+          style: { background: '#0f172a', color: '#10b981', border: '1px solid #059669' },
+        });
+
+        // Broadcast to users if required
+        try {
+          await apiClient.post(`/announcements/${res.data.announcement._id}/broadcast`);
+        } catch (bErr) {
+          // Silent catch for broadcast log
+        }
+
+        fetchAnnouncements();
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to post announcement');
+    } finally {
+      setIsSubmitting(false);
     }
-    setAnnouncements([newAnc, ...announcements]);
-    setForm({ title: '', message: '', category: 'System', targetRole: 'All Users', priority: 'Medium' });
   };
 
-  return (
-    <div className="flex flex-col gap-6 w-full font-sans text-slate-900 dark:text-slate-100 animate-fade-in">
-      <BackButton fallbackPath="/admin" className="self-start" />
+  // Handle Toggle Pin
+  const handleTogglePin = async (id) => {
+    try {
+      const res = await apiClient.post(`/announcements/${id}/pin`);
+      if (res.data?.announcement) {
+        toast.success(res.data.message || 'Pin status updated!');
+        fetchAnnouncements();
+      }
+    } catch (err) {
+      toast.error('Failed to toggle pin');
+    }
+  };
 
-      {/* Header Bar */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
+  // Handle Like
+  const handleLike = async (id) => {
+    try {
+      await apiClient.post(`/announcements/${id}/like`);
+    } catch (err) {
+      // Silent catch
+    }
+  };
+
+  // Handle Repost
+  const handleRepost = async (id) => {
+    try {
+      await apiClient.post(`/announcements/${id}/repost`);
+    } catch (err) {
+      // Silent catch
+    }
+  };
+
+  // Handle Delete
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this announcement?')) return;
+    try {
+      await apiClient.delete(`/announcements/${id}`);
+      toast.success('Announcement deleted');
+      setAnnouncements((prev) => prev.filter((a) => a._id !== id));
+    } catch (err) {
+      toast.error('Failed to delete announcement');
+    }
+  };
+
+  const filteredAnnouncements = announcements.filter((item) => {
+    const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+    const matchesSearch =
+      !searchQuery ||
+      item.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.message?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  return (
+    <div className="flex flex-col gap-6 w-full pb-10 font-sans text-slate-900 dark:text-slate-100">
+      {/* Header Banner */}
+      <div className="flex flex-wrap items-center justify-between gap-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-[#04AA6D]/10 text-[#04AA6D] dark:text-emerald-400 border border-[#04AA6D]/30">
-            <Megaphone className="w-6 h-6" />
+          <div className="p-3 rounded-2xl bg-emerald-600 text-white shadow-sm shadow-emerald-600/30">
+            <Megaphone className="w-6 h-6 animate-pulse" />
           </div>
-          <div className="flex flex-col">
-            <h1 className="text-2xl font-black tracking-tight">Platform Announcements & Broadcast Notifications</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Publish site-wide announcements, emergency maintenance banners, and targeted user notifications.</p>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Platform Announcements Feed
+              </h1>
+              <span className="text-[11px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-emerald-600" />
+                Live Broadcast Engine
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 dark:text-slate-400 font-medium mt-0.5">
+              Publish Twitter/X-style announcements, updates, feature releases, and emergency alerts to CodeSphere users
+            </p>
           </div>
         </div>
 
-        <button 
-          onClick={loadAnnouncements}
-          className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold font-mono rounded-xl flex items-center gap-2 cursor-pointer transition-colors"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-3">
+          {/* Refresh Button */}
+          <button
+            onClick={fetchAnnouncements}
+            disabled={isLoading}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold border border-slate-200 dark:border-slate-700 transition-all"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh Feed
+          </button>
+        </div>
       </div>
 
-      {/* Broadcast Form */}
-      <form onSubmit={handleCreate} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 rounded-3xl flex flex-col gap-4 shadow-sm">
-        <h3 className="font-extrabold text-sm text-slate-900 dark:text-white font-mono uppercase tracking-wider">Create New Broadcast Announcement</h3>
+      {/* Main Content Layout: Composer & Feed (Left 2 cols), Analytics Sidebar (Right 1 col) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          {/* Twitter/X Style Composer Box */}
+          <AnnouncementComposer
+            onPostAnnouncement={handlePostAnnouncement}
+            isSubmitting={isSubmitting}
+          />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Announcement Title</label>
-            <input
-              type="text"
-              placeholder="e.g. Platform System Maintenance"
-              value={form.title}
-              onChange={e => setForm({ ...form, title: e.target.value })}
-              className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-3.5 py-2 text-xs font-sans text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#04AA6D]"
-            />
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Category</label>
-              <select
-                value={form.category}
-                onChange={e => setForm({ ...form, category: e.target.value })}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none"
-              >
-                <option value="System">System</option>
-                <option value="Maintenance">Maintenance</option>
-                <option value="Event">Event</option>
-                <option value="Feature">Feature</option>
-              </select>
+          {/* Feed Search & Controls Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 rounded-2xl shadow-sm">
+            <div className="flex items-center gap-2">
+              <Bell className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+              <h2 className="text-sm font-bold text-slate-900 dark:text-white">
+                Broadcast Feed ({filteredAnnouncements.length})
+              </h2>
             </div>
 
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Target Role</label>
-              <select
-                value={form.targetRole}
-                onChange={e => setForm({ ...form, targetRole: e.target.value })}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none"
-              >
-                <option value="All Users">All Users</option>
-                <option value="Students">Students</option>
-                <option value="Instructors">Instructors</option>
-              </select>
-            </div>
-
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Priority</label>
-              <select
-                value={form.priority}
-                onChange={e => setForm({ ...form, priority: e.target.value })}
-                className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl px-2.5 py-2 text-xs font-mono text-slate-800 dark:text-slate-200 focus:outline-none"
-              >
-                <option value="Low">Low</option>
-                <option value="Medium">Medium</option>
-                <option value="High">High</option>
-              </select>
+            {/* Search Input */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search announcements..."
+                className="bg-slate-50 dark:bg-slate-950 text-xs text-slate-900 dark:text-white placeholder-slate-400 border border-slate-200 dark:border-slate-800 rounded-xl pl-8 pr-3 py-1.5 focus:outline-none focus:border-emerald-500 font-medium"
+              />
             </div>
           </div>
+
+          {/* Announcement Feed List */}
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
+              <RefreshCw className="w-6 h-6 text-emerald-600 animate-spin mb-2" />
+              <p className="text-xs font-mono text-slate-400">Loading CodeSphere Announcement Feed...</p>
+            </div>
+          ) : filteredAnnouncements.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center px-4">
+              <Megaphone className="w-10 h-10 text-slate-300 dark:text-slate-700 mb-3" />
+              <h3 className="text-sm font-bold text-slate-700 dark:text-slate-300">No Announcements Found</h3>
+              <p className="text-xs text-slate-400 mt-1 max-w-sm">
+                Use the composer box above to post your first announcement live to CodeSphere!
+              </p>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-4">
+              {filteredAnnouncements.map((item) => (
+                <AnnouncementCard
+                  key={item._id}
+                  announcement={item}
+                  onLike={handleLike}
+                  onRepost={handleRepost}
+                  onTogglePin={handleTogglePin}
+                  onDelete={handleDelete}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          <label className="text-xs font-bold text-slate-700 dark:text-slate-300">Broadcast Message Body</label>
-          <textarea
-            rows="3"
-            placeholder="Type the message to broadcast to users..."
-            value={form.message}
-            onChange={e => setForm({ ...form, message: e.target.value })}
-            className="bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-3.5 text-xs font-sans text-slate-800 dark:text-slate-200 focus:outline-none focus:border-[#04AA6D]"
+        {/* Right Sidebar: Analytics & Quick Filters */}
+        <div className="flex flex-col gap-6">
+          <AnnouncementSidebar
+            announcements={announcements}
+            selectedCategory={selectedCategory}
+            onSelectCategory={setSelectedCategory}
           />
         </div>
-
-        <button
-          type="submit"
-          className="self-end px-6 py-2.5 bg-[#04AA6D] hover:bg-emerald-600 text-white font-extrabold text-xs uppercase tracking-wider rounded-xl flex items-center gap-2 shadow-md cursor-pointer transition-all"
-        >
-          <Send className="w-4 h-4" />
-          Broadcast Announcement
-        </button>
-      </form>
-
-      {/* Announcements Stream */}
-      <div className="flex flex-col gap-4">
-        <h3 className="font-extrabold text-sm text-slate-900 dark:text-white font-mono uppercase tracking-wider">Active Broadcast Stream ({announcements.length})</h3>
-
-        {announcements.map(anc => (
-          <div key={anc._id} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-5 rounded-3xl flex flex-col gap-2 shadow-sm">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <span className="text-[10px] font-black uppercase font-mono px-2.5 py-0.5 rounded-full bg-[#04AA6D]/10 text-[#04AA6D]">
-                  {anc.category}
-                </span>
-                <h4 className="font-extrabold text-sm text-slate-900 dark:text-white">{anc.title}</h4>
-              </div>
-              <span className="text-[10px] text-slate-400 font-mono">{new Date(anc.createdAt).toLocaleDateString()}</span>
-            </div>
-
-            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-sans">{anc.message}</p>
-
-            <div className="flex items-center gap-3 pt-2 border-t border-slate-100 dark:border-slate-800 text-[10px] font-mono text-slate-400">
-              <span>Target: <strong className="text-slate-700 dark:text-slate-300">{anc.targetRole}</strong></span>
-              <span>·</span>
-              <span>Priority: <strong className="text-amber-500">{anc.priority}</strong></span>
-            </div>
-          </div>
-        ))}
       </div>
     </div>
   );

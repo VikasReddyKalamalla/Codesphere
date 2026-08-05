@@ -24,8 +24,7 @@ const resourceSchema = new mongoose.Schema(
 
     // ─── Classification ───────────────────────────────────────────────────────
     category: {
-      type:     mongoose.Schema.Types.ObjectId,
-      ref:      'ResourceCategory',
+      type:     mongoose.Schema.Types.Mixed,
       required: [true, 'Category is required'],
     },
     subCategory: { type: String, default: '', trim: true },

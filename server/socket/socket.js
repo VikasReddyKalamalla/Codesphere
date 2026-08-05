@@ -13,6 +13,7 @@ const { handlePresence, broadcastOnline, broadcastOffline } = require('./presenc
 const { handleTyping }      = require('./typing.socket');
 const { handleActivity }    = require('./activity.socket');
 const { handleEventSocket } = require('./event.socket');
+const { handleAnalyticsSocket } = require('./analytics.socket');
 
 let io;
 
@@ -67,6 +68,7 @@ const initSocket = (server) => {
     handleTyping(socket, io);
     handleActivity(socket, io);
     handleEventSocket(socket, io);
+    handleAnalyticsSocket(socket, io);
 
     // ─── Disconnect handler ──────────────────────────────────────────────────
     socket.on('disconnect', async (reason) => {

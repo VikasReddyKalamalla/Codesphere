@@ -12,6 +12,8 @@ import { ResourceRightSidebar } from '../components/ResourceRightSidebar.jsx';
 import { ResourceCard } from '../components/ResourceCard.jsx';
 import { CreateResourceModal } from '../components/CreateResourceModal.jsx';
 
+import { socket } from '../../../socket/socket.js';
+
 import {
   fetchResourcesThunk,
   fetchFeaturedResourcesThunk,
@@ -69,6 +71,23 @@ export const Resources = () => {
     dispatch(fetchResourcesThunk());
     dispatch(fetchFeaturedResourcesThunk());
     dispatch(fetchTrendingResourcesThunk());
+
+    const handleResourceChanged = (evt) => {
+      const entity = evt?.entity;
+      if (!entity || entity === 'resource' || entity === 'all') {
+        dispatch(fetchResourcesThunk());
+        dispatch(fetchFeaturedResourcesThunk());
+        dispatch(fetchTrendingResourcesThunk());
+      }
+    };
+
+    socket.on('admin:data_changed', handleResourceChanged);
+    socket.on('resource:changed', handleResourceChanged);
+
+    return () => {
+      socket.off('admin:data_changed', handleResourceChanged);
+      socket.off('resource:changed', handleResourceChanged);
+    };
   }, [dispatch]);
 
   const handleSelectResource = (resource) => {
@@ -82,6 +101,57 @@ export const Resources = () => {
 
   const handleCreateSubmit = (newResourceData) => {
     dispatch(createResourceThunk(newResourceData));
+  };
+
+  const handleDownload = async (res) => {
+    if (!res) return;
+    const targetUrl = res.fileUrl || res.externalUrl || res.url;
+    if (!targetUrl) {
+      toast.error('No downloadable file or link available for this resource');
+      return;
+    }
+
+    const loader = toast.loading(`Downloading ${res.title}...`);
+    try {
+      await apiClient.post(`/resources/${res._id || res.id}/download`);
+      dispatch(fetchResourcesThunk());
+    } catch (err) {
+      // Continue download even if analytics call fails
+    }
+
+    const fullUrl = targetUrl.startsWith('http') || targetUrl.startsWith('data:')
+      ? targetUrl
+      : `http://localhost:5000${targetUrl.startsWith('/') ? '' : '/'}${targetUrl}`;
+
+    try {
+      const response = await fetch(fullUrl);
+      if (!response.ok) throw new Error('File download failed');
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+
+      const extName = targetUrl.split('.').pop()?.split('?')[0] || '';
+      const filename = targetUrl.split('/').pop() || `${res.title}.${extName || 'file'}`;
+
+      const link = document.createElement('a');
+      link.href = blobUrl;
+      link.setAttribute('download', filename);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+
+      toast.success(`Successfully downloaded ${res.title}!`, { id: loader });
+    } catch (err) {
+      const link = document.createElement('a');
+      link.href = fullUrl;
+      link.target = '_blank';
+      link.download = res.title || 'resource-file';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      toast.success(`Download started for ${res.title}!`, { id: loader });
+    }
   };
 
   const currentUser = useSelector((state) => state.auth?.user);
@@ -98,26 +168,30 @@ export const Resources = () => {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3">
             <div className="p-2.5 rounded-2xl bg-gradient-to-tr from-[#04AA6D] to-teal-600 shadow-lg shadow-emerald-500/25">
-              <Layers className="w-6 h-6 text-white" />
+              <BookOpen className="w-6 h-6 text-white" />
             </div>
-            <h1 className="text-3xl font-black bg-gradient-to-r from-slate-900 via-slate-800 to-[#04AA6D] dark:from-white dark:via-slate-200 dark:to-emerald-400 bg-clip-text text-transparent tracking-tight">
-              Developer Knowledge & Resource Library
-            </h1>
+            <div>
+              <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">
+                Developer Knowledge & Resource Library
+              </h1>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Explore verified cheat sheets, PDF manuals, source code zip archives, and video tutorials published by CodeSphere.
+              </p>
+            </div>
           </div>
-          <p className="text-sm text-slate-600 dark:text-slate-400 max-w-xl">
-            Discover verified PDF notes, system design cheat sheets, code boilerplates, video tutorials, and placement materials.
-          </p>
         </div>
 
-        {isAdmin && (
-          <button
-            onClick={() => setIsCreateModalOpen(true)}
-            className="flex items-center gap-2.5 px-5 py-3 rounded-2xl font-bold text-sm bg-gradient-to-r from-[#04AA6D] to-teal-600 hover:from-[#03935e] hover:to-teal-500 active:scale-95 transition-all text-white shadow-xl shadow-emerald-500/20 border border-emerald-500/30 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            Publish Resource
-          </button>
-        )}
+        <div className="flex items-center gap-3">
+          {isAdmin && (
+            <button
+              onClick={() => setIsCreateModalOpen(true)}
+              className="px-4 py-2.5 bg-[#04AA6D] hover:bg-emerald-600 text-white rounded-2xl font-extrabold text-xs shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-2 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Upload New Resource
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Global Search Bar */}
@@ -143,20 +217,16 @@ export const Resources = () => {
         )}
       </div>
 
-      {/* Main 3-Column Layout */}
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* Left Navigation & Filter Sidebar */}
+      {/* Main Layout Body */}
+      <div className="flex flex-col lg:flex-row gap-6 relative z-10">
+        {/* Left Sidebar */}
         <ResourceSidebar
-          activeTab={activeTab}
           activeCategory={activeCategory}
           activeResourceType={activeResourceType}
           activeDifficulty={activeDifficulty}
-          priceFilter={priceFilter}
-          onTabChange={(val) => dispatch(setActiveTab(val))}
-          onCategoryChange={(val) => dispatch(setActiveCategory(val))}
-          onTypeChange={(val) => dispatch(setActiveResourceType(val))}
-          onDifficultyChange={(val) => dispatch(setActiveDifficulty(val))}
-          onPriceChange={(val) => dispatch(setPriceFilter(val))}
+          onSelectCategory={(cat) => dispatch(setActiveCategory(cat))}
+          onSelectResourceType={(type) => dispatch(setActiveResourceType(type))}
+          onSelectDifficulty={(diff) => dispatch(setActiveDifficulty(diff))}
           onReset={() => dispatch(resetFilters())}
         />
 
@@ -173,52 +243,66 @@ export const Resources = () => {
           </div>
 
           {/* Featured Rail on Explore tab */}
-          {activeTab === 'explore' && featuredResources.length > 0 && !searchQuery && (
-            <div className="flex flex-col gap-3">
-              <div className="flex items-center gap-2 text-xs font-extrabold text-[#04AA6D] dark:text-emerald-400 uppercase tracking-wider font-mono">
-                <Flame className="w-4 h-4" />
-                Featured Knowledge Items
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {featuredResources.slice(0, 2).map((res) => (
-                  <ResourceCard
-                    key={res._id || res.id}
-                    resource={res}
-                    isBookmarked={userBookmarks.includes(res._id || res.id)}
-                    onSelect={handleSelectResource}
-                    onBookmark={handleBookmark}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
+          {(() => {
+            const showFeatured = activeTab === 'explore' && featuredResources.length > 0 && !searchQuery;
+            const featuredItems = showFeatured ? featuredResources.slice(0, 2) : [];
+            const featuredIds = featuredItems.map(r => String(r._id || r.id));
 
-          {/* Resource Grid / List */}
-          {filteredResources.length === 0 ? (
-            <div className="p-12 text-center bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-900 rounded-3xl flex flex-col items-center gap-3">
-              <Layers className="w-12 h-12 text-slate-400 dark:text-slate-600" />
-              <h3 className="font-extrabold text-slate-800 dark:text-slate-200">No resources matched your search filters</h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Try adjusting your topic, resource format, or difficulty filter.</p>
-              <button
-                onClick={() => dispatch(resetFilters())}
-                className="mt-2 px-4 py-2 bg-[#04AA6D] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl cursor-pointer"
-              >
-                Reset Filters
-              </button>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {filteredResources.map((res) => (
-                <ResourceCard
-                  key={res._id || res.id}
-                  resource={res}
-                  isBookmarked={userBookmarks.includes(res._id || res.id)}
-                  onSelect={handleSelectResource}
-                  onBookmark={handleBookmark}
-                />
-              ))}
-            </div>
-          )}
+            const mainGridResources = filteredResources.filter(r => !featuredIds.includes(String(r._id || r.id)));
+
+            return (
+              <>
+                {showFeatured && (
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center gap-2 text-xs font-extrabold text-[#04AA6D] dark:text-emerald-400 uppercase tracking-wider font-mono">
+                      <Flame className="w-4 h-4" />
+                      Featured Knowledge Items
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {featuredItems.map((res) => (
+                        <ResourceCard
+                          key={res._id || res.id}
+                          resource={res}
+                          isBookmarked={userBookmarks.includes(res._id || res.id)}
+                          onSelect={handleSelectResource}
+                          onBookmark={handleBookmark}
+                          onDownload={handleDownload}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Main Resource Grid */}
+                {mainGridResources.length === 0 && !showFeatured ? (
+                  <div className="p-12 text-center bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-900 rounded-3xl flex flex-col items-center gap-3">
+                    <Layers className="w-12 h-12 text-slate-400 dark:text-slate-600" />
+                    <h3 className="font-extrabold text-slate-800 dark:text-slate-200">No resources matched your search filters</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">Try adjusting your topic, resource format, or difficulty filter.</p>
+                    <button
+                      onClick={() => dispatch(resetFilters())}
+                      className="mt-2 px-4 py-2 bg-[#04AA6D] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl cursor-pointer"
+                    >
+                      Reset Filters
+                    </button>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                    {mainGridResources.map((res) => (
+                      <ResourceCard
+                        key={res._id || res.id}
+                        resource={res}
+                        isBookmarked={userBookmarks.includes(res._id || res.id)}
+                        onSelect={handleSelectResource}
+                        onBookmark={handleBookmark}
+                        onDownload={handleDownload}
+                      />
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </div>
 
         {/* Right Sidebar */}

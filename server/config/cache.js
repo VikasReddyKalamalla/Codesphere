@@ -23,17 +23,16 @@ const initCache = async () => {
       url: redisUrl,
       socket: {
         reconnectStrategy: (retries) => {
-          if (retries > 10) {
-            logger.error('Redis reconnection failed after 10 attempts');
+          if (retries > 3) {
             return new Error('Redis max retries exceeded');
           }
-          return retries * 50;
+          return Math.min(retries * 100, 1000);
         },
       },
     });
 
     redisClient.on('error', (err) => {
-      logger.error(`Redis error: ${err.message}`);
+      logger.warn(`Redis cache warning: ${err.message}`);
     });
 
     redisClient.on('connect', () => {

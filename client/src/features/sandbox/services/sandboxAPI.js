@@ -17,6 +17,7 @@ export const getBookmarkStatusAPI       = async (id)       => (await apiClient.g
 export const submitProjectAPI           = async (id, data) => (await apiClient.post(`/sandbox/${id}/submission`, data)).data;
 export const resetProgressAPI           = async (id)       => (await apiClient.post(`/sandbox/${id}/reset`)).data;
 export const fetchAllMyProgressAPI      = async ()         => (await apiClient.get('/sandbox/my/progress')).data;
-export const initWorkspaceAPI           = async (id)       => (await apiClient.post(`/sandbox/${id}/workspace/init`)).data;
+export const initWorkspaceAPI           = async (id, data) => (await apiClient.post(`/sandbox/${id}/workspace/init`, data)).data;
+export const terminateWorkspaceAPI      = async (id, data) => (await apiClient.post(`/sandbox/${id}/workspace/terminate`, data)).data;
 export const syncWorkspaceAPI           = async (id)       => (await apiClient.post(`/sandbox/${id}/workspace/sync`)).data;
 export const stopWorkspaceAPI           = async (id)       => (await apiClient.delete(`/sandbox/${id}/workspace/stop`)).data;

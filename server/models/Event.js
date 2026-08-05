@@ -28,13 +28,15 @@ const eventSchema = new mongoose.Schema(
     },
     companyName: { type: String, default: 'CodeSphere Partner', trim: true },
     companyLogo: { type: String, default: '' },
-    source:      { type: String, default: 'internal', enum: ['internal', 'user_created', 'github', 'devpost', 'mlh', 'unstop', 'hackerearth', 'meetup', 'eventbrite', 'google', 'microsoft', 'aws', 'meta', 'apple'] },
+    source:      { type: String, default: 'internal' },
     externalUrl: { type: String, default: '' },
+    registrationUrl: { type: String, default: '', trim: true },
+    registrationSource: { type: String, default: 'official', trim: true },
+    meetingUrl:  { type: String, default: '', trim: true },
 
     // ─── Classification ───────────────────────────────────────────────────────
     category: {
-      type:    mongoose.Schema.Types.ObjectId,
-      ref:     'EventCategory',
+      type:    mongoose.Schema.Types.Mixed,
       default: null,
     },
     categoryName: { type: String, default: 'General' },
@@ -218,8 +220,17 @@ const eventSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// ─── Auto-generate slug before save ──────────────────────────────────────────
+// ─── Sanitize source & Auto-generate slug before validate / save ────────────
+eventSchema.pre('validate', function () {
+  if (!this.source || this.source === 'user_created') {
+    this.source = 'internal';
+  }
+});
+
 eventSchema.pre('save', function () {
+  if (!this.source || this.source === 'user_created') {
+    this.source = 'internal';
+  }
   if (this.isModified('title') || !this.slug) {
     this.slug = this.title
       .toLowerCase()
@@ -241,4 +252,5 @@ eventSchema.index({ latitude: 1, longitude: 1 });
 eventSchema.index({ isFeatured: 1, isTrending: 1 });
 eventSchema.index({ title: 'text', description: 'text', tags: 'text', companyName: 'text', location: 'text' });
 
+delete mongoose.models.Event;
 module.exports = mongoose.model('Event', eventSchema);

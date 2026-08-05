@@ -32,7 +32,9 @@ const getAllUsers = async (query = {}) => {
   const filter = {};
   if (role) filter.role = role;
   if (plan) filter.plan = plan;
-  if (typeof isActive !== 'undefined') filter.isActive = isActive === 'true';
+  if (isActive === 'true' || isActive === 'false' || typeof isActive === 'boolean') {
+    filter.isActive = String(isActive) === 'true';
+  }
 
   if (search) {
     filter.$or = [
@@ -42,7 +44,10 @@ const getAllUsers = async (query = {}) => {
     ];
   }
 
-  const sortOrder = sort === 'oldest' ? { createdAt: 1 } : { createdAt: -1 };
+  let sortOrder = { createdAt: -1 };
+  if (sort === 'oldest') sortOrder = { createdAt: 1 };
+  else if (sort === 'progress_desc') sortOrder = { learningProgress: -1 };
+  else if (sort === 'streak_desc') sortOrder = { dayStreak: -1 };
   const skip = (Number(page) - 1) * Number(limit);
 
   const [usersList, total] = await Promise.all([

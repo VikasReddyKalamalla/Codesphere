@@ -10,6 +10,7 @@ const redis = require('redis');
 // Create Redis client for distributed rate limiting
 let redisClient;
 let redisConnected = false;
+let hasLoggedError = false;
 
 try {
   // Only connect to Redis when not running tests
@@ -19,21 +20,35 @@ try {
       : ((process.env.UPSTASH_REDIS_URL && !process.env.UPSTASH_REDIS_URL.includes('host:port'))
         ? process.env.UPSTASH_REDIS_URL
         : 'redis://localhost:6379');
-    redisClient = redis.createClient({ url: redisUrl });
+    
+    redisClient = redis.createClient({
+      url: redisUrl,
+      socket: {
+        reconnectStrategy: (retries) => {
+          if (retries > 3) {
+            return new Error('Redis max retries reached');
+          }
+          return Math.min(retries * 500, 2000);
+        },
+      },
+    });
     
     redisClient.on('error', (err) => {
-      console.error('Redis client error:', err);
       redisConnected = false;
+      if (!hasLoggedError) {
+        console.warn(`⚠️ Redis not connected (${err.message || 'ECONNREFUSED'}). Using in-memory rate limiting.`);
+        hasLoggedError = true;
+      }
     });
 
     redisClient.on('connect', () => {
       console.log('✓ Redis connected for rate limiting');
       redisConnected = true;
+      hasLoggedError = false;
     });
 
     // Start connection in background (non-blocking)
-    redisClient.connect().catch(err => {
-      console.warn('Redis connection failed (non-critical for dev):', err.message);
+    redisClient.connect().catch(() => {
       redisConnected = false;
     });
   }

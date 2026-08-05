@@ -1,25 +1,32 @@
 import toast from 'react-hot-toast';
 
 export const handleApiError = (error) => {
+  if (error.config?.suppressErrorToast) {
+    return Promise.reject(error);
+  }
   if (!error.response) {
     toast.error('Network Error: Please check your connection.');
     return Promise.reject(error);
   }
   const { status, data } = error.response;
   const message = data?.message || 'Request failed';
+  const isAuthRequest = error.config?.url?.includes('/auth/login') || error.config?.url?.includes('/auth/register');
+
   switch (status) {
     case 400:
-      toast.error(`Bad Request: ${message}`);
+      if (!isAuthRequest) toast.error(`Bad Request: ${message}`);
       break;
     case 401:
-      toast.error(`Unauthorized: ${message}`);
-      localStorage.clear();
+      if (!isAuthRequest) {
+        toast.error(`Unauthorized: ${message}`);
+        localStorage.removeItem('codesphere_token');
+      }
       break;
     case 403:
-      toast.error(`Forbidden: ${message}`);
+      if (!isAuthRequest) toast.error(`Forbidden: ${message}`);
       break;
     case 404:
-      toast.error(`Not Found: ${message}`);
+      if (!isAuthRequest) toast.error(`Not Found: ${message}`);
       break;
     case 409:
       toast.error(`Conflict: ${message}`);

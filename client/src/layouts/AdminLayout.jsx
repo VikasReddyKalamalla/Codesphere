@@ -11,17 +11,16 @@ import toast from 'react-hot-toast';
 import Logo from '../components/Logo.jsx';
 
 const adminNavItems = [
-  { name: 'Dashboard',      path: '/admin/dashboard',     icon: LayoutDashboard },
-  { name: 'User Registry',  path: '/admin/users',         icon: Users },
-  { name: 'Learning Paths', path: '/admin/learning',      icon: GraduationCap },
-  { name: 'Instructors',    path: '/admin/instructors',   icon: Award },
-  { name: 'Reports',        path: '/admin/reports',       icon: ClipboardList },
-  { name: 'Moderation',     path: '/admin/moderation',    icon: EyeOff },
-  { name: 'Analytics',      path: '/admin/analytics',     icon: BarChart2 },
-  { name: 'Announcements',  path: '/admin/announcements', icon: Bell },
-  { name: 'Features',       path: '/admin/features',      icon: Radio },
-  { name: 'System Health',  path: '/admin/system-health', icon: Activity },
-  { name: 'Settings',       path: '/admin/settings',      icon: Settings },
+  { name: 'Dashboard',      path: '/admin/dashboard',        icon: LayoutDashboard },
+  { name: 'User Registry',  path: '/admin/users',            icon: Users },
+  { name: 'Admin Hub',      path: '/admin/features',         icon: Radio },
+  { name: 'Instructors',    path: '/admin/instructors',      icon: Award },
+  { name: 'Reports',        path: '/admin/reports',          icon: ClipboardList },
+  { name: 'Moderation',     path: '/admin/moderation',       icon: EyeOff },
+  { name: 'Analytics',      path: '/admin/analytics',        icon: BarChart2 },
+  { name: 'Announcements',  path: '/admin/announcements',    icon: Bell },
+  { name: 'System Health',  path: '/admin/system-health',    icon: Activity },
+  { name: 'Settings',       path: '/admin/settings',         icon: Settings },
 ];
 
 export default function AdminLayout() {

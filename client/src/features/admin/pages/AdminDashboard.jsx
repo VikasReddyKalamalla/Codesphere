@@ -94,13 +94,27 @@ const UserDistributionChart = ({ students = 0, instructors = 0, admins = 0 }) =>
 };
 
 export default function AdminDashboard() {
-  const { stats, status } = useAdmin();
+  const { stats, status, error, refetch } = useAdmin();
   const cardClass = "bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] flex flex-col justify-between";
 
-  if (status === 'loading' || status === 'idle' || !stats) {
+  if (status === 'loading' || status === 'idle') {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="text-sm font-bold text-slate-500 animate-pulse font-mono">Loading Admin Dashboard Data...</div>
+      </div>
+    );
+  }
+
+  if (status === 'failed' || !stats) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-3">
+        <div className="text-sm font-bold text-rose-500 font-mono">Failed to load admin dashboard data: {error || 'Unknown error'}</div>
+        <button
+          onClick={refetch}
+          className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow transition"
+        >
+          Retry Loading
+        </button>
       </div>
     );
   }

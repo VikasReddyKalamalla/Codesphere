@@ -29,6 +29,67 @@ const communitySlice = createSlice({
       state.status = 'failed';
       state.error = action.payload;
     },
+    updateCommunityMembership: (state, action) => {
+      const raw = action.payload || {};
+      const payloadData = (raw.data && raw.data.communityId) ? raw.data : raw;
+      const { communityId, memberCount, members, userId, action: memberAction } = payloadData;
+      if (!communityId) return;
+
+      // Update in items list
+      state.items = state.items.map((comm) => {
+        if (comm._id !== communityId) return comm;
+
+        let updatedMembers = comm.members ? [...comm.members] : [];
+
+        if (members && Array.isArray(members)) {
+          updatedMembers = members.map((m) => (m._id || m).toString());
+        }
+
+        if (userId) {
+          const userIdStr = userId.toString();
+          if (memberAction === 'joined') {
+            const exists = updatedMembers.some((m) => (m._id || m).toString() === userIdStr);
+            if (!exists) updatedMembers.push(userIdStr);
+          } else if (memberAction === 'left') {
+            updatedMembers = updatedMembers.filter((m) => (m._id || m).toString() !== userIdStr);
+          }
+        }
+
+        const isJoined = memberAction === 'joined' ? true : memberAction === 'left' ? false : comm._isJoinedLocally;
+
+        return {
+          ...comm,
+          _isJoinedLocally: isJoined,
+          memberCount: typeof memberCount === 'number' ? memberCount : updatedMembers.length,
+          members: updatedMembers
+        };
+      });
+
+      // Update in activeCommunity if loaded
+      if (state.activeCommunity && state.activeCommunity._id === communityId) {
+        let updatedActiveMembers = state.activeCommunity.members ? [...state.activeCommunity.members] : [];
+
+        if (members && Array.isArray(members)) {
+          updatedActiveMembers = members.map((m) => (m._id || m).toString());
+        }
+
+        if (userId) {
+          const userIdStr = userId.toString();
+          if (memberAction === 'joined') {
+            const exists = updatedActiveMembers.some((m) => (m._id || m).toString() === userIdStr);
+            if (!exists) updatedActiveMembers.push(userIdStr);
+          } else if (memberAction === 'left') {
+            updatedActiveMembers = updatedActiveMembers.filter((m) => (m._id || m).toString() !== userIdStr);
+          }
+        }
+
+        state.activeCommunity = {
+          ...state.activeCommunity,
+          memberCount: typeof memberCount === 'number' ? memberCount : updatedActiveMembers.length,
+          members: updatedActiveMembers
+        };
+      }
+    },
     
     // Posts
     setPosts: (state, action) => {
@@ -106,6 +167,7 @@ export const {
   fetchSuccess,
   fetchCommunitySuccess,
   fetchFailure,
+  updateCommunityMembership,
   setPosts,
   addPost,
   updatePost,

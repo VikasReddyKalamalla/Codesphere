@@ -1,6 +1,4 @@
-const mongoose = require('mongoose');
 const Resource = require('../models/Resource');
-const ResourceCategory = require('../models/ResourceCategory');
 const Bookmark = require('../models/Bookmark');
 const { getPagination } = require('../utils/pagination');
 
@@ -8,6 +6,19 @@ const createError = (message, statusCode) => {
   const err = new Error(message);
   err.statusCode = statusCode;
   return err;
+};
+
+const VALID_TYPES = ['pdf', 'notes', 'video', 'documentation', 'source_code', 'github', 'link', 'presentation', 'ppt', 'word', 'doc', 'zip', 'other'];
+
+const normalizeResourceType = (typeStr) => {
+  if (!typeStr) return 'documentation';
+  const lower = String(typeStr).toLowerCase().trim();
+  if (VALID_TYPES.includes(lower)) return lower;
+  if (lower === 'article' || lower === 'article & docs') return 'documentation';
+  if (lower === 'cheatsheet' || lower === 'cheat sheet') return 'notes';
+  if (lower.includes('powerpoint') || lower.includes('presentation') || lower === 'ppt' || lower === 'pptx') return 'ppt';
+  if (lower.includes('word') || lower === 'doc' || lower === 'docx') return 'word';
+  return 'other';
 };
 
 // ─── GET ALL RESOURCES (with search & filters) ────────────────────────────────
@@ -18,48 +29,31 @@ const getAllResources = async (query) => {
     category,
     difficulty,
     resourceType,
+    type,
     tags,
     search,
+    all,
     sortBy = 'createdAt',
     order = 'desc',
   } = query;
 
-  const filter = { status: 'published' };
-
-  if (category && category !== 'all') {
-    if (mongoose.Types.ObjectId.isValid(category)) {
-      filter.category = category;
-    } else {
-      const catDoc = await ResourceCategory.findOne({
-        $or: [
-          { slug: category },
-          { slug: category.replace(/_/g, '-') },
-          { name: new RegExp('^' + category.replace(/[-_]/g, ' ') + '$', 'i') }
-        ]
-      });
-      if (catDoc) {
-        filter.category = catDoc._id;
-      } else {
-        filter.$or = [
-          { tags: { $in: [category.toLowerCase(), category.replace('_', '-').toLowerCase()] } },
-          { subCategory: new RegExp(category, 'i') }
-        ];
-      }
-    }
+  const filter = {};
+  if (all !== 'true') {
+    filter.status = 'published';
   }
 
-  if (difficulty && difficulty !== 'all')   filter.difficulty = difficulty;
-  if (resourceType && resourceType !== 'all') filter.resourceType = resourceType;
+  if (category)      filter.category = category;
+  if (difficulty)    filter.difficulty = difficulty;
+  
+  const targetType = resourceType || type;
+  if (targetType) {
+    filter.resourceType = normalizeResourceType(targetType);
+  }
+
   if (tags)          filter.tags = { $in: tags.split(',') };
   if (search)        filter.$text = { $search: search };
 
-  let total = await Resource.countDocuments(filter).catch(() => 0);
-  if (total === 0) {
-    const { autoSeedIfEmpty } = require('../utils/autoSeed');
-    await autoSeedIfEmpty().catch(() => {});
-    total = await Resource.countDocuments(filter).catch(() => 0);
-  }
-
+  const total = await Resource.countDocuments(filter);
   const { skip, ...meta } = getPagination(page, limit, total);
 
   const sortOrder = order === 'desc' ? -1 : 1;
@@ -98,15 +92,23 @@ const getResourceById = async (id) => {
 
 // ─── CREATE ───────────────────────────────────────────────────────────────────
 const createResource = async (body, file, userId) => {
-  const { title, category, resourceType } = body;
+  const { title, category, resourceType, type, url, content } = body;
 
-  if (!title)        throw createError('Title is required', 400);
-  if (!category)     throw createError('Category is required', 400);
-  if (!resourceType) throw createError('Resource type is required', 400);
+  if (!title) throw createError('Title is required', 400);
+
+  const finalResourceType = normalizeResourceType(resourceType || type || 'documentation');
+  const finalCategory = category || 'Documentation';
 
   const data = {
     ...body,
+    title: title.trim(),
+    category: finalCategory,
+    resourceType: finalResourceType,
+    status: body.status || 'published',
     uploadedBy: userId,
+    fileUrl: body.fileUrl || url || '',
+    externalUrl: body.externalUrl || url || '',
+    markdownContent: body.markdownContent || content || '',
   };
 
   if (file) {
@@ -117,7 +119,7 @@ const createResource = async (body, file, userId) => {
 };
 
 // ─── UPDATE ───────────────────────────────────────────────────────────────────
-const updateResource = async (id, body, userId, userRole) => {
+const updateResource = async (id, body, file, userId, userRole) => {
   const resource = await Resource.findById(id);
   if (!resource) throw createError('Resource not found', 404);
 
@@ -129,7 +131,22 @@ const updateResource = async (id, body, userId, userRole) => {
   // Prevent changing uploader
   delete body.uploadedBy;
 
-  return Resource.findByIdAndUpdate(id, body, { new: true, runValidators: true });
+  const updateData = { ...body };
+  if (body.type || body.resourceType) {
+    updateData.resourceType = normalizeResourceType(body.resourceType || body.type);
+  }
+  if (body.url) {
+    if (!body.externalUrl) updateData.externalUrl = body.url;
+    if (!body.fileUrl) updateData.fileUrl = body.url;
+  }
+  if (body.content) {
+    if (!body.markdownContent) updateData.markdownContent = body.content;
+  }
+  if (file) {
+    updateData.fileUrl = `/${file.path.replace(/\\/g, '/')}`;
+  }
+
+  return Resource.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
 };
 
 // ─── DELETE ───────────────────────────────────────────────────────────────────

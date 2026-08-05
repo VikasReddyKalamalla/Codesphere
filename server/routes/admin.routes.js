@@ -80,21 +80,29 @@ router.put   ('/moderation/:id/reject', moderationCtrl.rejectContent);
 router.delete('/moderation/:id',        moderationCtrl.deleteModerationItem);
 
 // ─── Reports ─────────────────────────────────────────────────────────────────
-router.get('/reports',     reportCtrl.getReports);
-router.get('/reports/:id', reportCtrl.getReportById);
-router.put('/reports/:id', reportCtrl.updateReport);
+router.get   ('/reports',     reportCtrl.getReports);
+router.post  ('/reports',     reportCtrl.createReport);
+router.get   ('/reports/:id', reportCtrl.getReportById);
+router.put   ('/reports/:id', reportCtrl.updateReport);
+router.delete('/reports/:id', reportCtrl.deleteReport);
 
 // ─── Platform Settings ────────────────────────────────────────────────────────
 router.get('/settings', settingCtrl.getSettings);
 router.put('/settings', settingCtrl.updateSettings);
+router.post('/settings/purge-cache', settingCtrl.purgeCache);
+router.post('/settings/backup', settingCtrl.triggerBackup);
 
 // ─── Feature Toggles ─────────────────────────────────────────────────────────
 router.get('/features',     featureCtrl.getFeatureToggles);
 router.put('/features/:id', featureCtrl.updateFeatureToggle);
 
 // ─── Platform Analytics ───────────────────────────────────────────────────────
-router.get ('/analytics',          analyticsCtrl.getAnalytics);
+router.get ('/analytics/realtime', analyticsCtrl.getRealtimeAnalytics);
+router.get ('/analytics/events',   analyticsCtrl.getAnalyticsEvents);
 router.post('/analytics/generate', analyticsCtrl.generateAnalytics);
+router.post('/analytics/simulate', analyticsCtrl.simulateTrafficEvent);
+router.post('/analytics/seed',     analyticsCtrl.seedAnalyticsData);
+router.get ('/analytics',          analyticsCtrl.getAnalytics);
 
 // ─── System Health ────────────────────────────────────────────────────────────
 router.get('/system-health',         healthCtrl.getSystemHealth);

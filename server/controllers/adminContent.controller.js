@@ -1,6 +1,16 @@
 const asyncHandler = require('../utils/asyncHandler');
 const { successResponse } = require('../utils/apiResponse');
 const contentService = require('../services/adminContent.service');
+const { broadcastDataChange } = require('../utils/realtimeBroadcast');
+
+const emitContentChange = (action, payload = {}) => {
+  try {
+    getIO().emit('learning_path_changed', { action, timestamp: Date.now() });
+    broadcastDataChange('learning', action, payload);
+  } catch (err) {
+    // ignore socket errors if disconnected
+  }
+};
 
 const getLearningPaths = asyncHandler(async (req, res) => {
   const result = await contentService.getLearningPaths(req.query);
@@ -9,31 +19,37 @@ const getLearningPaths = asyncHandler(async (req, res) => {
 
 const createLearningPath = asyncHandler(async (req, res) => {
   const result = await contentService.createLearningPath(req.body, req.user._id);
+  emitContentChange('created');
   successResponse(res, 201, 'Learning path created', result);
 });
 
 const updateLearningPath = asyncHandler(async (req, res) => {
   const result = await contentService.updateLearningPath(req.params.id, req.body, req.user._id);
+  emitContentChange('updated');
   successResponse(res, 200, 'Learning path updated', result);
 });
 
 const deleteLearningPath = asyncHandler(async (req, res) => {
   const result = await contentService.deleteLearningPath(req.params.id, req.user._id);
+  emitContentChange('deleted');
   successResponse(res, 200, result.message, {});
 });
 
 const duplicateLearningPath = asyncHandler(async (req, res) => {
   const result = await contentService.duplicateLearningPath(req.params.id, req.user._id);
+  emitContentChange('duplicated');
   successResponse(res, 201, 'Learning path duplicated', result);
 });
 
 const publishLearningPath = asyncHandler(async (req, res) => {
   const result = await contentService.publishLearningPath(req.params.id, req.user._id);
+  emitContentChange('published');
   successResponse(res, 200, 'Learning path published', result);
 });
 
 const archiveLearningPath = asyncHandler(async (req, res) => {
   const result = await contentService.archiveLearningPath(req.params.id, req.user._id);
+  emitContentChange('archived');
   successResponse(res, 200, 'Learning path archived', result);
 });
 
@@ -50,12 +66,14 @@ const getLearningPathAnalytics = asyncHandler(async (req, res) => {
 const reorderModules = asyncHandler(async (req, res) => {
   const { learningPathId, moduleIds } = req.body;
   const result = await contentService.reorderModules(learningPathId, moduleIds, req.user._id);
+  emitContentChange('reordered_modules');
   successResponse(res, 200, result.message);
 });
 
 const reorderLessons = asyncHandler(async (req, res) => {
   const { moduleId, lessonIds } = req.body;
   const result = await contentService.reorderLessons(moduleId, lessonIds, req.user._id);
+  emitContentChange('reordered_lessons');
   successResponse(res, 200, result.message);
 });
 
@@ -91,11 +109,13 @@ const getEvents = asyncHandler(async (req, res) => {
 
 const updateEvent = asyncHandler(async (req, res) => {
   const event = await contentService.updateEvent(req.params.id, req.body, req.user._id);
+  broadcastDataChange('event', 'updated', event);
   successResponse(res, 200, 'Event updated', { event });
 });
 
 const deleteEvent = asyncHandler(async (req, res) => {
   const result = await contentService.deleteEvent(req.params.id, req.user._id);
+  broadcastDataChange('event', 'deleted', { id: req.params.id });
   successResponse(res, 200, result.message, {});
 });
 

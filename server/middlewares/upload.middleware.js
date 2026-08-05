@@ -13,20 +13,13 @@ const storage = (type) =>
   });
 
 const fileFilter = (req, file, cb) => {
-  const allowedTypes = /jpeg|jpg|png|gif|pdf|mp4|doc|docx/;
-  const ext = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mime = allowedTypes.test(file.mimetype);
-
-  if (ext && mime) {
-    cb(null, true);
-  } else {
-    cb(new Error('Invalid file type'), false);
-  }
+  // Accept all resource uploads (PDF, PPT, DOCX, ZIP, MP4, images, code files, etc.)
+  cb(null, true);
 };
 
-const uploadAvatar    = multer({ storage: storage('avatar'),      fileFilter, limits: { fileSize: 2 * 1024 * 1024 } });  // 2MB
-const uploadResource  = multer({ storage: storage('resource'),    fileFilter, limits: { fileSize: 50 * 1024 * 1024 } }); // 50MB
+const uploadAvatar    = multer({ storage: storage('avatar'),      fileFilter, limits: { fileSize: 5 * 1024 * 1024 } });  // 5MB
+const uploadResource  = multer({ storage: storage('resource'),    fileFilter, limits: { fileSize: 100 * 1024 * 1024 } }); // 100MB
 const uploadCertificate = multer({ storage: storage('certificate'), fileFilter, limits: { fileSize: 5 * 1024 * 1024 } }); // 5MB
-const uploadSandbox   = multer({ storage: storage('sandbox'),     fileFilter, limits: { fileSize: 10 * 1024 * 1024 } }); // 10MB
+const uploadSandbox   = multer({ storage: storage('sandbox'),     fileFilter, limits: { fileSize: 20 * 1024 * 1024 } }); // 20MB
 
 module.exports = { uploadAvatar, uploadResource, uploadCertificate, uploadSandbox };

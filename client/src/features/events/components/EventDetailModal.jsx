@@ -10,6 +10,8 @@ import toast from 'react-hot-toast';
 export const EventDetailModal = ({ event, onClose, isRegistered, isBookmarked, onRegister, onBookmark }) => {
   if (!event) return null;
 
+  const targetRegUrl = event.registrationUrl || event.externalUrl || event.url || event.registrationLink;
+
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'hackathon', 'speakers', 'agenda', 'resources', 'discussion'
   const [commentText, setCommentText] = useState('');
   const [commentsList, setCommentsList] = useState([
@@ -122,8 +124,29 @@ export const EventDetailModal = ({ event, onClose, isRegistered, isBookmarked, o
                   <Share2 className="w-4 h-4" />
                 </button>
 
+                {targetRegUrl && (
+                  <a
+                    href={targetRegUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-emerald-500/40 text-emerald-400 font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all cursor-pointer"
+                    title="Open Official Website / Unstop Portal"
+                  >
+                    <ExternalLink className="w-4 h-4" />
+                    <span className="hidden sm:inline font-mono uppercase">Official Site</span>
+                  </a>
+                )}
+
                 <button
-                  onClick={onRegister}
+                  onClick={() => {
+                    if (onRegister) onRegister(event);
+                    if (targetRegUrl) {
+                      toast.success(`Redirecting to official ${event.registrationSource || event.source || 'registration'} portal...`);
+                      setTimeout(() => {
+                        window.open(targetRegUrl, '_blank', 'noopener,noreferrer');
+                      }, 400);
+                    }
+                  }}
                   className={`px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xl flex items-center gap-2 ${
                     isRegistered
                       ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/20'

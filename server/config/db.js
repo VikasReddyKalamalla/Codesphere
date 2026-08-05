@@ -2,20 +2,11 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect(process.env.MONGO_URI, {
-      serverSelectionTimeoutMS: 2000
-    });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    const conn = await mongoose.connect(process.env.MONGO_URI);
+    console.log(`MongoDB Connected: ${conn.connection.host} | DB Name: ${conn.connection.name}`);
+    return conn;
   } catch (error) {
     console.error(`MongoDB connection error: ${error.message}`);
-    
-    // In development mode, allow app to run without MongoDB for testing
-    if (process.env.NODE_ENV === 'development') {
-      console.warn('⚠️  Running in development mode without MongoDB. Using mock data.');
-      // Create a fake connection for development
-      return Promise.resolve();
-    }
-    
     process.exit(1);
   }
 };

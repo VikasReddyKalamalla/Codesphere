@@ -14,9 +14,13 @@ const announcementNotificationSchema = new mongoose.Schema(
       trim: true,
       maxlength: 2000,
     },
+    category: {
+      type: String,
+      enum: ['Update', 'Release', 'Maintenance', 'Community', 'Security'],
+      default: 'Update',
+    },
     priority: {
       type: String,
-      required: true,
       enum: ['Low', 'Medium', 'High', 'Critical'],
       default: 'Medium',
     },
@@ -24,6 +28,26 @@ const announcementNotificationSchema = new mongoose.Schema(
       type: String,
       trim: true,
       maxlength: 100,
+    },
+    mediaUrl: {
+      type: String,
+      default: '',
+    },
+    isPinned: {
+      type: Boolean,
+      default: false,
+    },
+    likesCount: {
+      type: Number,
+      default: 0,
+    },
+    repostsCount: {
+      type: Number,
+      default: 0,
+    },
+    viewsCount: {
+      type: Number,
+      default: 0,
     },
     // Who this announcement targets
     targetAudience: {
@@ -44,7 +68,7 @@ const announcementNotificationSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: ['Draft', 'Scheduled', 'Sent', 'Cancelled'],
-      default: 'Draft',
+      default: 'Sent',
       index: true,
     },
     scheduledAt: {
@@ -52,6 +76,7 @@ const announcementNotificationSchema = new mongoose.Schema(
     },
     sentAt: {
       type: Date,
+      default: Date.now,
     },
     recipientCount: {
       type: Number,
@@ -73,7 +98,7 @@ const announcementNotificationSchema = new mongoose.Schema(
 );
 
 announcementNotificationSchema.index({ createdBy: 1, createdAt: -1 });
-announcementNotificationSchema.index({ status: 1, scheduledAt: 1 });
+announcementNotificationSchema.index({ isPinned: -1, createdAt: -1 });
 
 const AnnouncementNotification = mongoose.model(
   'AnnouncementNotification',

@@ -23,7 +23,11 @@ const getAllTests = async (query) => {
     order  = 'desc',
   } = query;
 
-  const filter = { isPublished: true, status: 'published' };
+  const filter = {};
+  if (query.all !== 'true') {
+    filter.isPublished = true;
+    filter.status = 'published';
+  }
 
   if (search)     filter.$text       = { $search: search };
   if (difficulty) filter.difficulty  = difficulty;

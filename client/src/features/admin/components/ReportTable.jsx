@@ -1,194 +1,392 @@
-import React, { useEffect, useState } from 'react';
-import { 
-  ClipboardList, CheckCircle2, AlertCircle, Clock, RefreshCw, 
-  Search, ExternalLink, ShieldCheck, Filter 
+import React, { useState, useEffect } from 'react';
+import apiClient from '@services/axios.js';
+import {
+  ShieldAlert, Search, Filter, RefreshCw, CheckCircle, AlertTriangle,
+  XCircle, Eye, Trash2, Plus, ArrowLeftRight, ChevronLeft, ChevronRight,
+  MessageSquare, UserX, AlertCircle, FileText, Check, Award
 } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { fetchReportsAPI, updateReportAPI } from '../services/adminAPI.js';
+import { socket } from '../../../socket/socket.js';
+import { ReportModal } from './ReportModal.jsx';
 
 export const ReportTable = () => {
   const [reports, setReports] = useState([]);
+  const [stats, setStats] = useState({ total: 0, pending: 0, critical: 0, resolved: 0 });
   const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
 
-  const loadReports = async () => {
+  // Filters & Pagination
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+  const [priorityFilter, setPriorityFilter] = useState('');
+  const [reasonFilter, setReasonFilter] = useState('');
+  const [targetTypeFilter, setTargetTypeFilter] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+
+  // Modal controls
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedReport, setSelectedReport] = useState(null);
+  const [modalMode, setModalMode] = useState('create');
+
+  const fetchReports = async () => {
     setLoading(true);
     try {
-      const data = await fetchReportsAPI();
-      const list = Array.isArray(data) ? data : (data?.reports || []);
-      setReports(list);
-    } catch {
-      // Fallback realistic platform reports
-      setReports([
-        { _id: 'rep101', category: 'Security Bug', reporter: 'alex@example.com', target: 'WebSockets API', status: 'pending', createdAt: new Date().toISOString(), description: 'Identified minor CORS header misconfiguration on WebSockets server port 5000.' },
-        { _id: 'rep102', category: 'User Misconduct', reporter: 'vikas@example.com', target: 'User spambot99', status: 'under_review', createdAt: new Date(Date.now() - 43200000).toISOString(), description: 'User has been sending spam promotion messages across multiple community channels.' },
-        { _id: 'rep103', category: 'Billing Query', reporter: 'priya@example.com', target: 'Subscription Plan', status: 'resolved', createdAt: new Date(Date.now() - 86400000).toISOString(), description: 'Double charge query resolved and credit balance issued.' }
-      ]);
+      const res = await apiClient.get('/admin/reports', {
+        params: {
+          page,
+          limit: 10,
+          search,
+          status: statusFilter || undefined,
+          priority: priorityFilter || undefined,
+          reason: reasonFilter || undefined,
+          targetType: targetTypeFilter || undefined,
+        },
+      });
+
+      const data = res.data.data;
+      setReports(data.reports || []);
+      setStats(data.stats || { total: 0, pending: 0, critical: 0, resolved: 0 });
+      setTotalPages(data.pagination?.totalPages || 1);
+    } catch (err) {
+      toast.error(err.message || 'Failed to fetch platform reports');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadReports();
-  }, []);
+    fetchReports();
 
-  const handleUpdateStatus = async (id, newStatus) => {
+    // Listen for real-time WebSocket events from backend
+    const handleReportSocket = (event) => {
+      fetchReports();
+      if (event.action === 'created') {
+        toast('New report submitted live!', { icon: '🔔' });
+      }
+    };
+
+    socket.on('report_changed', handleReportSocket);
+    return () => {
+      socket.off('report_changed', handleReportSocket);
+    };
+  }, [page, statusFilter, priorityFilter, reasonFilter, targetTypeFilter]);
+
+  // Debounced search trigger
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      setPage(1);
+      fetchReports();
+    }, 500);
+    return () => clearTimeout(delayDebounceFn);
+  }, [search]);
+
+  // Quick Action Handler (Resolve / Dismiss / Delete)
+  const handleQuickAction = async (reportId, action) => {
+    const loader = toast.loading(`Processing report ${action}...`);
     try {
-      await updateReportAPI(id, { status: newStatus });
-      toast.success(`Updated report ${id} status to ${newStatus.replace('_', ' ')}`);
-    } catch {
-      toast.success(`Updated report ${id} status to ${newStatus.replace('_', ' ')}`);
+      if (action === 'delete') {
+        await apiClient.delete(`/admin/reports/${reportId}`);
+        toast.success('Report log deleted', { id: loader });
+      } else {
+        await apiClient.put(`/admin/reports/${reportId}`, {
+          status: action,
+          actionTaken: action === 'resolved' ? 'content_removed' : 'none',
+        });
+        toast.success(`Report marked as ${action}`, { id: loader });
+      }
+      fetchReports();
+    } catch (err) {
+      toast.error(err.message || 'Operation failed', { id: loader });
     }
-    setReports(prev => prev.map(r => r._id === id ? { ...r, status: newStatus } : r));
   };
 
-  const filtered = reports.filter(r => {
-    const matchesSearch = (r.reporter || '').toLowerCase().includes(search.toLowerCase()) || 
-                          (r.target || '').toLowerCase().includes(search.toLowerCase()) ||
-                          (r.category || '').toLowerCase().includes(search.toLowerCase()) ||
-                          (r.description || '').toLowerCase().includes(search.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
+  // Handle Save from Modal
+  const handleSaveModal = async (formData) => {
+    const loader = toast.loading('Saving report changes...');
+    try {
+      if (modalMode === 'create') {
+        await apiClient.post('/admin/reports', formData);
+        toast.success('Report submitted successfully', { id: loader });
+      } else {
+        await apiClient.put(`/admin/reports/${selectedReport._id}`, formData);
+        toast.success('Report resolved and updated', { id: loader });
+      }
+      setModalOpen(false);
+      fetchReports();
+    } catch (err) {
+      toast.error(err.message || 'Action failed', { id: loader });
+    }
+  };
 
   return (
-    <div className="flex flex-col gap-6 w-full font-sans text-slate-900 dark:text-slate-100">
-      {/* Header Bar */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white dark:bg-slate-900 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-sm">
-        <div className="flex items-center gap-3">
-          <div className="p-3 rounded-2xl bg-blue-500/10 text-blue-500 border border-blue-500/30">
-            <ClipboardList className="w-6 h-6" />
-          </div>
-          <div className="flex flex-col">
-            <h1 className="text-2xl font-black tracking-tight">Platform Incident & User Reports Center</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">Track, investigate, and resolve user-submitted technical bugs, billing queries, and policy incidents.</p>
-          </div>
+    <div className="flex flex-col gap-6 w-full text-slate-800">
+      {/* Header bar */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-xl font-extrabold tracking-tight text-slate-900 flex items-center gap-2">
+            <ShieldAlert className="text-emerald-600" size={22} />
+            Platform Reports & Moderation Audit
+          </h1>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Review user flags, policy violations, spam reports, and resolve safety incidents in real-time.
+          </p>
         </div>
-
-        <button 
-          onClick={loadReports}
-          className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold font-mono rounded-xl flex items-center gap-2 cursor-pointer transition-colors"
+        <button
+          onClick={() => {
+            setSelectedReport(null);
+            setModalMode('create');
+            setModalOpen(true);
+          }}
+          className="px-4 py-2 bg-[#04AA6D] text-white rounded-xl hover:bg-emerald-700 font-bold transition-all text-xs flex items-center gap-1.5 shadow-sm select-none"
         >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Refresh Reports
+          <Plus size={15} />
+          <span>File Manual Report</span>
         </button>
       </div>
 
-      {/* Search & Filter Controls */}
-      <div className="flex flex-col md:flex-row items-center gap-3 bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
-        <div className="relative flex-1 w-full">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+      {/* Metric Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 select-none">
+        {[
+          { label: 'Total Reports Logged', value: stats.total, color: 'text-indigo-600', bg: 'bg-indigo-50 border-indigo-100' },
+          { label: 'Pending Review', value: stats.pending, color: 'text-amber-600', bg: 'bg-amber-50 border-amber-100' },
+          { label: 'Critical / High Alerts', value: stats.critical, color: 'text-rose-600', bg: 'bg-rose-50 border-rose-100' },
+          { label: 'Resolved Case Rate', value: stats.resolved, color: 'text-emerald-600', bg: 'bg-emerald-50 border-emerald-100' },
+        ].map((card, idx) => (
+          <div key={idx} className={`p-4 border rounded-2xl flex flex-col justify-between shadow-[0_1px_2px_0_rgba(0,0,0,0.01)] ${card.bg}`}>
+            <span className="text-[8.5px] uppercase tracking-wider font-extrabold text-slate-400 font-mono-origin">{card.label}</span>
+            <span className={`text-xl font-black mt-1 font-mono-origin ${card.color}`}>{card.value}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Search & Filters */}
+      <div className="bg-white border border-slate-200/85 p-4 rounded-2xl shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] grid grid-cols-1 md:grid-cols-5 gap-3">
+        <div className="relative md:col-span-2">
+          <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+            <Search size={14} />
+          </span>
           <input
             type="text"
-            placeholder="Search reports by ID, reporter email, category, or description..."
+            placeholder="Search reports by headline, description, or notes..."
             value={search}
-            onChange={e => setSearch(e.target.value)}
-            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2 text-xs focus:outline-none focus:border-[#04AA6D]"
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 pr-4 py-2 w-full bg-slate-50 border border-slate-200 rounded-xl text-xs focus:bg-white focus:outline-none focus:ring-1 focus:ring-emerald-500 transition-all font-mono-origin"
           />
         </div>
 
-        <div className="flex items-center gap-1 overflow-x-auto w-full md:w-auto">
-          {['all', 'pending', 'under_review', 'resolved'].map(st => (
-            <button
-              key={st}
-              onClick={() => setStatusFilter(st)}
-              className={`px-3.5 py-2 rounded-xl text-xs font-bold uppercase font-mono tracking-wider cursor-pointer whitespace-nowrap ${
-                statusFilter === st 
-                  ? 'bg-[#04AA6D] text-white shadow-md' 
-                  : 'bg-slate-100 dark:bg-slate-950 text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'
-              }`}
-            >
-              {st.replace('_', ' ')}
-            </button>
-          ))}
-        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-500 focus:bg-white focus:outline-none"
+        >
+          <option value="">All Statuses</option>
+          <option value="pending">Pending</option>
+          <option value="reviewed">Reviewed</option>
+          <option value="resolved">Resolved</option>
+          <option value="dismissed">Dismissed</option>
+        </select>
+
+        <select
+          value={priorityFilter}
+          onChange={(e) => setPriorityFilter(e.target.value)}
+          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-500 focus:bg-white focus:outline-none"
+        >
+          <option value="">All Priorities</option>
+          <option value="critical">Critical</option>
+          <option value="high">High</option>
+          <option value="medium">Medium</option>
+          <option value="low">Low</option>
+        </select>
+
+        <select
+          value={reasonFilter}
+          onChange={(e) => setReasonFilter(e.target.value)}
+          className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-500 focus:bg-white focus:outline-none"
+        >
+          <option value="">All Reasons</option>
+          <option value="spam">Spam</option>
+          <option value="abuse">Abuse</option>
+          <option value="harassment">Harassment</option>
+          <option value="fake_information">Fake Info</option>
+          <option value="inappropriate_content">Inappropriate</option>
+          <option value="copyright">Copyright</option>
+          <option value="other">Other</option>
+        </select>
       </div>
 
-      {/* Reports Table View */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl overflow-hidden shadow-sm">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
-            <thead className="bg-slate-50 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800 font-mono text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-              <tr>
-                <th className="px-6 py-4">Report ID & Category</th>
-                <th className="px-6 py-4">Reporter / Target</th>
-                <th className="px-6 py-4">Description Snippet</th>
-                <th className="px-6 py-4">Status</th>
-                <th className="px-6 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60 font-sans">
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="px-6 py-12 text-center text-slate-400 font-mono">
-                    No incident reports matching filter parameters.
-                  </td>
+      {/* Reports Table */}
+      <div className="bg-white border border-slate-200/80 rounded-2xl shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] overflow-hidden">
+        {loading ? (
+          <div className="py-24 flex flex-col items-center justify-center gap-2">
+            <RefreshCw className="animate-spin text-emerald-600" size={32} />
+            <span className="text-xs text-slate-400 font-semibold font-mono-origin">Querying report logs...</span>
+          </div>
+        ) : reports.length === 0 ? (
+          <div className="py-20 text-center flex flex-col items-center justify-center select-none">
+            <ShieldAlert size={40} className="text-slate-300 mb-2" />
+            <p className="text-sm font-bold text-slate-700">No reports found</p>
+            <p className="text-xs text-slate-400 mt-1">Try adjusting your filters or keyword query.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse select-none">
+              <thead>
+                <tr className="bg-slate-50 border-b border-slate-100 text-[9px] font-extrabold uppercase tracking-wider text-slate-400 font-mono-origin">
+                  <th className="py-3 px-4">Headline & Reason</th>
+                  <th className="py-3 px-4">Target Type</th>
+                  <th className="py-3 px-4">Priority</th>
+                  <th className="py-3 px-4">Reported By</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4">Reviewer & Notes</th>
+                  <th className="py-3 px-4 text-right">Actions</th>
                 </tr>
-              ) : (
-                filtered.map(r => (
-                  <tr key={r._id} className="hover:bg-slate-50/80 dark:hover:bg-slate-950/50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col gap-1">
-                        <span className="font-mono font-bold text-slate-900 dark:text-white">#{r._id}</span>
-                        <span className="text-[10px] font-mono font-bold text-blue-500 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20 w-fit">
-                          {r.category}
+              </thead>
+              <tbody className="divide-y divide-slate-100 text-xs text-slate-600 font-semibold">
+                {reports.map((r) => {
+                  const statusColors = {
+                    pending: 'bg-amber-100 text-amber-700',
+                    reviewed: 'bg-blue-100 text-blue-700',
+                    resolved: 'bg-emerald-100 text-emerald-700',
+                    dismissed: 'bg-slate-100 text-slate-500',
+                  };
+
+                  const priorityColors = {
+                    critical: 'bg-rose-100 text-rose-700 border-rose-200',
+                    high: 'bg-orange-100 text-orange-700 border-orange-200',
+                    medium: 'bg-sky-100 text-sky-700 border-sky-200',
+                    low: 'bg-slate-100 text-slate-600 border-slate-200',
+                  };
+
+                  return (
+                    <tr key={r._id} className="hover:bg-slate-50/50 transition-colors">
+                      <td className="py-3.5 px-4 max-w-[240px]">
+                        <p className="font-extrabold text-slate-800 text-xs line-clamp-1">
+                          {r.targetSummary || 'Report Entry'}
+                        </p>
+                        <p className="text-[10px] text-slate-400 mt-0.5 capitalize font-mono-origin">
+                          Reason: {r.reason?.replace('_', ' ')}
+                        </p>
+                      </td>
+
+                      <td className="py-3.5 px-4">
+                        <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-200 text-[9.5px] uppercase font-bold text-slate-600">
+                          {r.targetType}
                         </span>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col font-mono text-[11px]">
-                        <span className="font-bold text-slate-800 dark:text-slate-200">{r.reporter}</span>
-                        <span className="text-slate-400 text-[10px]">Target: {r.target}</span>
-                      </div>
-                    </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`px-2 py-0.5 rounded border text-[8.5px] uppercase font-bold tracking-wider ${priorityColors[r.priority] || priorityColors.medium}`}>
+                          {r.priority || 'medium'}
+                        </span>
+                      </td>
 
-                    <td className="px-6 py-4 max-w-xs">
-                      <p className="text-xs text-slate-600 dark:text-slate-300 line-clamp-2">{r.description}</p>
-                    </td>
+                      <td className="py-3.5 px-4">
+                        <div className="flex flex-col text-[10px] text-slate-400">
+                          <span className="font-bold text-slate-700">{r.reportedBy?.fullName || 'Anonymous'}</span>
+                          <span className="font-mono-origin text-[9px]">{r.reportedBy?.email || ''}</span>
+                        </div>
+                      </td>
 
-                    <td className="px-6 py-4">
-                      <span className={`text-[9px] font-mono font-black uppercase px-2.5 py-1 rounded-full border ${
-                        r.status === 'resolved' 
-                          ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30'
-                          : r.status === 'under_review'
-                          ? 'bg-blue-500/10 text-blue-400 border-blue-500/30'
-                          : 'bg-amber-500/10 text-amber-400 border-amber-500/30'
-                      }`}>
-                        {r.status.replace('_', ' ')}
-                      </span>
-                    </td>
+                      <td className="py-3.5 px-4">
+                        <span className={`px-2 py-0.5 rounded-lg text-[8.5px] uppercase font-bold tracking-wider leading-none ${statusColors[r.status] || statusColors.pending}`}>
+                          {r.status}
+                        </span>
+                      </td>
 
-                    <td className="px-6 py-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        {r.status !== 'resolved' && (
-                          <button
-                            onClick={() => handleUpdateStatus(r._id, 'resolved')}
-                            className="px-3 py-1.5 bg-[#04AA6D] hover:bg-emerald-600 text-white font-bold text-[11px] rounded-xl flex items-center gap-1 cursor-pointer transition-colors"
-                          >
-                            <CheckCircle2 className="w-3.5 h-3.5" />
-                            Resolve
-                          </button>
+                      <td className="py-3.5 px-4 max-w-[180px]">
+                        {r.reviewedBy ? (
+                          <div className="flex flex-col text-[10px]">
+                            <span className="font-bold text-slate-700">{r.reviewedBy.fullName}</span>
+                            <span className="text-[9px] text-slate-400 line-clamp-1">{r.adminNotes || 'No notes'}</span>
+                          </div>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 italic">Unreviewed</span>
                         )}
-                        {r.status === 'pending' && (
+                      </td>
+
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end gap-1.5">
                           <button
-                            onClick={() => handleUpdateStatus(r._id, 'under_review')}
-                            className="px-3 py-1.5 bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 font-bold text-[11px] rounded-xl cursor-pointer transition-colors"
+                            onClick={() => {
+                              setSelectedReport(r);
+                              setModalMode('resolve');
+                              setModalOpen(true);
+                            }}
+                            className="p-1.5 border border-slate-200 hover:bg-slate-100 text-slate-600 rounded-lg text-[10px] font-bold uppercase transition-all"
+                            title="Inspect & Resolve"
                           >
-                            Review
+                            <Eye size={13} />
                           </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+
+                          {r.status !== 'resolved' && (
+                            <button
+                              onClick={() => handleQuickAction(r._id, 'resolved')}
+                              className="p-1 text-slate-400 hover:text-emerald-600 rounded hover:bg-emerald-50"
+                              title="Resolve"
+                            >
+                              <Check size={14} />
+                            </button>
+                          )}
+
+                          {r.status !== 'dismissed' && (
+                            <button
+                              onClick={() => handleQuickAction(r._id, 'dismissed')}
+                              className="p-1 text-slate-400 hover:text-amber-600 rounded hover:bg-amber-50"
+                              title="Dismiss"
+                            >
+                              <XCircle size={14} />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleQuickAction(r._id, 'delete')}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-rose-50"
+                            title="Delete Log"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Pagination controls */}
+        {totalPages > 1 && (
+          <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+            <span>Page {page} of {totalPages}</span>
+            <div className="flex gap-1">
+              <button
+                disabled={page === 1}
+                onClick={() => setPage(page - 1)}
+                className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-30"
+              >
+                <ChevronLeft size={14} />
+              </button>
+              <button
+                disabled={page === totalPages}
+                onClick={() => setPage(page + 1)}
+                className="p-1.5 border border-slate-200 rounded-lg hover:bg-slate-50 disabled:opacity-30"
+              >
+                <ChevronRight size={14} />
+              </button>
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSave={handleSaveModal}
+        report={selectedReport}
+        mode={modalMode}
+      />
     </div>
   );
 };

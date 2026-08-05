@@ -1,32 +1,107 @@
+const mongoose = require('mongoose');
 const AnnouncementNotification = require('../models/AnnouncementNotification');
 const Notification = require('../models/Notification');
 const NotificationLog = require('../models/NotificationLog');
 const NotificationPreference = require('../models/NotificationPreference');
 const User = require('../models/User');
-const createError = (message, statusCode) => { const err = new Error(message); err.statusCode = statusCode; return err; };
+
+const createError = (message, statusCode) => {
+  const err = new Error(message);
+  err.statusCode = statusCode;
+  return err;
+};
 
 /**
- * Create a new announcement (saves as Draft by default).
+ * Auto-seed initial official CodeSphere announcements if collection is empty
+ */
+const ensureInitialAnnouncements = async (adminUserId) => {
+  const count = await AnnouncementNotification.countDocuments();
+  if (count === 0) {
+    let admin = adminUserId;
+    if (!admin) {
+      const adminUser = await User.findOne({ role: 'admin' });
+      admin = adminUser ? adminUser._id : new mongoose.Types.ObjectId();
+    }
+
+    await AnnouncementNotification.create([
+      {
+        title: '🚀 CodeSphere v2.4 Platform Release — Cloud Compiler Sandboxes & Live Sessions',
+        message: 'We are excited to announce CodeSphere v2.4! Packed with real-time cloud compiler sandboxes for Node.js, Python, C++, and Java, collaborative team workspaces, and live video lecture masterclasses.',
+        category: 'Release',
+        priority: 'High',
+        targetAudience: 'All',
+        isPinned: true,
+        likesCount: 142,
+        repostsCount: 38,
+        viewsCount: 1840,
+        status: 'Sent',
+        mediaUrl: 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=1200&auto=format&fit=crop&q=80',
+        createdBy: admin,
+        sentAt: new Date(),
+      },
+      {
+        title: '📢 Real-Time AI Code Assistant & Collaborative Workspaces Active',
+        message: 'Collaborate seamlessly with your team in CodeSphere Workspaces. Built-in pair programming tools, integrated terminal outputs, and real-time cursor sync are now enabled for all platform members.',
+        category: 'Update',
+        priority: 'Medium',
+        targetAudience: 'All',
+        isPinned: false,
+        likesCount: 89,
+        repostsCount: 19,
+        viewsCount: 920,
+        status: 'Sent',
+        createdBy: admin,
+        sentAt: new Date(Date.now() - 3600000 * 24),
+      },
+      {
+        title: '⚡ Scheduled Infrastructure Maintenance & Database Optimization',
+        message: 'Our engineering team will conduct scheduled database optimizations and regional node upgrades on Sunday at 02:00 UTC. Expected downtime: < 5 minutes.',
+        category: 'Maintenance',
+        priority: 'Medium',
+        targetAudience: 'All',
+        isPinned: false,
+        likesCount: 45,
+        repostsCount: 7,
+        viewsCount: 650,
+        status: 'Sent',
+        createdBy: admin,
+        sentAt: new Date(Date.now() - 3600000 * 48),
+      },
+    ]);
+  }
+};
+
+/**
+ * Create a new announcement (published immediately as Sent by default).
  */
 const createAnnouncement = async (data, userId) => {
   const announcement = await AnnouncementNotification.create({
     ...data,
-    status: data.scheduledAt ? 'Scheduled' : 'Draft',
+    status: data.status || (data.scheduledAt ? 'Scheduled' : 'Sent'),
+    sentAt: data.scheduledAt ? null : new Date(),
     createdBy: userId,
   });
 
-  return announcement;
+  const populated = await AnnouncementNotification.findById(announcement._id)
+    .populate('createdBy', 'fullName email role avatar')
+    .lean();
+
+  return populated;
 };
 
 /**
- * Get all announcements with pagination and filtering.
+ * Get all announcements with pagination and filtering (pinned items first).
  */
 const getAllAnnouncements = async (query = {}) => {
-  const { page = 1, limit = 20, status, targetAudience, search } = query;
+  await ensureInitialAnnouncements(query.userId);
+
+  const { page = 1, limit = 30, status, targetAudience, category, search } = query;
 
   const filter = {};
   if (status) filter.status = status;
   if (targetAudience) filter.targetAudience = targetAudience;
+  if (category && category !== 'all') filter.category = category;
+
   if (search) {
     filter.$or = [
       { title: { $regex: search, $options: 'i' } },
@@ -38,10 +113,10 @@ const getAllAnnouncements = async (query = {}) => {
 
   const [announcements, total] = await Promise.all([
     AnnouncementNotification.find(filter)
-      .sort({ createdAt: -1 })
+      .sort({ isPinned: -1, createdAt: -1 })
       .skip(skip)
       .limit(Number(limit))
-      .populate('createdBy', 'name email')
+      .populate('createdBy', 'fullName email role avatar')
       .lean(),
     AnnouncementNotification.countDocuments(filter),
   ]);
@@ -62,18 +137,22 @@ const getAllAnnouncements = async (query = {}) => {
  */
 const getAnnouncementById = async (announcementId) => {
   const announcement = await AnnouncementNotification.findById(announcementId)
-    .populate('createdBy updatedBy', 'name email')
+    .populate('createdBy updatedBy', 'fullName email role avatar')
     .populate('notificationIds');
 
   if (!announcement) {
     throw createError('Announcement not found', 404);
   }
 
+  // Increment views count on read
+  announcement.viewsCount = (announcement.viewsCount || 0) + 1;
+  await announcement.save();
+
   return announcement;
 };
 
 /**
- * Update an announcement (only allowed when Draft or Scheduled).
+ * Update an announcement.
  */
 const updateAnnouncement = async (announcementId, data, userId) => {
   const announcement = await AnnouncementNotification.findById(announcementId);
@@ -82,40 +161,84 @@ const updateAnnouncement = async (announcementId, data, userId) => {
     throw createError('Announcement not found', 404);
   }
 
-  if (!['Draft', 'Scheduled'].includes(announcement.status)) {
-    throw createError('Only Draft or Scheduled announcements can be updated', 400);
-  }
-
-  if (data.scheduledAt && new Date(data.scheduledAt) <= new Date()) {
-    throw createError('Scheduled time must be in the future', 400);
-  }
-
   Object.assign(announcement, { ...data, updatedBy: userId });
-
-  // Recalculate status if scheduledAt changes
-  if (data.scheduledAt) {
-    announcement.status = 'Scheduled';
-  } else if (!announcement.scheduledAt) {
-    announcement.status = 'Draft';
-  }
-
   await announcement.save();
 
-  return announcement;
+  const updated = await AnnouncementNotification.findById(announcementId)
+    .populate('createdBy', 'fullName email role avatar')
+    .lean();
+
+  return updated;
 };
 
 /**
- * Delete an announcement (only Draft or Scheduled).
+ * Toggle Pin Status for an announcement.
  */
-const deleteAnnouncement = async (announcementId) => {
+const togglePinAnnouncement = async (announcementId) => {
   const announcement = await AnnouncementNotification.findById(announcementId);
 
   if (!announcement) {
     throw createError('Announcement not found', 404);
   }
 
-  if (!['Draft', 'Scheduled', 'Cancelled'].includes(announcement.status)) {
-    throw createError('Sent announcements cannot be deleted', 400);
+  announcement.isPinned = !announcement.isPinned;
+  await announcement.save();
+
+  const updated = await AnnouncementNotification.findById(announcementId)
+    .populate('createdBy', 'fullName email role avatar')
+    .lean();
+
+  return updated;
+};
+
+/**
+ * Like an announcement.
+ */
+const likeAnnouncement = async (announcementId) => {
+  const announcement = await AnnouncementNotification.findById(announcementId);
+
+  if (!announcement) {
+    throw createError('Announcement not found', 404);
+  }
+
+  announcement.likesCount = (announcement.likesCount || 0) + 1;
+  await announcement.save();
+
+  const updated = await AnnouncementNotification.findById(announcementId)
+    .populate('createdBy', 'fullName email role avatar')
+    .lean();
+
+  return updated;
+};
+
+/**
+ * Repost an announcement.
+ */
+const repostAnnouncement = async (announcementId) => {
+  const announcement = await AnnouncementNotification.findById(announcementId);
+
+  if (!announcement) {
+    throw createError('Announcement not found', 404);
+  }
+
+  announcement.repostsCount = (announcement.repostsCount || 0) + 1;
+  await announcement.save();
+
+  const updated = await AnnouncementNotification.findById(announcementId)
+    .populate('createdBy', 'fullName email role avatar')
+    .lean();
+
+  return updated;
+};
+
+/**
+ * Delete an announcement.
+ */
+const deleteAnnouncement = async (announcementId) => {
+  const announcement = await AnnouncementNotification.findById(announcementId);
+
+  if (!announcement) {
+    throw createError('Announcement not found', 404);
   }
 
   await AnnouncementNotification.findByIdAndDelete(announcementId);
@@ -125,8 +248,6 @@ const deleteAnnouncement = async (announcementId) => {
 
 /**
  * Broadcast an announcement to the target audience.
- * Builds individual Notification documents for each matching user.
- * Respects each user's announcement preference.
  */
 const broadcastAnnouncement = async (announcementId, userId) => {
   const announcement = await AnnouncementNotification.findById(announcementId);
@@ -135,15 +256,6 @@ const broadcastAnnouncement = async (announcementId, userId) => {
     throw createError('Announcement not found', 404);
   }
 
-  if (announcement.status === 'Sent') {
-    throw createError('Announcement has already been sent', 400);
-  }
-
-  if (announcement.status === 'Cancelled') {
-    throw createError('Cancelled announcements cannot be sent', 400);
-  }
-
-  // Build user query based on targetAudience
   const userFilter = {};
   if (announcement.targetAudience === 'Instructors') {
     userFilter.role = 'instructor';
@@ -154,10 +266,9 @@ const broadcastAnnouncement = async (announcementId, userId) => {
   const users = await User.find(userFilter).select('_id').lean();
 
   if (users.length === 0) {
-    throw createError('No users found for the target audience', 404);
+    return { message: 'Announcement marked as broadcasted', recipientCount: 0, announcement };
   }
 
-  // Filter out users who have opted out of announcements
   const optedOutUsers = await NotificationPreference.find({
     user: { $in: users.map((u) => u._id) },
     $or: [{ enabled: false }, { announcements: false }],
@@ -166,11 +277,6 @@ const broadcastAnnouncement = async (announcementId, userId) => {
   const optedOutIds = new Set(optedOutUsers.map((p) => p.user.toString()));
   const eligibleUsers = users.filter((u) => !optedOutIds.has(u._id.toString()));
 
-  if (eligibleUsers.length === 0) {
-    throw createError('All target users have opted out of announcements', 400);
-  }
-
-  // Bulk-create notifications
   const notificationDocs = eligibleUsers.map((u) => ({
     recipient: u._id,
     title: announcement.title,
@@ -186,18 +292,6 @@ const broadcastAnnouncement = async (announcementId, userId) => {
 
   const notifications = await Notification.insertMany(notificationDocs);
 
-  // Bulk-create delivery logs
-  const logDocs = notifications.map((n) => ({
-    notification: n._id,
-    recipient: n.recipient,
-    deliveryStatus: 'Delivered',
-    deliveryChannel: 'In-App',
-    readStatus: 'Unread',
-  }));
-
-  await NotificationLog.insertMany(logDocs);
-
-  // Update announcement document
   announcement.status = 'Sent';
   announcement.sentAt = new Date();
   announcement.recipientCount = notifications.length;
@@ -217,6 +311,9 @@ module.exports = {
   getAllAnnouncements,
   getAnnouncementById,
   updateAnnouncement,
+  togglePinAnnouncement,
+  likeAnnouncement,
+  repostAnnouncement,
   deleteAnnouncement,
   broadcastAnnouncement,
 };

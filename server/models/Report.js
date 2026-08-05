@@ -24,10 +24,22 @@ const reportSchema = new mongoose.Schema(
     },
     reason: {
       type:     String,
-      enum:     ['spam', 'abuse', 'harassment', 'fake_information', 'inappropriate_content', 'other'],
+      enum:     ['spam', 'abuse', 'harassment', 'fake_information', 'inappropriate_content', 'copyright', 'other'],
       required: true,
     },
-    description: { type: String, default: '', maxlength: 500 },
+    priority: {
+      type:    String,
+      enum:    ['low', 'medium', 'high', 'critical'],
+      default: 'medium',
+    },
+    description: { type: String, default: '', maxlength: 1000 },
+    targetSummary: { type: String, default: '' },
+    actionTaken: {
+      type:    String,
+      enum:    ['none', 'content_removed', 'user_warned', 'user_suspended'],
+      default: 'none',
+    },
+    adminNotes: { type: String, default: '' },
     status: {
       type:    String,
       enum:    ['pending', 'reviewed', 'resolved', 'dismissed'],
@@ -42,5 +54,6 @@ const reportSchema = new mongoose.Schema(
 reportSchema.index({ targetId: 1 });
 reportSchema.index({ reportedBy: 1 });
 reportSchema.index({ status: 1 });
+reportSchema.index({ priority: 1 });
 
 module.exports = mongoose.model('Report', reportSchema);
