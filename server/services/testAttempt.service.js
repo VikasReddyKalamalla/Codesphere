@@ -27,6 +27,16 @@ const startTest = async (testId, userId) => {
     throw createError(`You have reached the maximum number of attempts (${test.maxAttempts})`, 400);
   }
 
+  // Fetch questions for this test to generate randomized candidate question order
+  const testQuestions = await Question.find({ testId }).select('_id').lean();
+  
+  // Fisher-Yates shuffle for randomized question order per candidate attempt
+  const shuffledOrder = testQuestions.map(q => q._id);
+  for (let i = shuffledOrder.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffledOrder[i], shuffledOrder[j]] = [shuffledOrder[j], shuffledOrder[i]];
+  }
+
   const attempt = await TestAttempt.create({
     testId,
     userId,
@@ -34,11 +44,30 @@ const startTest = async (testId, userId) => {
     timeLimit:     test.duration * 60,
     status:        'in_progress',
     startTime:     new Date(),
+    questionOrder: shuffledOrder,
   });
 
   await Test.findByIdAndUpdate(testId, { $inc: { attemptCount: 1 } });
 
   return attempt;
+};
+
+// ─── RECORD PROCTORING WARNING ────────────────────────────────────────────────
+const recordProctoringWarning = async (testId, userId) => {
+  const attempt = await TestAttempt.findOne({ testId, userId, status: 'in_progress' });
+  if (!attempt) return null;
+
+  attempt.proctoringWarnings += 1;
+  attempt.tabSwitchCount += 1;
+  
+  // Auto-terminate if tab switching warnings exceed 3
+  if (attempt.proctoringWarnings >= 3) {
+    attempt.status = 'submitted';
+    attempt.submittedAt = new Date();
+  }
+
+  await attempt.save();
+  return { warnings: attempt.proctoringWarnings, isTerminated: attempt.proctoringWarnings >= 3 };
 };
 
 // ─── PAUSE TEST ───────────────────────────────────────────────────────────────

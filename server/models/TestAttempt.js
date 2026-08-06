@@ -49,6 +49,11 @@ const testAttemptSchema = new mongoose.Schema(
     skippedQuestions: { type: Number, default: 0 },
     passed:           { type: Boolean, default: false },
     rank:             { type: Number, default: null },
+
+    // ─── Anti-Cheat & Proctoring ──────────────────────────────────────────────
+    proctoringWarnings: { type: Number, default: 0 },
+    tabSwitchCount:     { type: Number, default: 0 },
+    questionOrder:      [{ type: mongoose.Schema.Types.ObjectId, ref: 'Question' }],
   },
   { timestamps: true }
 );

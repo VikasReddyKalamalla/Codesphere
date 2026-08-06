@@ -34,50 +34,63 @@ export const TestRunner = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [codeLanguage, setCodeLanguage] = useState('javascript');
 
-  const questions = [
-    {
-      id: 'q1',
-      type: 'coding',
-      title: 'Two Sum & Target Index Array Optimization',
-      difficulty: 'Easy',
-      points: 20,
-      problemStatement: 'Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume each input would have exactly one solution.',
-      constraints: '2 <= nums.length <= 10^4\n-10^9 <= nums[i] <= 10^9\n-10^9 <= target <= 10^9',
-      sampleInput: 'nums = [2, 7, 11, 15], target = 9',
-      sampleOutput: '[0, 1]',
-      starterCode: `function twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const diff = target - nums[i];\n    if (map.has(diff)) {\n      return [map.get(diff), i];\n    }\n    map.set(nums[i], i);\n  }\n  return [];\n}`
-    },
-    {
-      id: 'q2',
-      type: 'mcq',
-      title: 'React 19 Server Components Architecture',
-      difficulty: 'Medium',
-      points: 15,
-      problemStatement: 'Which of the following is true regarding React Server Components (RSC) vs Client Components in Next.js 15?',
-      options: [
-        'A. Server Components can use useState and useEffect hooks directly.',
-        'B. Server Components execute only on the server, reducing client bundle size.',
-        'C. Client Components can import Server Components as direct children without wrappers.',
-        'D. Server Components cannot perform direct database queries.'
-      ],
-      correct: 1
-    },
-    {
-      id: 'q3',
-      type: 'coding',
-      title: 'System Design: LRU Cache Implementation',
-      difficulty: 'Hard',
-      points: 30,
-      problemStatement: 'Design a data structure that follows the constraints of a Least Recently Used (LRU) cache. Implement LRUCache class with get(key) and put(key, value) in O(1) time complexity.',
-      constraints: '1 <= capacity <= 3000\n0 <= key <= 10^4\n0 <= value <= 10^5',
-      sampleInput: '["LRUCache", "put", "put", "get", "put", "get"]\n[[2], [1, 1], [2, 2], [1], [3, 3], [2]]',
-      sampleOutput: '[null, null, null, 1, null, -1]',
-      starterCode: `class LRUCache {\n  constructor(capacity) {\n    this.capacity = capacity;\n    this.cache = new Map();\n  }\n  get(key) {\n    if (!this.cache.has(key)) return -1;\n    const val = this.cache.get(key);\n    this.cache.delete(key);\n    this.cache.set(key, val);\n    return val;\n  }\n}`
-    }
-  ];
+  const [proctoringWarnings, setProctoringWarnings] = useState(0);
 
-  const currentQ = questions[currentIdx];
-  const [codeValue, setCodeValue] = useState(currentQ.starterCode || '');
+  // Fisher-Yates Shuffle questions dynamically per attempt
+  const questions = React.useMemo(() => {
+    const raw = [
+      {
+        id: 'q1',
+        type: 'coding',
+        title: 'Two Sum & Target Index Array Optimization',
+        difficulty: 'Easy',
+        points: 20,
+        problemStatement: 'Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`. You may assume each input would have exactly one solution.',
+        constraints: '2 <= nums.length <= 10^4\n-10^9 <= nums[i] <= 10^9\n-10^9 <= target <= 10^9',
+        sampleInput: 'nums = [2, 7, 11, 15], target = 9',
+        sampleOutput: '[0, 1]',
+        starterCode: `function twoSum(nums, target) {\n  const map = new Map();\n  for (let i = 0; i < nums.length; i++) {\n    const diff = target - nums[i];\n    if (map.has(diff)) {\n      return [map.get(diff), i];\n    }\n    map.set(nums[i], i);\n  }\n  return [];\n}`
+      },
+      {
+        id: 'q2',
+        type: 'mcq',
+        title: 'React 19 Server Components Architecture',
+        difficulty: 'Medium',
+        points: 15,
+        problemStatement: 'Which of the following is true regarding React Server Components (RSC) vs Client Components in Next.js 15?',
+        options: [
+          'A. Server Components can use useState and useEffect hooks directly.',
+          'B. Server Components execute only on the server, reducing client bundle size.',
+          'C. Client Components can import Server Components as direct children without wrappers.',
+          'D. Server Components cannot perform direct database queries.'
+        ],
+        correct: 1
+      },
+      {
+        id: 'q3',
+        type: 'coding',
+        title: 'System Design: LRU Cache Implementation',
+        difficulty: 'Hard',
+        points: 30,
+        problemStatement: 'Design a data structure that follows the constraints of a Least Recently Used (LRU) cache. Implement LRUCache class with get(key) and put(key, value) in O(1) time complexity.',
+        constraints: '1 <= capacity <= 3000\n0 <= key <= 10^4\n0 <= value <= 10^5',
+        sampleInput: '["LRUCache", "put", "put", "get", "put", "get"]\n[[2], [1, 1], [2, 2], [1], [3, 3], [2]]',
+        sampleOutput: '[null, null, null, 1, null, -1]',
+        starterCode: `class LRUCache {\n  constructor(capacity) {\n    this.capacity = capacity;\n    this.cache = new Map();\n  }\n  get(key) {\n    if (!this.cache.has(key)) return -1;\n    const val = this.cache.get(key);\n    this.cache.delete(key);\n    this.cache.set(key, val);\n    return val;\n  }\n}`
+      }
+    ];
+
+    // Fisher-Yates algorithm
+    const arr = [...raw];
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [id]);
+
+  const currentQ = questions[currentIdx] || questions[0];
+  const [codeValue, setCodeValue] = useState(currentQ?.starterCode || '');
   const [runLog, setRunLog] = useState(null);
 
   // Countdown timer
@@ -96,12 +109,21 @@ export const TestRunner = () => {
     return () => clearInterval(timer);
   }, []);
 
-  // Proctoring tab switch warning
+  // Proctoring tab switch warning & auto-submit at 3 warnings
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.hidden) {
         dispatch(incrementProctoringWarning());
-        toast.error('PROCTORING WARNING: Tab switching detected!', { duration: 4000 });
+        setProctoringWarnings(prev => {
+          const next = prev + 1;
+          if (next >= 3) {
+            toast.error('PROCTORING VIOLATION: Maximum 3 tab switches exceeded! Auto-submitting exam...', { duration: 6000 });
+            setTimeout(() => handleFinalSubmit(), 1000);
+          } else {
+            toast.error(`PROCTORING WARNING (${next}/3): Tab switching detected!`, { duration: 4000 });
+          }
+          return next;
+        });
       }
     };
 
@@ -164,8 +186,17 @@ export const TestRunner = () => {
           </span>
         </div>
 
-        {/* Timer & Controls */}
+        {/* Timer & Anti-Cheat Controls */}
         <div className="flex items-center gap-4">
+          <div className={`flex items-center gap-2 border px-3 py-1.5 rounded-xl font-mono text-xs font-bold transition-all ${
+            proctoringWarnings > 0
+              ? 'bg-rose-500/20 text-rose-400 border-rose-500/40 animate-pulse'
+              : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+          }`}>
+            <ShieldAlert className="w-4 h-4" />
+            <span>Anti-Cheat Warnings: {proctoringWarnings} / 3</span>
+          </div>
+
           <div className="flex items-center gap-2 bg-slate-950 border border-slate-800 px-3.5 py-1.5 rounded-xl font-mono text-xs text-amber-400 font-bold">
             <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
             <span>Time Left: {formatTime(timeLeft)}</span>
