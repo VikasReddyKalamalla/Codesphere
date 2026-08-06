@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { 
   CheckCircle2, Lock, Play, BookOpen, 
   Sparkles, ChevronRight, X, Award, Zap, 
