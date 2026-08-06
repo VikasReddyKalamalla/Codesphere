@@ -157,6 +157,7 @@ export const LearningDetails = () => {
           onMarkLessonComplete={handleMarkComplete}
           pathTitle={course.title}
           category={course.category}
+          trackId={course.id || course._id || courseId}
         />
       ) : (
         <div className="p-6 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">

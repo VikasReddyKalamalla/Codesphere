@@ -43,18 +43,26 @@ export const VisualRoadmapTree = ({
   // Find matching native roadmap dataset from NATIVE_ROADMAPS or fallback to prop modules
   const activeNativeTrack = useMemo(() => {
     if (trackId) {
-      const match = NATIVE_ROADMAPS.find(r => r.id === trackId);
+      const match = NATIVE_ROADMAPS.find(r => r.id === trackId || r.id.toLowerCase() === trackId.toLowerCase());
       if (match) return match;
     }
     const catMatch = NATIVE_ROADMAPS.find(r => 
       r.category.toLowerCase() === (category || '').toLowerCase() ||
       r.id.toLowerCase() === (category || '').toLowerCase() ||
-      pathTitle.toLowerCase().includes(r.title.toLowerCase())
+      (pathTitle || '').toLowerCase().includes(r.title.toLowerCase())
     );
     return catMatch || NATIVE_ROADMAPS[0];
   }, [trackId, category, pathTitle]);
 
   const [selectedTrackId, setSelectedTrackId] = useState(activeNativeTrack.id);
+
+  // Sync selectedTrackId when activeNativeTrack changes (e.g. route navigation)
+  useEffect(() => {
+    if (activeNativeTrack?.id) {
+      setSelectedTrackId(activeNativeTrack.id);
+      setSelectedNodeId(null);
+    }
+  }, [activeNativeTrack]);
 
   const currentTrack = useMemo(() => {
     return NATIVE_ROADMAPS.find(r => r.id === selectedTrackId) || activeNativeTrack;
@@ -62,8 +70,9 @@ export const VisualRoadmapTree = ({
 
   // Combine passed database modules with native track modules for maximum completeness
   const activeModules = useMemo(() => {
-    if (modules && modules.length >= 4) return modules;
-    return currentTrack.modules || modules;
+    if (currentTrack?.modules && currentTrack.modules.length > 0) return currentTrack.modules;
+    if (modules && modules.length > 0) return modules;
+    return [];
   }, [modules, currentTrack]);
 
   // Helper to check if lesson is done
