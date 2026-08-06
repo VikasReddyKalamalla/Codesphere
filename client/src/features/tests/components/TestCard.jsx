@@ -95,27 +95,27 @@ export const TestCard = ({
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-3 gap-2 p-3 bg-white dark:bg-slate-950/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-[10px] text-slate-600 dark:text-slate-400 font-mono">
+        <div className="grid grid-cols-3 gap-1.5 p-2.5 bg-white dark:bg-slate-950/60 rounded-2xl border border-slate-200/80 dark:border-slate-800 text-[10px] text-slate-600 dark:text-slate-400 font-mono select-none">
           <div className="flex flex-col items-center gap-0.5">
-            <span className="text-slate-400 text-[9px] uppercase">Duration</span>
-            <span className="font-bold text-slate-900 dark:text-slate-200 flex items-center gap-1">
-              <Clock className="w-3 h-3 text-[#04AA6D]" />
+            <span className="text-slate-400 dark:text-slate-500 text-[8.5px] uppercase tracking-wider font-bold">Time</span>
+            <span className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1 text-xs">
+              <Clock className="w-3.5 h-3.5 text-[#04AA6D] shrink-0" />
               {duration}m
             </span>
           </div>
 
           <div className="flex flex-col items-center gap-0.5 border-x border-slate-200 dark:border-slate-800 px-1">
-            <span className="text-slate-400 text-[9px] uppercase">Questions</span>
-            <span className="font-bold text-slate-900 dark:text-slate-200 flex items-center gap-1">
-              <HelpCircle className="w-3 h-3 text-blue-500" />
+            <span className="text-slate-400 dark:text-slate-500 text-[8.5px] uppercase tracking-wider font-bold">Items</span>
+            <span className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1 text-xs">
+              <HelpCircle className="w-3.5 h-3.5 text-blue-500 shrink-0" />
               {totalQuestions}
             </span>
           </div>
 
           <div className="flex flex-col items-center gap-0.5">
-            <span className="text-slate-400 text-[9px] uppercase">Passing</span>
-            <span className="font-bold text-slate-900 dark:text-slate-200 flex items-center gap-1">
-              <Award className="w-3 h-3 text-amber-500" />
+            <span className="text-slate-400 dark:text-slate-500 text-[8.5px] uppercase tracking-wider font-bold">Pass</span>
+            <span className="font-extrabold text-slate-900 dark:text-slate-100 flex items-center gap-1 text-xs">
+              <Award className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               {passingMarks}%
             </span>
           </div>

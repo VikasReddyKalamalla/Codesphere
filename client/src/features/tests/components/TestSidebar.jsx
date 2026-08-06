@@ -34,7 +34,7 @@ export const TestSidebar = ({
   onReset
 }) => {
   return (
-    <div className="w-full lg:w-72 bg-slate-50/90 dark:bg-slate-900/50 border border-slate-200/90 dark:border-slate-800/80 rounded-3xl p-5 backdrop-blur-md flex flex-col gap-6 font-sans shrink-0 shadow-sm">
+    <div className="w-full lg:w-64 bg-slate-50/90 dark:bg-slate-900/50 border border-slate-200/90 dark:border-slate-800/80 rounded-3xl p-4 sm:p-5 backdrop-blur-md flex flex-col gap-5 font-sans shrink-0 shadow-sm">
       {/* Header */}
       <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800">
         <div className="flex items-center gap-2">
