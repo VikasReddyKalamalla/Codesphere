@@ -38,6 +38,7 @@ export const VisualRoadmapTree = ({
 }) => {
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [filterType, setFilterType] = useState('all');
+  const [viewMode, setViewMode] = useState('flowchart'); // 'flowchart' | 'timeline'
   
   // Find matching native roadmap dataset from NATIVE_ROADMAPS or fallback to prop modules
   const activeNativeTrack = useMemo(() => {
@@ -132,7 +133,7 @@ export const VisualRoadmapTree = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-[#04AA6D]/20 text-[#04AA6D] uppercase border border-[#04AA6D]/30">
-                CodeSphere Native Roadmap
+                Interactive Flowchart Engine
               </span>
               <span className="text-xs text-slate-400 font-mono font-semibold">• {totalNodes} Milestones</span>
             </div>
@@ -141,8 +142,31 @@ export const VisualRoadmapTree = ({
           </div>
         </div>
 
-        {/* Track Selector & Filters */}
+        {/* Track Selector & Mode Switcher */}
         <div className="flex flex-wrap items-center gap-3 z-10">
+          <div className="flex items-center gap-1 bg-slate-950 p-1 rounded-2xl border border-slate-800">
+            <button
+              onClick={() => setViewMode('flowchart')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                viewMode === 'flowchart'
+                  ? 'bg-amber-400 text-slate-950 font-extrabold shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Interactive Diagram
+            </button>
+            <button
+              onClick={() => setViewMode('timeline')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer ${
+                viewMode === 'timeline'
+                  ? 'bg-[#04AA6D] text-white font-extrabold shadow-md'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Timeline View
+            </button>
+          </div>
+
           <div className="flex items-center gap-2 bg-slate-950 p-2 rounded-2xl border border-slate-800">
             <Filter className="w-4 h-4 text-slate-400 ml-2" />
             <select
@@ -160,7 +184,7 @@ export const VisualRoadmapTree = ({
 
           <div className="px-4 py-2 rounded-2xl bg-slate-950/80 border border-slate-800 flex items-center gap-3">
             <div className="text-left font-mono">
-              <p className="text-[10px] text-slate-400 font-bold uppercase">Track Progress</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase">Progress</p>
               <p className="text-xs font-bold text-[#04AA6D]">{completedNodes} / {totalNodes} Cleared</p>
             </div>
             <div className="w-10 h-10 rounded-xl bg-[#04AA6D]/15 border border-[#04AA6D]/30 flex items-center justify-center text-[#04AA6D] font-mono font-bold text-xs">
@@ -191,7 +215,118 @@ export const VisualRoadmapTree = ({
           <div className="text-center py-28 text-slate-500 font-mono text-xs">
             No modules available in this native roadmap track.
           </div>
+        ) : viewMode === 'flowchart' ? (
+          /* ─────────────────────────────────────────────────────────────
+             AUTHENTIC ROADMAP.SH INTERACTIVE FLOWCHART DIAGRAM MODE
+             Central Trunk Spine + Alternating Left/Right Sub-topic Branches
+             ───────────────────────────────────────────────────────────── */
+          <div className="w-full max-w-5xl flex flex-col items-center relative z-10 space-y-16">
+            {processedTree.map((node, idx) => {
+              const isCompleted = node.status === 'completed';
+              const isInProgress = node.status === 'in-progress';
+              const isUnlocked = node.status === 'unlocked';
+              const isLocked = node.status === 'locked';
+              const hasNext = idx < processedTree.length - 1;
+
+              const cleanTitleText = cleanText(node.title).replace(/^Phase\s+\d+:\s*/i, '');
+              const cleanTopicList = (node.topics || []).map(cleanText).filter(Boolean);
+              
+              const isEvenIndex = idx % 2 === 0;
+              const sideBranchPosition = isEvenIndex ? 'right' : 'left';
+
+              return (
+                <div key={node.id} className="w-full flex flex-col items-center relative">
+                  
+                  {/* Central Vertical Trunk Segment */}
+                  <div className="w-full flex items-center justify-center relative my-2">
+                    
+                    {/* LEFT Sub-topics Branch Container */}
+                    <div className="flex-1 flex justify-end pr-6 items-center">
+                      {sideBranchPosition === 'left' && cleanTopicList.length > 0 && (
+                        <div className="flex flex-col gap-2 items-end z-20">
+                          {cleanTopicList.slice(0, 4).map((t, ti) => (
+                            <div
+                              key={ti}
+                              onClick={() => setSelectedNodeId(node.id)}
+                              className="px-4 py-2 rounded-2xl bg-amber-200/90 dark:bg-amber-400/90 text-slate-950 font-bold text-xs font-mono border border-amber-300 dark:border-amber-300/80 shadow-md hover:scale-105 hover:bg-amber-300 transition-all cursor-pointer flex items-center gap-2"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                              <span>{t}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* CENTRAL TRUNK MILESTONE BLOCK (Gold/Emerald Main Node Box) */}
+                    <div
+                      onClick={() => setSelectedNodeId(node.id)}
+                      className={`group relative z-30 px-8 py-5 rounded-2xl border-2 cursor-pointer transition-all duration-300 text-center shadow-xl min-w-[280px] max-w-[380px] ${
+                        isCompleted
+                          ? 'bg-[#04AA6D] text-white border-emerald-300 shadow-emerald-950/60 hover:scale-105'
+                          : isInProgress
+                          ? 'bg-amber-400 text-slate-950 font-black border-amber-300 ring-4 ring-amber-400/30 shadow-amber-950/60 hover:scale-105'
+                          : isUnlocked
+                          ? 'bg-amber-300/95 dark:bg-amber-400/90 text-slate-950 font-extrabold border-amber-300 hover:scale-105 hover:bg-amber-300'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 opacity-70 hover:opacity-100 hover:scale-102'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1.5 font-mono text-[10px] uppercase font-bold tracking-wider opacity-80">
+                        <span>Milestone #{idx + 1}</span>
+                        <span>{isCompleted ? '✓ Done' : isInProgress ? '⚡ Active' : isUnlocked ? 'Unlocked' : '🔒 Locked'}</span>
+                      </div>
+                      <h3 className="text-base font-black font-mono leading-tight tracking-tight">
+                        {cleanTitleText}
+                      </h3>
+                      {node.totalLessons > 0 && (
+                        <div className="mt-2 text-[10px] font-mono font-bold opacity-75">
+                          {node.doneLessons} / {node.totalLessons} Lessons • {node.percentage}%
+                        </div>
+                      )}
+                    </div>
+
+                    {/* RIGHT Sub-topics Branch Container */}
+                    <div className="flex-1 flex justify-start pl-6 items-center">
+                      {sideBranchPosition === 'right' && cleanTopicList.length > 0 && (
+                        <div className="flex flex-col gap-2 items-start z-20">
+                          {cleanTopicList.slice(0, 4).map((t, ti) => (
+                            <div
+                              key={ti}
+                              onClick={() => setSelectedNodeId(node.id)}
+                              className="px-4 py-2 rounded-2xl bg-amber-200/90 dark:bg-amber-400/90 text-slate-950 font-bold text-xs font-mono border border-amber-300 dark:border-amber-300/80 shadow-md hover:scale-105 hover:bg-amber-300 transition-all cursor-pointer flex items-center gap-2"
+                            >
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-900" />
+                              <span>{t}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                  </div>
+
+                  {/* Vertical Trunk Connector Line */}
+                  {hasNext && (
+                    <div className="w-full flex justify-center py-2 relative pointer-events-none z-10">
+                      <svg className="w-12 h-14 overflow-visible">
+                        <line
+                          x1="24" y1="0" x2="24" y2="56"
+                          stroke={isCompleted ? '#04AA6D' : '#FBBF24'}
+                          strokeWidth="3.5"
+                          strokeDasharray={isCompleted ? 'none' : '6 6'}
+                        />
+                      </svg>
+                    </div>
+                  )}
+
+                </div>
+              );
+            })}
+          </div>
         ) : (
+          /* ─────────────────────────────────────────────────────────────
+             TIMELINE LIST MODE (Detailed Module Cards View)
+             ───────────────────────────────────────────────────────────── */
           <div className="w-full max-w-4xl flex flex-col items-center relative z-10 space-y-16">
             {processedTree.map((node, idx) => {
               if (filterType === 'unlocked' && node.status === 'locked') return null;
@@ -318,6 +453,7 @@ export const VisualRoadmapTree = ({
               );
             })}
           </div>
+        )}        </div>
         )}
 
         {/* Pathway Completion Certificate Banner */}
