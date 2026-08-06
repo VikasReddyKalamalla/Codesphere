@@ -250,7 +250,7 @@ export const Resources = () => {
         </div>
       </div>
 
-      {/* Main Layout Body */}
+      {/* Main Layout Body: Left Sidebar + Spacious Main Grid */}
       <div className="flex flex-col lg:flex-row gap-6 relative z-10">
         {/* Left Sidebar */}
         <ResourceSidebar
@@ -267,8 +267,8 @@ export const Resources = () => {
           onReset={() => dispatch(resetFilters())}
         />
 
-        {/* Center Content Grid */}
-        <div className="flex-1 flex flex-col gap-6">
+        {/* Spacious Center Content Grid */}
+        <div className="flex-1 min-w-0 flex flex-col gap-6">
           <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
             <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <Layers className="w-4 h-4 text-[#04AA6D]" />
@@ -289,16 +289,16 @@ export const Resources = () => {
           {(() => {
             if (activeTab === 'collections') {
               return (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {collections.map((c) => (
                     <div
                       key={c.id}
                       onClick={() => dispatch(setActiveCategory('all'))}
-                      className="p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-[#04AA6D] cursor-pointer transition-all flex flex-col gap-2 shadow-xs"
+                      className="p-5 rounded-3xl bg-slate-50/90 dark:bg-slate-900/60 border border-slate-200/90 dark:border-slate-800/80 hover:border-[#04AA6D] cursor-pointer transition-all flex flex-col gap-2 shadow-xs"
                     >
                       <div className="flex justify-between items-center">
                         <span className="text-xs font-mono font-bold text-[#04AA6D] uppercase">{c.icon || 'Kit'}</span>
-                        <span className="text-[10px] bg-emerald-500/10 text-emerald-500 font-mono font-bold px-2 py-0.5 rounded-md">{c.count} Resources</span>
+                        <span className="text-[10px] bg-emerald-500/10 text-emerald-500 font-mono font-bold px-2.5 py-0.5 rounded-full border border-emerald-500/20">{c.count} Resources</span>
                       </div>
                       <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">{c.title}</h4>
                     </div>
@@ -334,7 +334,7 @@ export const Resources = () => {
                       <Flame className="w-4 h-4" />
                       Featured Knowledge Items
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                       {featuredItems.map((res) => (
                         <ResourceCard
                           key={String(res._id || res.id)}
@@ -349,12 +349,12 @@ export const Resources = () => {
                   </div>
                 )}
 
-                {/* Main Resource Grid */}
+                {/* Main Resource Grid - Spacious 3 Column Layout */}
                 {mainGridResources.length === 0 && !showFeatured ? (
                   <div className="p-12 text-center bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-900 rounded-3xl flex flex-col items-center gap-3">
                     <Layers className="w-12 h-12 text-slate-400 dark:text-slate-600" />
                     <h3 className="font-extrabold text-slate-800 dark:text-slate-200">No resources found</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm">
                       {activeTab === 'bookmarks'
                         ? 'You have not bookmarked any resources yet.'
                         : activeTab === 'history'
@@ -363,13 +363,13 @@ export const Resources = () => {
                     </p>
                     <button
                       onClick={() => dispatch(resetFilters())}
-                      className="mt-2 px-4 py-2 bg-[#04AA6D] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl cursor-pointer"
+                      className="mt-2 px-5 py-2.5 bg-[#04AA6D] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl cursor-pointer shadow-sm"
                     >
                       Reset Filters
                     </button>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {mainGridResources.map((res) => (
                       <ResourceCard
                         key={String(res._id || res.id)}
@@ -386,13 +386,6 @@ export const Resources = () => {
             );
           })()}
         </div>
-
-        {/* Right Sidebar */}
-        <ResourceRightSidebar
-          resources={filteredResources}
-          history={userHistory}
-          onSelectResource={handleSelectResource}
-        />
       </div>
 
       {/* Create Resource Modal */}
