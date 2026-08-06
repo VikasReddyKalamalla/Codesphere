@@ -531,36 +531,23 @@ export const DashboardHome = () => {
           </div>
         </div>
 
-        {/* Daily Streak */}
+        {/* Student Quick Action Hub */}
         <div className={`${cardClass} flex flex-col justify-between`}>
           <div>
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-4 font-mono-origin flex items-center gap-1.5">
-              Daily Streak 🔥
+            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3 font-mono-origin">
+              Quick Learning Shortcuts
             </p>
-            {(() => {
-              const streak = dbData?.achievements?.dayStreak ?? 0;
-              return (
-                <div className="flex items-center gap-4 py-1">
-                  <div className="relative flex items-center justify-center shrink-0 animate-pulse">
-                    <svg height="80" width="80" className="select-none">
-                      <circle stroke="#f1f5f9" fill="transparent" strokeWidth="6" r="30" cx="40" cy="40" />
-                      <circle stroke="#04AA6D" fill="transparent" strokeWidth="6" strokeDasharray="188.4" strokeDashoffset={188.4 * (1 - Math.min(7, streak) / 7)} strokeLinecap="round" r="30" cx="40" cy="40" className="origin-center -rotate-90" />
-                    </svg>
-                    <div className="absolute flex flex-col items-center justify-center">
-                      <span className="text-sm font-black text-slate-855 font-mono-origin leading-none">{streak}</span>
-                      <span className="text-[8px] font-bold text-slate-400 uppercase tracking-widest font-mono-origin mt-0.5">Days</span>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <StreakChart streak={streak} />
-                  </div>
-                </div>
-              );
-            })()}
+            <div className="flex flex-col gap-2">
+              <Link to="/learning" className="p-3 rounded-xl bg-[#04AA6D]/10 hover:bg-[#04AA6D]/20 text-[#04AA6D] border border-[#04AA6D]/30 flex items-center justify-between text-xs font-mono font-bold transition-all">
+                <span>Explore 83 Tech Roadmaps</span>
+                <ChevronRight size={14} />
+              </Link>
+              <Link to="/dsa" className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 hover:bg-indigo-100 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 flex items-center justify-between text-xs font-mono font-bold transition-all">
+                <span>DSA Compiler Playpen</span>
+                <ChevronRight size={14} />
+              </Link>
+            </div>
           </div>
-          <p className="text-[9.5px] font-semibold text-slate-500 font-sans-origin mt-4 text-center">
-            {dbData?.achievements?.dayStreak > 0 ? "Keep it up! You're doing great." : "Start your streak today!"}
-          </p>
         </div>
 
       </div>

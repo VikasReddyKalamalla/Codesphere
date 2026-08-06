@@ -237,19 +237,6 @@ export const Learning = () => {
             Master computer science, AI, web development, cloud, system design, and algorithms with accurate PDF-derived roadmaps.
           </p>
         </div>
-
-        {/* Learning Stats Badge */}
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-sm">
-              <Flame size={20} />
-            </div>
-            <div className="text-left font-mono">
-              <p className="text-xs font-bold text-slate-900 dark:text-white">{streak} Day Streak 🔥</p>
-              <p className="text-[10px] text-slate-400">{overallPct}% Avg Completion</p>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* ── Featured Interactive Compiler Banner ── */}
