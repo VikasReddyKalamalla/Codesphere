@@ -42,11 +42,19 @@ const getPostById = async (id) => {
 };
 
 // ─── CREATE ───────────────────────────────────────────────────────────────────
+const { moderateContent } = require('../utils/contentModeration');
+
 const createPost = async (body, userId) => {
   const { communityId, content } = body;
 
   if (!communityId) throw createError('Community ID is required', 400);
   if (!content)     throw createError('Content is required', 400);
+
+  // Automated Content Moderation check
+  const moderation = moderateContent(content);
+  if (moderation.isFlagged) {
+    throw createError(moderation.reason, 400);
+  }
 
   const community = await Community.findById(communityId);
   if (!community) throw createError('Community not found', 404);
