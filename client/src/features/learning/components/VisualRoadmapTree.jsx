@@ -8,6 +8,20 @@ import {
 } from 'lucide-react';
 import { NATIVE_ROADMAPS } from '../data/nativeRoadmapsData.js';
 
+// Text Sanitizer to strip leftover regex artifact text
+const cleanText = (str) => {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .replace(/roadmap\s+and\s+more\s+roadmaps\s+at/gi, '')
+    .replace(/roadmap\.sh\s+and\s+more\s+roadmaps\s+at/gi, '')
+    .replace(/roadmap\s+and\s+more\s+roadmaps/gi, '')
+    .replace(/https?:\/\/[^\s]+/gi, '')
+    .replace(/roadmap\.sh/gi, '')
+    .replace(/\s+/g, ' ')
+    .replace(/:\s*$/, '')
+    .trim();
+};
+
 /**
  * VisualRoadmapTree
  * 100% Native CodeSphere Visual Tree Roadmap
@@ -210,9 +224,9 @@ export const VisualRoadmapTree = ({
                       }`}
                     >
                       {/* Node Header */}
-                      <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-start justify-between gap-4 mb-4">
                         <div className="flex items-center gap-3.5">
-                          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center font-mono font-bold text-xs ${
+                          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center font-mono font-bold text-sm shrink-0 shadow-md ${
                             isCompleted
                               ? 'bg-emerald-500/20 text-[#04AA6D] border border-emerald-500/40'
                               : isInProgress
@@ -225,16 +239,16 @@ export const VisualRoadmapTree = ({
                           </div>
 
                           <div>
-                            <span className="text-[10px] font-mono font-bold tracking-wider uppercase text-slate-400">
+                            <span className="text-[10px] font-mono font-extrabold tracking-wider uppercase text-emerald-400">
                               MILESTONE #{idx + 1}
                             </span>
                             <h3 className="text-lg font-black text-white font-mono group-hover:text-[#04AA6D] transition-colors leading-snug">
-                              {node.title}
+                              {cleanText(node.title)}
                             </h3>
                           </div>
                         </div>
 
-                        <span className={`px-3 py-1 rounded-xl text-xs font-mono font-bold border ${
+                        <span className={`px-3 py-1 rounded-full text-[11px] font-mono font-bold border shrink-0 ${
                           isCompleted
                             ? 'bg-emerald-500/10 text-[#04AA6D] border-emerald-500/30'
                             : isInProgress
@@ -248,18 +262,18 @@ export const VisualRoadmapTree = ({
                       </div>
 
                       {/* Description */}
-                      {node.description && (
-                        <p className="text-xs text-slate-400 leading-relaxed font-sans mb-4">
-                          {node.description}
+                      {cleanText(node.description) && (
+                        <p className="text-xs text-slate-300 leading-relaxed font-sans mb-4">
+                          {cleanText(node.description)}
                         </p>
                       )}
 
                       {/* Sub-topics Badges */}
                       {node.topics && node.topics.length > 0 && (
-                        <div className="mb-5 flex flex-wrap items-center gap-1.5">
-                          {node.topics.map((t, ti) => (
-                            <span key={ti} className="px-2.5 py-1 rounded-lg text-[10px] font-mono font-semibold bg-slate-950 text-slate-300 border border-slate-800 flex items-center gap-1">
-                              <Tag className="w-2.5 h-2.5 text-[#04AA6D]" />
+                        <div className="mb-5 flex flex-wrap items-center gap-2">
+                          {node.topics.map(cleanText).filter(Boolean).map((t, ti) => (
+                            <span key={ti} className="px-3 py-1 rounded-xl text-[11px] font-mono font-semibold bg-slate-950/80 text-emerald-300 border border-emerald-500/20 flex items-center gap-1.5 shadow-xs">
+                              <Tag className="w-3 h-3 text-[#04AA6D]" />
                               <span>{t}</span>
                             </span>
                           ))}
@@ -339,9 +353,9 @@ export const VisualRoadmapTree = ({
               </button>
             </div>
 
-            <h2 className="text-xl font-black text-white font-mono leading-snug">{selectedNode.title}</h2>
-            {selectedNode.description && (
-              <p className="text-xs text-slate-400 mt-2 leading-relaxed font-sans">{selectedNode.description}</p>
+            <h2 className="text-xl font-black text-white font-mono leading-snug">{cleanText(selectedNode.title)}</h2>
+            {cleanText(selectedNode.description) && (
+              <p className="text-xs text-slate-300 mt-2 leading-relaxed font-sans">{cleanText(selectedNode.description)}</p>
             )}
 
             {/* Topics Covered */}
@@ -349,8 +363,8 @@ export const VisualRoadmapTree = ({
               <div className="my-4 p-4 rounded-2xl bg-slate-950 border border-slate-800">
                 <p className="text-[10px] font-mono font-bold text-slate-400 uppercase mb-2">Key Concepts & Topics Covered</p>
                 <div className="flex flex-wrap gap-1.5">
-                  {selectedNode.topics.map((t, idx) => (
-                    <span key={idx} className="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-900 text-slate-200 border border-slate-800">
+                  {selectedNode.topics.map(cleanText).filter(Boolean).map((t, idx) => (
+                    <span key={idx} className="px-2.5 py-1 rounded-lg text-xs font-mono bg-slate-900 text-emerald-300 border border-slate-800">
                       {t}
                     </span>
                   ))}
