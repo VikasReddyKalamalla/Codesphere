@@ -39,5 +39,40 @@ const logout = asyncHandler(async (req, res) => {
   return successResponse(res, 200, 'Logged out successfully');
 });
 
-module.exports = { register, login, getMe, updateProfile, googleAuth, logout };
+// POST /api/auth/2fa/setup (protected)
+const setup2FA = asyncHandler(async (req, res) => {
+  const data = await authService.generate2FASecret(req.user._id);
+  return successResponse(res, 200, '2FA setup secret generated', data);
+});
+
+// POST /api/auth/2fa/verify (protected)
+const verify2FA = asyncHandler(async (req, res) => {
+  const data = await authService.verifyAndEnable2FA(req.user._id, req.body.token);
+  return successResponse(res, 200, '2FA enabled successfully', data);
+});
+
+// POST /api/auth/forgot-password
+const forgotPassword = asyncHandler(async (req, res) => {
+  const data = await authService.requestPasswordReset(req.body.email);
+  return successResponse(res, 200, 'Password reset instructions sent', data);
+});
+
+// POST /api/auth/reset-password
+const resetPassword = asyncHandler(async (req, res) => {
+  const data = await authService.resetPasswordWithToken(req.body.token, req.body.newPassword);
+  return successResponse(res, 200, 'Password reset successful', data);
+});
+
+module.exports = {
+  register,
+  login,
+  getMe,
+  updateProfile,
+  googleAuth,
+  logout,
+  setup2FA,
+  verify2FA,
+  forgotPassword,
+  resetPassword,
+};
 

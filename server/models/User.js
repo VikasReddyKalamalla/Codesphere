@@ -67,9 +67,16 @@ const userSchema = new mongoose.Schema(
       default: 'none',
     },
 
-    // ─── Account Status ───────────────────────────────────────────────────────
+    // ─── Account Status & Security ───────────────────────────────────────────
     isVerified: { type: Boolean, default: false },
     isActive:   { type: Boolean, default: true },
+
+    // ─── 2FA & TOTP Security ──────────────────────────────────────────────────
+    twoFactorEnabled:      { type: Boolean, default: false },
+    twoFactorSecret:       { type: String, select: false },
+    passwordResetToken:    { type: String, select: false },
+    passwordResetExpires:  { type: Date, select: false },
+    emailVerificationToken:{ type: String, select: false },
   },
   {
     timestamps: true, // adds createdAt and updatedAt automatically

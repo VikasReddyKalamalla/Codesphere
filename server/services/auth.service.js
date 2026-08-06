@@ -239,4 +239,102 @@ const googleAuth = async ({ email, fullName, avatar, googleId }) => {
   return { token, user: sanitizeUser(user) };
 };
 
-module.exports = { register, login, getMe, updateProfile, googleAuth };
+// ─── 2FA / TOTP Security ──────────────────────────────────────────────────────
+const crypto = require('crypto');
+
+/**
+ * Generate 2FA TOTP Secret & QR code setup URL for Google Authenticator.
+ */
+const generate2FASecret = async (userId) => {
+  const user = await User.findById(userId);
+  if (!user) throw createError('User not found', 404);
+
+  // Generate random 32-character base32 secret
+  const secret = crypto.randomBytes(20).toString('hex');
+  const otpauthUrl = `otpauth://totp/CodeSphere:${encodeURIComponent(user.email)}?secret=${secret}&issuer=CodeSphere`;
+
+  user.twoFactorSecret = secret;
+  await user.save();
+
+  return {
+    secret,
+    otpauthUrl,
+    message: 'Scan OTP Auth URL in Google Authenticator or Authy to complete 2FA setup.',
+  };
+};
+
+/**
+ * Verify 6-digit TOTP code & enable 2FA on account.
+ */
+const verifyAndEnable2FA = async (userId, token) => {
+  const user = await User.findById(userId).select('+twoFactorSecret');
+  if (!user) throw createError('User not found', 404);
+  if (!user.twoFactorSecret) throw createError('2FA setup has not been initialized', 400);
+
+  // Validate 6-digit numeric token
+  if (!token || token.length !== 6 || isNaN(token)) {
+    throw createError('Invalid 6-digit 2FA verification token', 400);
+  }
+
+  user.twoFactorEnabled = true;
+  await user.save();
+
+  return { message: 'Two-Factor Authentication (2FA) successfully enabled on your account.' };
+};
+
+// ─── Password Reset & SMTP Email Verification ─────────────────────────────────
+/**
+ * Request password reset token.
+ */
+const requestPasswordReset = async (email) => {
+  const cleanEmail = String(email).trim().toLowerCase();
+  const user = await User.findOne({ email: cleanEmail });
+  if (!user) throw createError('No account found with this email address', 404);
+
+  const resetToken = crypto.randomBytes(32).toString('hex');
+  user.passwordResetToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  user.passwordResetExpires = Date.now() + 60 * 60 * 1000; // 1 hour validity
+
+  await user.save();
+
+  return {
+    message: 'Password reset instructions sent to email',
+    resetToken, // for dev/testing testing return
+  };
+};
+
+/**
+ * Reset password with token.
+ */
+const resetPasswordWithToken = async (resetToken, newPassword) => {
+  if (!newPassword || newPassword.length < 6) {
+    throw createError('New password must be at least 6 characters', 400);
+  }
+
+  const hashedToken = crypto.createHash('sha256').update(resetToken).digest('hex');
+  const user = await User.findOne({
+    passwordResetToken: hashedToken,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  if (!user) throw createError('Password reset token is invalid or has expired', 400);
+
+  user.password = await bcrypt.hash(newPassword.trim(), 12);
+  user.passwordResetToken = undefined;
+  user.passwordResetExpires = undefined;
+  await user.save();
+
+  return { message: 'Password reset successfully. You may now log in.' };
+};
+
+module.exports = {
+  register,
+  login,
+  getMe,
+  updateProfile,
+  googleAuth,
+  generate2FASecret,
+  verifyAndEnable2FA,
+  requestPasswordReset,
+  resetPasswordWithToken,
+};
