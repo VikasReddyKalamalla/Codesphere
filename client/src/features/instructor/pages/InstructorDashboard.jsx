@@ -106,6 +106,16 @@ const FeedbackOverview = () => {
 };
 
 export default function InstructorDashboard() {
+  const [stats, setStats] = React.useState(null);
+
+  React.useEffect(() => {
+    import('../services/instructorAPI.js').then((m) => {
+      m.fetchInstructorStatsAPI()
+        .then((res) => setStats(res?.data || res))
+        .catch(() => {});
+    });
+  }, []);
+
   const cardClass = "bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] flex flex-col justify-between";
 
   return (
@@ -114,10 +124,10 @@ export default function InstructorDashboard() {
       {/* Top 4 Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         {[
-          { label: 'Courses', value: '8', sub: 'Active Courses', color: 'indigo', icon: GraduationCap },
-          { label: 'Students', value: '243', sub: 'Total Enrolled', color: 'blue', icon: Users },
-          { label: 'Assignments', value: '12', sub: 'Pending Review', color: 'amber', icon: ClipboardList },
-          { label: 'Avg. Rating', value: '4.8', sub: 'From 128 Reviews', color: 'rose', icon: Award },
+          { label: 'Courses', value: String(stats?.coursesCount ?? stats?.totalCourses ?? 0), sub: 'Active Courses', color: 'indigo', icon: GraduationCap },
+          { label: 'Students', value: String(stats?.totalEnrolled ?? stats?.totalStudents ?? 0), sub: 'Total Enrolled', color: 'blue', icon: Users },
+          { label: 'Assignments', value: String(stats?.pendingAssignments ?? stats?.assignmentsCount ?? 0), sub: 'Pending Review', color: 'amber', icon: ClipboardList },
+          { label: 'Avg. Rating', value: String(stats?.averageRating ?? 4.8), sub: `From ${stats?.totalReviews ?? 0} Reviews`, color: 'rose', icon: Award },
         ].map(({ label, value, sub, color, icon: Icon }) => {
           const colors = {
             indigo:  'bg-indigo-50 border-indigo-100/50 text-indigo-500',

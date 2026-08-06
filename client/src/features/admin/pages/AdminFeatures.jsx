@@ -1043,7 +1043,9 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   <Users size={18} />
                 </div>
               </div>
-              <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">142</p>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
+                {events.reduce((sum, e) => sum + (e.registeredCount || (Array.isArray(e.attendees) ? e.attendees.length : 0) || (Array.isArray(e.registeredUsers) ? e.registeredUsers.length : 0)), 0)}
+              </p>
             </div>
           </div>
 
