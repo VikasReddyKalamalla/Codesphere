@@ -30,10 +30,29 @@ const initSocket = (server) => {
       methods: ['GET', 'POST'],
       credentials: true,
     },
-    // Ping/pong settings for connection health
+    // Ping/pong settings for connection health & reconnection
     pingTimeout: 60000,
     pingInterval: 25000,
   });
+
+  // Attach Redis Adapter for horizontal scaling if REDIS_URL present
+  if (process.env.REDIS_URL || process.env.REDIS_HOST) {
+    try {
+      const { createAdapter } = require('@socket.io/redis-adapter');
+      const { createClient }  = require('redis');
+      const pubClient = createClient({ url: process.env.REDIS_URL || `redis://${process.env.REDIS_HOST || 'localhost'}:6379` });
+      const subClient = pubClient.duplicate();
+
+      Promise.all([pubClient.connect(), subClient.connect()]).then(() => {
+        io.adapter(createAdapter(pubClient, subClient));
+        console.log('[Socket] Redis Adapter attached for multi-instance horizontal scaling!');
+      }).catch(err => {
+        console.warn('[Socket] Redis connection failed, running with in-memory adapter:', err.message);
+      });
+    } catch (e) {
+      console.log('[Socket] Operating with native in-memory adapter');
+    }
+  }
 
   // ─── Authentication middleware ─────────────────────────────────────────────
   io.use(socketAuth);
