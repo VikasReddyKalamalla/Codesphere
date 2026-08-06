@@ -45,7 +45,8 @@ BOILERPLATE = [
     'Continue Learning with following',
     'Visit Backend path and see',
     'Find the interactive version',
-    'roadmap.sh/pdf'
+    'roadmap.sh/pdf',
+    'Subscribe to'
 ]
 
 def clean_lines(text):
@@ -57,6 +58,8 @@ def clean_lines(text):
             continue
         if any(b.lower() in s.lower() for b in BOILERPLATE):
             continue
+        # Remove trailing/leading bullet points
+        s = re.sub(r'^[•\-\*]\s*', '', s)
         cleaned.append(s)
     return cleaned
 
@@ -128,6 +131,15 @@ def format_title(key):
     capitalized = [w.capitalize() if w not in ['and', 'or', 'to', 'for', 'a', 'an', 'in', 'on', 'of'] else w for w in words]
     return ' '.join(capitalized) + ' Roadmap'
 
+PHASE_LABELS = [
+    "Phase 1: Foundations & Core Concepts",
+    "Phase 2: Essential Building Blocks",
+    "Phase 3: Architecture & Deep Dives",
+    "Phase 4: Tooling & Ecosystem",
+    "Phase 5: Performance, Testing & Security",
+    "Phase 6: Enterprise Practice & Deployment"
+]
+
 def generate_curriculum(key, lines):
     title = format_title(key)
     cat, diff = get_category_and_diff(key)
@@ -136,24 +148,24 @@ def generate_curriculum(key, lines):
     unique_topics = []
     seen = set()
     for l in lines:
-        if len(l) < 3 or len(l) > 65:
+        if len(l) < 3 or len(l) > 70:
             continue
-        if l in seen:
+        if l in seen or l.lower() == key or l.lower() == title.lower():
             continue
         seen.add(l)
         unique_topics.append(l)
         
     if len(unique_topics) < 6:
         unique_topics = [
-            f'{title} Core Foundations & Environment Setup',
+            f'Introduction & Environment Setup for {title}',
             'Core Syntax & Essential Fundamentals',
-            'Data Processing & Architecture Patterns',
-            'State Management & Modular Integration',
-            'Testing, Debugging & Performance Tuning',
-            'Production Deployment & Enterprise Best Practices'
+            'Data Structures & Operational Logic',
+            'Modular Architecture & Best Practices',
+            'Testing, Debugging & Quality Control',
+            'Production Deployment & CI/CD Pipelines'
         ]
 
-    # Partition topics into 5-6 structured modules
+    # Partition topics into 6 structured phases
     chunk_size = max(2, len(unique_topics) // 6)
     modules = []
     mod_id_prefix = key.replace('-', '')[:4]
@@ -163,38 +175,43 @@ def generate_curriculum(key, lines):
         end = start + chunk_size if mod_idx < 5 else len(unique_topics)
         mod_topics = unique_topics[start:end]
         if not mod_topics:
-            mod_topics = [f'{title} Skill Module {mod_idx+1}']
+            mod_topics = [f'{title} Topic {mod_idx+1}']
 
-        mod_title = mod_topics[0]
-        mod_desc = f'Master official topics in {mod_title}: {", ".join(mod_topics[1:4]) if len(mod_topics)>1 else mod_title}.'
+        phase_name = PHASE_LABELS[mod_idx]
+        main_topic_name = mod_topics[0]
+        
+        # Build clear description
+        topic_preview = ", ".join(mod_topics[1:4]) if len(mod_topics) > 1 else main_topic_name
+        mod_desc = f'Master key roadmap concepts in {main_topic_name}, including: {topic_preview}.'
         
         lessons = [
             {
                 '_id': f'{mod_id_prefix}-l-{mod_idx*3 + 1}',
-                'title': f'Overview & Theory: {mod_topics[0]}',
+                'title': f'Concept Overview: {main_topic_name}',
                 'type': 'article',
-                'duration': 20
+                'duration': 15
             },
             {
                 '_id': f'{mod_id_prefix}-l-{mod_idx*3 + 2}',
-                'title': f'Video Guide: {mod_topics[1] if len(mod_topics) > 1 else mod_title}',
+                'title': f'Guided Video: {mod_topics[1] if len(mod_topics) > 1 else main_topic_name}',
                 'type': 'video',
-                'duration': 30
+                'duration': 25
             },
             {
                 '_id': f'{mod_id_prefix}-l-{mod_idx*3 + 3}',
-                'title': f'Interactive Challenge: {mod_topics[-1]}',
+                'title': f'Hands-on Lab: {mod_topics[-1]}',
                 'type': 'code',
-                'duration': 35
+                'duration': 30
             }
         ]
 
         modules.append({
             '_id': f'{mod_id_prefix}-mod-{mod_idx+1}',
             'order': mod_idx + 1,
-            'title': mod_title,
+            'phase': phase_name,
+            'title': f'{phase_name}: {main_topic_name}',
             'description': mod_desc,
-            'topics': mod_topics[:5],
+            'topics': mod_topics[:6],
             'lessons': lessons
         })
         
@@ -203,8 +220,8 @@ def generate_curriculum(key, lines):
         'title': title,
         'category': cat,
         'difficulty': diff,
-        'description': f'Complete structured learning path for {title}. Covers official roadmap concepts step-by-step with interactive lessons and sandbox exercises.',
-        'duration': 160 + (len(modules) * 15),
+        'description': f'Complete structured learning path for {title}. Extracted directly from official PDF roadmap resources with clear step-by-step phases, topic checklists, and interactive coding challenges.',
+        'duration': 180,
         'modules': modules
     }
 
@@ -239,9 +256,8 @@ def main():
             
         curriculum = generate_curriculum(k, lines)
         roadmaps.append(curriculum)
-        print(f'✓ Processed {k:30s} -> {curriculum["title"]} ({curriculum["category"]})')
 
-    print(f'\nTotal Roadmaps Generated: {len(roadmaps)}')
+    print(f'Total Roadmaps Structured: {len(roadmaps)}')
 
     # 1. Output JS file
     js_content = "/**\n * Native Roadmaps Data for CodeSphere\n * Auto-generated from official roadmaps for all 83 tech tracks.\n */\n\n"
