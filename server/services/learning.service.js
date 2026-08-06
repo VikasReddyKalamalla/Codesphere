@@ -39,19 +39,40 @@ const getAllPaths = async ({ page = 1, limit = 10, category, difficulty, isPremi
   return { ...meta, paths };
 };
 
+const mongoose = require('mongoose');
+
 // ─── GET BY ID ────────────────────────────────────────────────────────────────
 /**
  * Fetch a single learning path with all its modules (ordered).
  */
 const getPathById = async (id) => {
-  const path = await LearningPath
-    .findById(id)
-    .populate({
-      path: 'modules',
-      populate: { path: 'lessons', options: { sort: { order: 1 } } },
-      options: { sort: { order: 1 } }
-    })
-    .populate('createdBy', 'fullName avatar');
+  const isObjectId = mongoose.Types.ObjectId.isValid(id);
+  let path = null;
+
+  if (isObjectId) {
+    path = await LearningPath
+      .findById(id)
+      .populate({
+        path: 'modules',
+        populate: { path: 'lessons', options: { sort: { order: 1 } } },
+        options: { sort: { order: 1 } }
+      })
+      .populate('createdBy', 'fullName avatar');
+  }
+
+  if (!path) {
+    const term = id.replace(/-/g, '.*');
+    path = await LearningPath
+      .findOne({
+        title: { $regex: new RegExp(term, 'i') }
+      })
+      .populate({
+        path: 'modules',
+        populate: { path: 'lessons', options: { sort: { order: 1 } } },
+        options: { sort: { order: 1 } }
+      })
+      .populate('createdBy', 'fullName avatar');
+  }
 
   if (!path) throw createError('Learning path not found', 404);
   return path;
