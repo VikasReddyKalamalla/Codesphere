@@ -6,7 +6,7 @@ import {
   Layers, MessageSquare, Video, ChevronRight, CreditCard,
   ClipboardList, Compass, Briefcase, Calendar, BookOpen, User,
   CheckCircle2, ShieldCheck, MapPin, Pin, Bell, FileText, Clock, Key,
-  Mic, Monitor, AlertCircle, HelpCircle, CheckSquare
+  Mic, Monitor, AlertCircle, HelpCircle, CheckSquare, Sparkles
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { fetchDashboardDataAPI } from '../services/dashboardAPI.js';
