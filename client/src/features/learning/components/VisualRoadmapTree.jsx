@@ -450,10 +450,8 @@ export const VisualRoadmapTree = ({
                     </div>
                   )}
                 </React.Fragment>
-              );
             })}
           </div>
-        )}        </div>
         )}
 
         {/* Pathway Completion Certificate Banner */}
