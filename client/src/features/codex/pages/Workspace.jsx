@@ -172,7 +172,7 @@ export const Workspace = () => {
   // Load Initial API Data
   useEffect(() => {
     setLoading(true);
-    Promise.all([
+    Promise.allSettled([
       fetchWorkspaceDetailsAPI(workspaceId),
       fetchWorkspaceMembersAPI(workspaceId),
       fetchWorkspaceTasksAPI(workspaceId),
@@ -180,22 +180,30 @@ export const Workspace = () => {
       fetchWorkspaceAnalyticsAPI(workspaceId)
     ])
       .then(([wsRes, memRes, taskRes, fileRes, analyticsRes]) => {
-        if (wsRes.success) dispatch(setCurrentWorkspace(wsRes.data));
-        if (memRes.success) dispatch(setMembers(memRes.data.members || []));
-        if (taskRes.success) dispatch(setTasks(taskRes.data.tasks || []));
-        if (fileRes.success) {
-          const list = fileRes.data.files || [];
+        if (wsRes.status === 'fulfilled' && wsRes.value?.success) {
+          dispatch(setCurrentWorkspace(wsRes.value.data));
+        } else if (wsRes.status === 'rejected') {
+          console.error('Failed to load workspace details:', wsRes.reason);
+          toast.error(wsRes.reason?.response?.data?.message || 'Failed to retrieve workspace data');
+        }
+
+        if (memRes.status === 'fulfilled' && memRes.value?.success) {
+          dispatch(setMembers(memRes.value.data?.members || memRes.value.data || []));
+        }
+        if (taskRes.status === 'fulfilled' && taskRes.value?.success) {
+          dispatch(setTasks(taskRes.value.data?.tasks || taskRes.value.data || []));
+        }
+        if (fileRes.status === 'fulfilled' && fileRes.value?.success) {
+          const list = fileRes.value.data?.files || fileRes.value.data || [];
           dispatch(setFiles(list));
           if (list.length > 0) {
             const defaultFile = list.find(f => f.name === 'index.html') || list[0];
             dispatch(setActiveFile(defaultFile));
           }
         }
-        if (analyticsRes.success) dispatch(setAnalytics(analyticsRes.data.stats || analyticsRes.data));
-      })
-      .catch((err) => {
-        console.error('Failed to load workspace:', err);
-        toast.error('Failed to retrieve workspace data');
+        if (analyticsRes.status === 'fulfilled' && analyticsRes.value?.success) {
+          dispatch(setAnalytics(analyticsRes.value.data?.stats || analyticsRes.value.data));
+        }
       })
       .finally(() => {
         setLoading(false);
