@@ -13,8 +13,10 @@ import {
   fetchAllProgressAPI, fetchPathProgressAPI,
   markLessonCompleteAPI, enrollAPI, unenrollAPI,
 } from '../services/learningAPI.js';
+import { NATIVE_ROADMAPS } from '../data/nativeRoadmapsData.js';
 
 /* ── helpers ────────────────────────────────────────────────── */
+
 const fmtMins = (m) => {
   if (!m) return '—';
   const h = Math.floor(m / 60), mn = m % 60;
@@ -56,7 +58,8 @@ export const Learning = () => {
   const [level,         setLevel]         = useState('');
   const [sortBy,        setSortBy]        = useState('popular');
   const [expandedMod,   setExpandedMod]   = useState(0);
-  const [detailTab,     setDetailTab]     = useState('modules');
+  const [detailTab,     setDetailTab]     = useState('roadmap');
+
   const [enrolling, setEnrolling] = useState(null);
   const [markingLesson, setMarkingLesson] = useState(null);
   const [bookmarked,    setBookmarked]    = useState({});
@@ -66,78 +69,74 @@ export const Learning = () => {
     setLoading(true);
     try {
       const [pr, pg] = await Promise.allSettled([fetchCoursesAPI(), fetchAllProgressAPI()]);
-      if (pr.status === 'fulfilled') { const d = pr.value?.data; setPaths(d?.paths || d || []); }
+      const fetched = pr.status === 'fulfilled' ? (pr.value?.data?.paths || pr.value?.data || []) : [];
+      
+      const nativeFormatted = NATIVE_ROADMAPS.map(r => ({
+        _id: r.id,
+        title: r.title,
+        description: r.description,
+        category: r.category,
+        difficulty: r.difficulty,
+        duration: r.duration,
+        modules: r.modules,
+        totalStudents: 1420,
+        createdBy: { fullName: 'CodeSphere Engineering' }
+      }));
+
+      const merged = [...nativeFormatted];
+      fetched.forEach(f => {
+        if (!merged.some(m => m._id === f._id || m.title.toLowerCase() === f.title?.toLowerCase())) {
+          merged.push(f);
+        }
+      });
+
+      setPaths(merged);
       if (pg.status === 'fulfilled') setAllProgress(pg.value?.data || []);
-    } catch {}
+    } catch {
+      const nativeFormatted = NATIVE_ROADMAPS.map(r => ({
+        _id: r.id,
+        title: r.title,
+        description: r.description,
+        category: r.category,
+        difficulty: r.difficulty,
+        duration: r.duration,
+        modules: r.modules,
+        totalStudents: 1420,
+        createdBy: { fullName: 'CodeSphere Engineering' }
+      }));
+      setPaths(nativeFormatted);
+    }
     setLoading(false);
   }, []);
 
+
   useEffect(() => { loadAll(); }, [loadAll]);
 
-  const openPath = async (path) => {
-    setSelectedPath(path);
-    setDetailLoading(true);
-    setDetailTab('modules');
-    setExpandedMod(0);
-    try {
-      const [dr, pr] = await Promise.allSettled([
-        fetchCourseDetailsAPI(path._id),
-        fetchPathProgressAPI(path._id),
-      ]);
-      if (dr.status === 'fulfilled') { const d = dr.value?.data; setPathModules(d?.modules || []); }
-      if (pr.status === 'fulfilled') setPathProgress(pr.value?.data || null);
-    } catch {}
-    setDetailLoading(false);
+
+
+  const openPath = (path) => {
+    window.open(`/learning/${path._id}`, '_blank');
   };
 
-  const markComplete = async (lessonId, unmark = false) => {
-    setMarkingLesson(lessonId);
+  const handleEnroll = async (pathId) => {
+    setEnrolling(pathId);
     try {
-      const res = await markLessonCompleteAPI(lessonId, unmark);
-      if (res?.data) setPathProgress(res.data);
-      const p = await fetchAllProgressAPI();
-      setAllProgress(p?.data || []);
-      toast.success(unmark ? 'Lesson marked incomplete' : 'Lesson completed! ✓');
-    } catch { toast.error(unmark ? 'Could not unmark lesson' : 'Could not mark lesson'); }
-    setMarkingLesson(null);
-  };
-
-  const handleEnroll = async () => {
-    if (!selectedPath) return;
-    const id = selectedPath._id;
-    setEnrolling(id);
-    try {
-      if (pathEnrolled) {
-        await unenrollAPI(id);
-        setAllProgress(prev => prev.filter(p => (p.learningPathId?._id || p.learningPathId) !== id));
-        setPathProgress(null);
-        toast.success('Unenrolled from ' + selectedPath.title);
+      if (isEnrolled(pathId)) {
+        await unenrollAPI(pathId);
+        setAllProgress(prev => prev.filter(p => (p.learningPathId?._id || p.learningPathId) !== pathId));
+        toast.success('Unenrolled from path');
       } else {
-        await enrollAPI(id);
-        const [pr, dr] = await Promise.allSettled([
-          fetchAllProgressAPI(),
-          fetchPathProgressAPI(id),
-        ]);
-        if (pr.status === 'fulfilled') setAllProgress(pr.value?.data || []);
-        if (dr.status === 'fulfilled') setPathProgress(dr.value?.data || null);
-        toast.success('Enrolled in ' + selectedPath.title + '! 🎉');
+        await enrollAPI(pathId);
+        const p = await fetchAllProgressAPI();
+        setAllProgress(p?.data || []);
+        toast.success('Enrolled in learning path! 🎉');
       }
     } catch { toast.error('Action failed. Please try again.'); }
     setEnrolling(null);
   };
 
-  const handleStartLearning = () => {
-    if (!selectedPath) return;
-    if (!pathEnrolled) { handleEnroll(); return; }
-    for (let mi = 0; mi < pathModules.length; mi++) {
-      const mod = pathModules[mi];
-      const hasIncomplete = (mod.lessons || []).some(l => !lessonDone(l._id || l));
-      if (hasIncomplete) { setExpandedMod(mi); break; }
-    }
-    toast.success('Resuming where you left off!');
-  };
-
-  const handleBookmark = (pathId) => {
+  const handleBookmark = (pathId, e) => {
+    e.stopPropagation();
     setBookmarked(b => {
       const next = { ...b, [pathId]: !b[pathId] };
       toast.success(next[pathId] ? 'Bookmarked!' : 'Bookmark removed');
@@ -150,12 +149,6 @@ export const Learning = () => {
   const getPct     = (id) => getProg(id)?.completionPercentage || 0;
   const isEnrolled = (id) => !!getProg(id);
   const isDone     = (id) => getProg(id)?.isCompleted || false;
-  const lessonDone = (lid) => pathProgress?.completedLessons?.some(l => (l._id || l) === lid);
-
-  const completedCount   = pathProgress?.completedLessons?.length || 0;
-  const totalInPath      = pathModules.reduce((s, m) => s + (m.lessons?.length || 0), 0);
-  const pathPct          = selectedPath ? getPct(selectedPath._id) : 0;
-  const pathEnrolled     = selectedPath ? isEnrolled(selectedPath._id) : false;
 
   const categories = [...new Set(paths.map(p => p.category).filter(Boolean))];
 
@@ -176,61 +169,65 @@ export const Learning = () => {
 
   const enrolledCount = allProgress.length;
   const lessonsTotal  = allProgress.reduce((s,p) => s + (p.completedLessons?.length || 0), 0);
-  const timeH         = Math.round(lessonsTotal * 18 / 60);
   const overallPct    = enrolledCount ? Math.round(allProgress.reduce((s,p) => s + (p.completionPercentage||0), 0) / enrolledCount) : 0;
-  const inProgPaths   = allProgress.filter(p => !p.isCompleted && (p.completionPercentage||0) > 0).slice(0,3);
   const streak        = user?.dayStreak ?? 0;
 
   /* ── Card Component ── */
   const PathCard = ({ path }) => {
     const pct    = getPct(path._id);
-    const active = selectedPath?._id === path._id;
     const cfg    = CAT_ICONS[path.category] || { icon: BookOpen, bg: 'bg-slate-100 dark:bg-slate-800 text-slate-500' };
     const CatIcon = cfg.icon;
     const diff = DIFF[path.difficulty] || DIFF.beginner;
+    const enrolled = isEnrolled(path._id);
+
     return (
-      <button 
+      <div 
         onClick={() => openPath(path)} 
-        className={`w-full text-left rounded-2xl p-4 transition-all bg-white dark:bg-slate-900 border ${
-          active 
-            ? 'border-[#04AA6D] ring-2 ring-[#04AA6D]/20 shadow-md' 
-            : 'border-slate-200/80 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
-        }`}
+        className="w-full text-left rounded-3xl p-6 transition-all bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 hover:border-[#04AA6D]/60 hover:shadow-xl dark:hover:border-[#04AA6D]/60 flex flex-col justify-between group cursor-pointer relative overflow-hidden"
       >
-        <div className="flex items-start justify-between gap-2 mb-2">
+        <div className="flex items-start justify-between gap-3 mb-3">
           <div>
-            <p className="text-[10px] font-bold text-slate-400 font-mono mb-1 uppercase tracking-wider">{path.category}</p>
-            <h4 className="text-sm font-black text-slate-900 dark:text-white leading-snug">{path.title}</h4>
+            <p className="text-[10px] font-bold text-slate-400 font-mono mb-1 uppercase tracking-wider">{path.category || 'General'}</p>
+            <h4 className="text-base font-black text-slate-900 dark:text-white font-mono group-hover:text-[#04AA6D] transition-colors leading-snug">
+              {path.title}
+            </h4>
           </div>
-          <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${cfg.bg}`}>
-            <CatIcon className="w-4 h-4" />
+          <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${cfg.bg}`}>
+            <CatIcon className="w-5 h-5" />
           </div>
         </div>
 
-        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 mb-3">{path.description}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed line-clamp-2 mb-4 font-sans">{path.description}</p>
 
-        <div className="flex flex-wrap items-center gap-1.5 mb-3">
-          <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono border ${diff.bg}`}>{diff.label}</span>
-          <span className="text-[10px] font-mono text-slate-400">{path.modules?.length || 0} Modules</span>
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <span className={`px-2.5 py-0.5 rounded-lg text-[10px] font-bold font-mono border ${diff.bg}`}>{diff.label}</span>
+          <span className="text-[10px] font-mono text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-lg">
+            {path.modules?.length || 0} Modules
+          </span>
+          {enrolled && (
+            <span className="text-[10px] font-mono font-bold text-[#04AA6D] bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+              Enrolled ✓
+            </span>
+          )}
         </div>
 
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-6 h-6 rounded-full bg-[#04AA6D] flex items-center justify-center text-[10px] font-bold text-white shrink-0">
-            {(path.createdBy?.fullName || 'I')[0]}
+        <div className="pt-4 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-[#04AA6D] flex items-center justify-center text-[10px] font-bold text-white shrink-0">
+              {(path.createdBy?.fullName || 'I')[0]}
+            </div>
+            <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{path.createdBy?.fullName || 'Instructor'}</span>
           </div>
-          <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">{path.createdBy?.fullName || 'Instructor'}</span>
-        </div>
 
-        <div>
-          <div className="flex items-center justify-between mb-1 text-[10px] font-mono font-bold">
-            <span className="text-slate-400">Progress</span>
-            <span className="text-[#04AA6D]">{pct}%</span>
-          </div>
-          <div className="w-full h-1.5 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-            <div className="h-1.5 rounded-full bg-[#04AA6D] transition-all" style={{ width: `${pct}%` }} />
-          </div>
+          <button
+            onClick={(e) => { e.stopPropagation(); openPath(path); }}
+            className="px-4 py-2 rounded-xl bg-[#04AA6D] hover:bg-emerald-600 text-white font-mono font-bold text-xs shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span>Explore Roadmap</span>
+            <ChevronRight size={14} />
+          </button>
         </div>
-      </button>
+      </div>
     );
   };
 
@@ -240,7 +237,7 @@ export const Learning = () => {
       {/* ── Page Header ── */}
       <div className="mb-4 text-left">
         <h1 className="text-2xl font-black text-slate-900 dark:text-white font-mono tracking-tight">Learning Paths & Courses</h1>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Master computer science, software engineering, and system design through structured paths.</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Master computer science, software engineering, and system design through structured interactive roadmaps.</p>
       </div>
 
       {/* ── Featured DSA Learning Path Banner ── */}
@@ -264,10 +261,10 @@ export const Learning = () => {
         </div>
 
         <button
-          onClick={() => window.location.href = '/dsa'}
+          onClick={() => window.open('/dsa', '_blank')}
           className="px-6 py-3 bg-[#04AA6D] hover:bg-emerald-600 font-bold text-xs text-white rounded-2xl shadow-lg transition-all shrink-0 flex items-center gap-2 cursor-pointer border border-emerald-500/30 relative z-10"
         >
-          <span>Explore DSA Roadmap</span>
+          <span>Explore DSA Roadmap ↗</span>
           <ChevronRight size={14} />
         </button>
       </div>
@@ -333,228 +330,59 @@ export const Learning = () => {
         </div>
       </div>
 
-      {/* ── 3-column Layout ── */}
-      <div className="flex flex-col lg:flex-row gap-6 flex-1 items-start">
+      {/* ── Main Catalog Grid & Stats Layout ── */}
+      <div className="flex flex-col lg:flex-row gap-6 flex-1 items-start w-full">
 
-        {/* ═══ LEFT PANEL: Path List ═══ */}
-        <div className="w-full lg:w-72 flex flex-col gap-3 shrink-0">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">Available Paths</span>
+        {/* ═══ Catalog Cards Grid ═══ */}
+        <div className="flex-1 w-full text-left">
+          <div className="flex items-center justify-between px-1 mb-4">
+            <span className="text-xs font-mono font-bold uppercase tracking-wider text-slate-400">
+              Available Learning Tracks ({sorted.length})
+            </span>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-mono text-slate-600 dark:text-slate-300 px-2 py-1 rounded-lg outline-none cursor-pointer"
+              className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs font-mono text-slate-600 dark:text-slate-300 px-3 py-1.5 rounded-xl outline-none cursor-pointer"
             >
-              <option value="popular">Popular</option>
-              <option value="rating">Rating</option>
-              <option value="newest">Newest</option>
+              <option value="popular">Most Popular</option>
+              <option value="rating">Top Rated</option>
+              <option value="newest">Newest First</option>
             </select>
           </div>
 
           {loading ? (
-            <div className="flex flex-col items-center py-16 gap-3">
-              <div className="w-6 h-6 rounded-full border-2 border-[#04AA6D] border-t-transparent animate-spin" />
-              <p className="text-xs font-mono text-slate-400">Loading paths...</p>
+            <div className="flex flex-col items-center py-24 gap-3 text-center">
+              <div className="w-8 h-8 rounded-full border-2 border-[#04AA6D] border-t-transparent animate-spin" />
+              <p className="text-xs font-mono text-slate-400">Loading catalog...</p>
             </div>
           ) : sorted.length === 0 ? (
-            <div className="flex flex-col items-center py-12 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
-              <BookOpen className="w-8 h-8 mb-2 text-slate-400" />
-              <p className="text-xs font-mono text-slate-400">No paths found</p>
+            <div className="flex flex-col items-center py-20 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
+              <BookOpen className="w-10 h-10 mb-3 text-slate-400" />
+              <p className="text-xs font-mono text-slate-400">No learning paths found</p>
             </div>
           ) : (
-            sorted.map((path) => <PathCard key={path._id} path={path} />)
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 w-full">
+              {sorted.map((path) => <PathCard key={path._id} path={path} />)}
+            </div>
           )}
         </div>
 
-        {/* ═══ CENTER PANEL: Detail View ═══ */}
-        <div className="flex-1 w-full bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl overflow-hidden shadow-xs flex flex-col min-h-[500px]">
-          {!selectedPath ? (
-            <div className="flex flex-col items-center justify-center py-36 text-center">
-              <BookOpen className="w-12 h-12 mb-3 text-slate-300 dark:text-slate-700" />
-              <p className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">Select a learning path to inspect details</p>
-            </div>
-          ) : (
-            <>
-              {/* Header Breadcrumb */}
-              <div className="px-6 pt-5 pb-3 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between text-left">
-                <div className="flex items-center gap-1.5 text-xs font-mono">
-                  <button onClick={() => setSelectedPath(null)} className="text-[#04AA6D] hover:underline font-bold">All Paths</button>
-                  <ChevronRight size={12} className="text-slate-400" />
-                  <span className="font-bold text-slate-900 dark:text-white truncate">{selectedPath.title}</span>
-                </div>
-              </div>
-
-              {/* Main Course Info */}
-              <div className="p-6 border-b border-slate-100 dark:border-slate-800 text-left">
-                <div className="flex flex-col md:flex-row items-start justify-between gap-4">
-                  <div className="flex-1">
-                    <h2 className="text-xl font-black text-slate-900 dark:text-white font-mono tracking-tight">{selectedPath.title}</h2>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">{selectedPath.description}</p>
-                    
-                    {/* Course Stats */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 my-5">
-                      {[
-                        { label: 'Level',    val: DIFF[selectedPath.difficulty]?.label || 'Beginner' },
-                        { label: 'Modules',  val: selectedPath.modules?.length || 0 },
-                        { label: 'Duration', val: fmtMins(selectedPath.duration) },
-                        { label: 'Enrolled', val: (selectedPath.totalStudents>=1000 ? ((selectedPath.totalStudents/1000).toFixed(1)+'K') : (selectedPath.totalStudents||0)) + ' Students' },
-                      ].map((s) => (
-                        <div key={s.label} className="bg-slate-50 dark:bg-slate-950 p-2.5 rounded-xl border border-slate-200/60 dark:border-slate-800">
-                          <p className="text-[9px] font-mono uppercase font-bold text-slate-400">{s.label}</p>
-                          <p className="text-xs font-bold text-slate-900 dark:text-white font-mono mt-0.5">{s.val}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Action Buttons */}
-                    <div className="flex flex-wrap items-center gap-3">
-                      <button
-                        onClick={handleStartLearning}
-                        disabled={enrolling === selectedPath._id}
-                        className="px-6 py-2.5 rounded-xl text-xs font-bold font-mono text-white bg-[#04AA6D] hover:bg-emerald-600 transition-all shadow-md shadow-emerald-500/20 cursor-pointer"
-                      >
-                        {enrolling === selectedPath._id ? 'Loading…' : pathPct > 0 ? 'Continue Learning' : 'Start Learning'}
-                      </button>
-
-                      <button
-                        onClick={handleEnroll}
-                        disabled={enrolling === selectedPath._id}
-                        className={`px-5 py-2.5 rounded-xl text-xs font-bold font-mono transition-all border flex items-center gap-1.5 cursor-pointer ${
-                          pathEnrolled 
-                            ? 'bg-emerald-500/10 text-[#04AA6D] border-emerald-500/30' 
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-200 dark:border-slate-700'
-                        }`}
-                      >
-                        {pathEnrolled && <CheckCircle2 size={14} />}
-                        {pathEnrolled ? 'Enrolled' : 'Enroll in Path'}
-                      </button>
-
-                      <button
-                        onClick={() => handleBookmark(selectedPath._id)}
-                        className="p-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-[#04AA6D] border border-slate-200 dark:border-slate-700 cursor-pointer"
-                      >
-                        {bookmarked[selectedPath._id] ? <BookmarkCheck size={16} className="text-[#04AA6D]" /> : <Bookmark size={16} />}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Progress bar if enrolled */}
-                {pathEnrolled && (
-                  <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800">
-                    <div className="flex items-center justify-between text-xs font-mono mb-1.5">
-                      <span className="font-bold text-slate-700 dark:text-slate-300">Course Progress</span>
-                      <span className="text-[#04AA6D] font-bold">{pathPct}% Complete</span>
-                    </div>
-                    <div className="w-full h-2 rounded-full bg-slate-100 dark:bg-slate-800 overflow-hidden">
-                      <div className="h-2 rounded-full bg-[#04AA6D] transition-all" style={{ width: `${pathPct}%` }} />
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* Course Detail Tabs */}
-              <div className="flex items-center px-6 border-b border-slate-100 dark:border-slate-800 gap-2 font-mono text-xs">
-                {[
-                  ['modules', 'Modules'],
-                  ['about', 'About'],
-                  ['resources', 'Resources'],
-                  ['reviews', 'Reviews'],
-                ].map(([id, label]) => (
-                  <button
-                    key={id}
-                    onClick={() => setDetailTab(id)}
-                    className={`px-4 py-3 font-bold transition-all cursor-pointer border-b-2 ${
-                      detailTab === id
-                        ? 'border-[#04AA6D] text-[#04AA6D]'
-                        : 'border-transparent text-slate-500 hover:text-slate-900 dark:hover:text-white'
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-
-              {/* Tab Panel Content */}
-              <div className="p-6 text-left overflow-y-auto max-h-[400px]">
-                {detailTab === 'modules' && (
-                  <div className="space-y-3">
-                    {detailLoading ? (
-                      <div className="flex justify-center py-10">
-                        <div className="w-6 h-6 rounded-full border-2 border-[#04AA6D] border-t-transparent animate-spin" />
-                      </div>
-                    ) : pathModules.length === 0 ? (
-                      <p className="text-xs font-mono text-slate-400 text-center py-8">No modules published yet.</p>
-                    ) : pathModules.map((mod, mi) => {
-                      const lessons = mod.lessons || [];
-                      const doneCount = lessons.filter(l => lessonDone(l._id || l)).length;
-                      const isOpen = expandedMod === mi;
-                      return (
-                        <div key={mod._id || mi} className="rounded-2xl border border-slate-200 dark:border-slate-800 overflow-hidden">
-                          <button
-                            onClick={() => setExpandedMod(isOpen ? null : mi)}
-                            className="w-full flex items-center justify-between px-4 py-3 bg-slate-50 dark:bg-slate-950/60 text-left font-mono text-xs font-bold cursor-pointer"
-                          >
-                            <span className="text-slate-900 dark:text-white">{mod.title}</span>
-                            <span className="text-[10px] text-slate-400">{doneCount} / {lessons.length} completed</span>
-                          </button>
-
-                          {isOpen && (
-                            <div className="divide-y divide-slate-100 dark:divide-slate-800/60">
-                              {lessons.map((lesson, li) => {
-                                const done = lessonDone(lesson._id || lesson);
-                                const LIcon = lesson.type === 'video' ? Play : lesson.type === 'code' ? Code2 : FileText;
-                                return (
-                                  <div key={lesson._id || li} className="flex items-center justify-between p-3 bg-white dark:bg-slate-900 text-xs">
-                                    <div className="flex items-center gap-2.5">
-                                      <LIcon size={14} className={done ? 'text-[#04AA6D]' : 'text-slate-400'} />
-                                      <span className={done ? 'line-through text-slate-400' : 'text-slate-800 dark:text-slate-200'}>{lesson.title}</span>
-                                    </div>
-
-                                    <button
-                                      onClick={() => markComplete(lesson._id || lesson, done)}
-                                      className={`px-3 py-1 rounded-lg text-[10px] font-mono font-bold transition-all ${
-                                        done ? 'bg-emerald-500/10 text-[#04AA6D]' : 'bg-[#04AA6D] text-white hover:bg-emerald-600'
-                                      }`}
-                                    >
-                                      {done ? 'Completed ✓' : 'Mark Complete'}
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {detailTab === 'about' && (
-                  <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed font-sans">{selectedPath.description}</p>
-                )}
-              </div>
-
-            </>
-          )}
-        </div>
-
-        {/* ═══ RIGHT PANEL: Learning Stats Sidebar ═══ */}
-        <div className="w-full lg:w-64 flex flex-col gap-4 shrink-0">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 shadow-xs text-left">
+        {/* ═══ Learning Stats Sidebar ═══ */}
+        <div className="w-full lg:w-72 flex flex-col gap-4 shrink-0">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs text-left">
             <p className="text-xs font-mono font-bold text-slate-900 dark:text-white mb-3">Overall Learning Progress</p>
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full border-4 border-[#04AA6D] flex items-center justify-center font-mono font-bold text-xs text-[#04AA6D]">
+              <div className="w-12 h-12 rounded-2xl border-2 border-[#04AA6D] flex items-center justify-center font-mono font-bold text-xs text-[#04AA6D] bg-[#04AA6D]/10">
                 {overallPct}%
               </div>
               <div className="text-xs font-mono">
-                <p className="font-bold text-slate-900 dark:text-white">{enrolledCount} Paths</p>
-                <p className="text-[10px] text-slate-400">{lessonsTotal} Lessons Done</p>
+                <p className="font-bold text-slate-900 dark:text-white">{enrolledCount} Tracks Enrolled</p>
+                <p className="text-[10px] text-slate-400">{lessonsTotal} Lessons Completed</p>
               </div>
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-4 shadow-xs text-left">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-5 shadow-xs text-left">
             <div className="flex items-center gap-2 text-xs font-mono font-bold text-slate-900 dark:text-white mb-2">
               <Flame size={16} className="text-amber-500" />
               <span>Learning Streak</span>
@@ -568,5 +396,6 @@ export const Learning = () => {
     </div>
   );
 };
+
 
 export default Learning;

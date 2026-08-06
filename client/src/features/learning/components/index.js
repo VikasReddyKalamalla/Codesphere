@@ -10,3 +10,5 @@ export * from './QuizLesson.jsx';
 export * from './ProgressTracker.jsx';
 export * from './LearningFilters.jsx';
 export * from './LearningSearch.jsx';
+export * from './VisualRoadmapTree.jsx';
+
