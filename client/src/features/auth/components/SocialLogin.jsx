@@ -100,9 +100,9 @@ export const SocialLogin = () => {
   return (
     <div className="flex flex-col gap-3.5 w-full select-none">
       <div className="flex items-center gap-3">
-        <div className="flex-1 border-t border-slate-200" />
-        <span className="text-[9px] uppercase tracking-widest font-bold text-slate-400">or continue with</span>
-        <div className="flex-1 border-t border-slate-200" />
+        <div className="flex-1 border-t border-slate-200 dark:border-slate-800" />
+        <span className="text-[9px] uppercase tracking-widest font-bold text-slate-400 dark:text-slate-500">or continue with</span>
+        <div className="flex-1 border-t border-slate-200 dark:border-slate-800" />
       </div>
 
       <motion.button
@@ -111,7 +111,7 @@ export const SocialLogin = () => {
         onClick={handleGoogleSignIn}
         whileHover={{ scale: loading ? 1 : 1.01, y: loading ? 0 : -1 }}
         whileTap={{ scale: loading ? 1 : 0.98 }}
-        className="flex items-center justify-center gap-2.5 w-full px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-bold transition-all border border-slate-200 bg-white text-slate-700 hover:text-[#4285F4] hover:border-[#4285F4]/40 hover:shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+        className="flex items-center justify-center gap-2.5 w-full px-4 py-3 rounded-xl text-xs uppercase tracking-wider font-bold transition-all border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:text-[#4285F4] dark:hover:text-[#4285F4] hover:border-[#4285F4]/40 hover:shadow-sm cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
       >
         {loading ? (
           <>

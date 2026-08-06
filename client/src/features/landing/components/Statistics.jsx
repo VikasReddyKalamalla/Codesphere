@@ -32,7 +32,7 @@ export const Statistics = () => {
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.2 });
 
   return (
-    <section ref={ref} className="px-6 py-20 border-t border-slate-200 bg-transparent z-10 relative">
+    <section ref={ref} className="px-6 py-20 border-t border-slate-200 dark:border-slate-800 bg-transparent z-10 relative">
       <div className="max-w-6xl mx-auto select-none">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((s, i) => (
@@ -47,13 +47,13 @@ export const Statistics = () => {
                 boxShadow: '0 15px 30px -10px rgba(4, 170, 109, 0.1)' 
               }}
               transition={{ delay: i * 0.08, duration: 0.4, ease: 'easeOut' }}
-              className="py-10 px-8 bg-white/95 backdrop-blur-sm border border-slate-200 rounded-xl flex flex-col gap-1 text-left cursor-pointer transition-colors"
+              className="py-10 px-8 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm border border-slate-200 dark:border-slate-800 rounded-xl flex flex-col gap-1 text-left cursor-pointer transition-colors"
             >
-              <p className="font-mono-origin text-2xl font-bold text-slate-800 tabular-nums">
+              <p className="font-mono-origin text-2xl font-bold text-slate-800 dark:text-slate-100 tabular-nums">
                 {inView ? <Counter end={s.value} decimals={s.decimals} suffix={s.suffix} /> : `0${s.suffix}`}
               </p>
-              <p className="font-mono-origin text-[10px] font-bold text-slate-500 uppercase tracking-widest mt-1">{s.label}</p>
-              <p className="font-sans-origin text-[11px] text-slate-400 mt-0.5 leading-relaxed">{s.sub}</p>
+              <p className="font-mono-origin text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1">{s.label}</p>
+              <p className="font-sans-origin text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 leading-relaxed">{s.sub}</p>
             </motion.div>
           ))}
         </div>

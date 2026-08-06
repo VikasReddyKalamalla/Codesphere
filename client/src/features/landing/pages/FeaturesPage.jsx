@@ -120,7 +120,7 @@ function Section({ s, idx }) {
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 });
   const even = idx % 2 === 0;
   return (
-    <div ref={ref} className="py-16 px-6 border-t border-slate-200 bg-transparent relative z-10">
+    <div ref={ref} className="py-16 px-6 border-t border-slate-200 dark:border-slate-800 bg-transparent relative z-10">
       <div className="max-w-5xl mx-auto">
         <div className={`flex flex-col ${even ? 'lg:flex-row' : 'lg:flex-row-reverse'} gap-12 items-center`}>
           <motion.div
@@ -130,16 +130,16 @@ function Section({ s, idx }) {
             className="flex-1 flex flex-col gap-5 text-left"
           >
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center">
-                <s.icon className="w-4 h-4 text-slate-650" />
+              <div className="w-9 h-9 rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center">
+                <s.icon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               </div>
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono-origin">{s.tag}</span>
+              <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest font-mono-origin">{s.tag}</span>
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 tracking-tight font-mono-origin">{s.title}</h2>
-            <p className="text-sm text-slate-600 leading-relaxed font-sans-origin">{s.desc}</p>
+            <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 tracking-tight font-mono-origin">{s.title}</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans-origin">{s.desc}</p>
             <ul className="flex flex-col gap-2.5">
               {s.bullets.map((b) => (
-                <li key={b} className="flex items-start gap-2.5 text-xs text-slate-650 font-sans-origin">
+                <li key={b} className="flex items-start gap-2.5 text-xs text-slate-600 dark:text-slate-300 font-sans-origin">
                   <CheckCircle2 className="w-4 h-4 text-[#04AA6D] shrink-0 mt-0.5" />
                   {b}
                 </li>
@@ -156,17 +156,17 @@ function Section({ s, idx }) {
             <motion.div 
               whileHover={{ y: -5, scale: 1.01, boxShadow: '0 20px 40px -15px rgba(4, 170, 109, 0.12)' }}
               transition={{ duration: 0.3 }}
-              className="rounded-xl border border-slate-200 bg-white/95 backdrop-blur-sm overflow-hidden shadow-lg cursor-pointer"
+              className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm overflow-hidden shadow-lg cursor-pointer"
             >
-              <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-slate-200 bg-slate-50 select-none">
-                <span className="w-2 h-2 rounded-full bg-slate-300" />
-                <span className="w-2 h-2 rounded-full bg-slate-300" />
-                <span className="w-2 h-2 rounded-full bg-slate-300" />
-                <span className="ml-2 text-[10px] text-slate-500 font-mono-origin font-semibold">
+              <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 select-none">
+                <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+                <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+                <span className="w-2 h-2 rounded-full bg-slate-300 dark:bg-slate-600" />
+                <span className="ml-2 text-[10px] text-slate-500 dark:text-slate-400 font-mono-origin font-semibold">
                   {s.title.toLowerCase().replace(/\s+/g,'-')}.cs
                 </span>
               </div>
-              <div className="px-5 py-5 font-mono-origin text-xs leading-7 text-left bg-slate-50/50">
+              <div className="px-5 py-5 font-mono-origin text-xs leading-7 text-left bg-slate-50/50 dark:bg-slate-900/50">
                 {s.preview.map((l, i) => <p key={i} className={l.c}>{l.t}</p>)}
               </div>
             </motion.div>
@@ -181,7 +181,7 @@ export default function FeaturesPage() {
   const { ref: extrasRef, inView: extrasInView } = useInView({ triggerOnce: true, threshold: 0.15 });
 
   return (
-    <div className="w-full relative bg-white overflow-hidden">
+    <div className="w-full relative bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 transition-colors">
       <ScrollingCodeBackground />
 
       {/* Hero */}
@@ -192,11 +192,11 @@ export default function FeaturesPage() {
           transition={{ duration: 0.6, ease: 'easeOut' }} 
           className="max-w-2xl w-full"
         >
-          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest font-mono-origin">Platform features</span>
-          <h1 className="mt-3 text-3xl sm:text-5xl font-bold text-slate-800 tracking-tight leading-tight font-mono-origin">
+          <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest font-mono-origin">Platform features</span>
+          <h1 className="mt-3 text-3xl sm:text-5xl font-bold text-slate-800 dark:text-slate-100 tracking-tight leading-tight font-mono-origin">
             Everything you need<br />to code, learn, and ship.
           </h1>
-          <p className="mt-4 text-slate-655 text-sm sm:text-base max-w-lg mx-auto leading-relaxed font-sans-origin">
+          <p className="mt-4 text-slate-600 dark:text-slate-300 text-sm sm:text-base max-w-lg mx-auto leading-relaxed font-sans-origin">
             CodeSphere brings together sandboxes, collaborative workspaces, live classes, assessments, and analytics in one place.
           </p>
           <div className="mt-7 flex flex-wrap justify-center gap-3">
@@ -206,7 +206,7 @@ export default function FeaturesPage() {
               </Link>
             </motion.div>
             <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-              <Link to="/pricing" className="font-mono-origin inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-350 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all">
+              <Link to="/pricing" className="font-mono-origin inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all">
                 View pricing
               </Link>
             </motion.div>
@@ -218,13 +218,13 @@ export default function FeaturesPage() {
       {sections.map((s, i) => <Section key={s.title} s={s} idx={i} />)}
 
       {/* Extra grid */}
-      <section ref={extrasRef} className="px-6 py-20 border-t border-slate-200 bg-transparent relative z-10">
+      <section ref={extrasRef} className="px-6 py-20 border-t border-slate-200 dark:border-slate-800 bg-transparent relative z-10">
         <div className="max-w-5xl mx-auto select-none">
           <motion.h2 
             initial={{ opacity: 0, y: 12 }}
             animate={extrasInView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.4 }}
-            className="text-2xl font-bold text-slate-800 mb-10 text-center font-mono-origin"
+            className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-10 text-center font-mono-origin"
           >
             More capabilities
           </motion.h2>
@@ -236,14 +236,14 @@ export default function FeaturesPage() {
                 animate={extrasInView ? { opacity: 1, y: 0 } : {}}
                 whileHover={{ y: -4, scale: 1.01, borderColor: 'rgba(4, 170, 109, 0.4)' }}
                 transition={{ delay: idx * 0.06, duration: 0.4, ease: 'easeOut' }}
-                className="flex gap-4 p-5 rounded-xl border border-slate-200 bg-white/95 backdrop-blur-sm shadow-sm transition-colors cursor-pointer"
+                className="flex gap-4 p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-sm shadow-sm transition-colors cursor-pointer"
               >
-                <div className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg bg-slate-50 border border-slate-200">
-                  <e.icon className="w-4 h-4 text-slate-600" />
+                <div className="w-9 h-9 shrink-0 flex items-center justify-center rounded-lg bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                  <e.icon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
                 </div>
                 <div className="text-left">
-                  <h3 className="text-xs font-bold text-slate-800 mb-1 font-mono-origin uppercase tracking-wider">{e.title}</h3>
-                  <p className="text-[11px] text-slate-500 leading-relaxed font-sans-origin">{e.desc}</p>
+                  <h3 className="text-xs font-bold text-slate-800 dark:text-slate-100 mb-1 font-mono-origin uppercase tracking-wider">{e.title}</h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed font-sans-origin">{e.desc}</p>
                 </div>
               </motion.div>
             ))}
@@ -252,10 +252,10 @@ export default function FeaturesPage() {
       </section>
 
       {/* Bottom CTA */}
-      <section className="px-6 py-20 border-t border-slate-200 bg-slate-50 relative z-10">
+      <section className="px-6 py-20 border-t border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-900/50 relative z-10">
         <div className="max-w-2xl mx-auto text-center select-none">
-          <h2 className="text-2xl font-bold text-slate-800 font-mono-origin">Ready to get started?</h2>
-          <p className="mt-3 text-slate-600 text-xs sm:text-sm font-sans-origin">Join thousands of teams and classrooms already building on CodeSphere.</p>
+          <h2 className="text-2xl font-bold text-slate-800 dark:text-slate-100 font-mono-origin">Ready to get started?</h2>
+          <p className="mt-3 text-slate-600 dark:text-slate-300 text-xs sm:text-sm font-sans-origin">Join thousands of teams and classrooms already building on CodeSphere.</p>
           <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }} className="inline-block">
             <Link to="/register" className="font-mono-origin inline-flex items-center gap-2 mt-6 px-6 py-3 rounded-lg bg-[#04AA6D] hover:bg-[#03935e] text-white text-xs font-bold transition-all shadow-md">
               Create free workspace <ArrowRight className="w-3.5 h-3.5" />

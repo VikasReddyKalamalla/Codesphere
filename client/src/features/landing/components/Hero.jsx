@@ -90,7 +90,7 @@ export const Hero = () => {
               transition={{ duration: 0.5 }}
               className="flex flex-col items-center gap-3 text-center"
             >
-              <h1 className="font-sans-origin text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-800 leading-tight tracking-tight italic">
+              <h1 className="font-sans-origin text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-800 dark:text-slate-100 leading-tight tracking-tight italic">
                 "{codingQuotes[quoteIndex].text}"
               </h1>
               <p className="font-mono-origin text-xs sm:text-sm text-[#04AA6D] font-bold uppercase tracking-wider">
@@ -101,7 +101,7 @@ export const Hero = () => {
         </div>
 
         {/* Description */}
-        <p className="font-sans-origin mt-6 text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl">
+        <p className="font-sans-origin mt-6 text-sm sm:text-base text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl">
           Codesphere brings classrooms and engineering teams real-time compiler playpens, 
           multiplayer codex workspaces, live study sessions, and automated assessments in a single dashboard.
         </p>
@@ -121,7 +121,7 @@ export const Hero = () => {
             <Link
               to="/codex"
               onClick={(e) => handleRestrictedClick(e, '/codex')}
-              className="font-mono-origin inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-slate-350 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold transition-all duration-200"
+              className="font-mono-origin inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all duration-200 shadow-xs"
             >
               Collaborative Codex <Users className="w-3.5 h-3.5" />
             </Link>
@@ -136,14 +136,14 @@ export const Hero = () => {
               key={s.label} 
               className="flex flex-col items-center cursor-default"
             >
-              <span className="font-mono-origin text-xl sm:text-2xl font-bold text-slate-900">{s.value}</span>
-              <span className="font-mono-origin text-[9px] text-slate-500 uppercase tracking-widest mt-1.5">{s.label}</span>
+              <span className="font-mono-origin text-xl sm:text-2xl font-bold text-slate-900 dark:text-slate-100">{s.value}</span>
+              <span className="font-mono-origin text-[9px] text-slate-500 dark:text-slate-400 uppercase tracking-widest mt-1.5">{s.label}</span>
             </motion.div>
           ))}
         </div>
       </motion.div>
 
-      {/* Interactive Code / Compiler preview (Light Themed IDE Mockup) */}
+      {/* Interactive Code / Compiler preview (Light & Dark Themed IDE Mockup) */}
       <motion.div
         initial={{ opacity: 0, y: 40 }}
         animate={{ opacity: 1, y: 0 }}
@@ -153,46 +153,46 @@ export const Hero = () => {
           boxShadow: '0 20px 40px -15px rgba(4, 170, 109, 0.15)' 
         }}
         transition={{ duration: 0.4, ease: 'easeOut' }}
-        className="mt-16 rounded-xl border border-slate-200 bg-white overflow-hidden w-full max-w-2xl shadow-xl z-10 cursor-pointer"
+        className="mt-16 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden w-full max-w-2xl shadow-xl z-10 cursor-pointer"
       >
         {/* IDE Header */}
-        <div className="flex items-center gap-2 px-4 py-3.5 border-b border-slate-200 bg-slate-50 select-none">
+        <div className="flex items-center gap-2 px-4 py-3.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80 select-none">
           <div className="flex gap-1.5">
             <span className="w-2.5 h-2.5 rounded-full bg-red-500/20 border border-red-500/30" />
             <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/20 border border-yellow-500/30" />
             <span className="w-2.5 h-2.5 rounded-full bg-green-500/20 border border-green-500/30" />
           </div>
-          <span className="ml-3 font-mono-origin text-[10px] text-slate-500">compiler-sandbox.js — codesphere</span>
-          <span className="ml-auto font-mono-origin text-[9px] text-slate-500 flex items-center gap-1.5">
+          <span className="ml-3 font-mono-origin text-[10px] text-slate-500 dark:text-slate-400">compiler-sandbox.js — codesphere</span>
+          <span className="ml-auto font-mono-origin text-[9px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
             <span className={`w-1.5 h-1.5 rounded-full ${stage === 1 ? 'bg-amber-500 animate-ping' : stage === 2 ? 'bg-emerald-500' : 'bg-slate-400'}`} />
             {stage === 0 ? 'Ready' : stage === 1 ? 'Compiling' : stage === 2 ? 'Successful' : 'Idling'}
           </span>
         </div>
         
         {/* IDE Editor Lines */}
-        <div className="px-5 py-6 font-mono-origin text-left text-xs sm:text-sm leading-8 select-none bg-slate-50/50">
-          <div className="flex items-center text-slate-700">
-            <span className="text-blue-500 mr-2.5">$</span>
+        <div className="px-5 py-6 font-mono-origin text-left text-xs sm:text-sm leading-8 select-none bg-slate-50/50 dark:bg-slate-900/50">
+          <div className="flex items-center text-slate-700 dark:text-slate-200">
+            <span className="text-blue-500 dark:text-blue-400 mr-2.5">$</span>
             <span>{terminalText}</span>
-            {stage === 0 && <span className="w-2 h-4 bg-blue-500 ml-0.5 animate-pulse" />}
+            {stage === 0 && <span className="w-2 h-4 bg-blue-500 dark:bg-blue-400 ml-0.5 animate-pulse" />}
           </div>
           
           {stage >= 1 && (
-            <p className="mt-1 text-slate-500 animate-pulse">
+            <p className="mt-1 text-slate-500 dark:text-slate-400 animate-pulse">
               Connecting to playpen sandbox websocket compiler...
             </p>
           )}
 
           {stage >= 2 && (
-            <div className="mt-2 text-emerald-800 bg-emerald-500/5 border border-emerald-500/10 p-3 rounded-lg flex flex-col gap-1">
-              <span className="font-bold flex items-center gap-1.5 text-emerald-700">
+            <div className="mt-2 text-emerald-800 dark:text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-lg flex flex-col gap-1">
+              <span className="font-bold flex items-center gap-1.5 text-emerald-700 dark:text-emerald-400">
                 <Code2 size={13} />
                 COMPILATION COMPLETE
               </span>
-              <span className="text-slate-600 text-[11px]">
+              <span className="text-slate-600 dark:text-slate-300 text-[11px]">
                 ✓ Output: 6a4881916697eee9d2e37717 save_test.js saved to DB
               </span>
-              <span className="text-slate-500 text-[10px]">
+              <span className="text-slate-500 dark:text-slate-400 text-[10px]">
                 Memory: 4.8MB │ Executed in: 34ms │ Status: 0 errors
               </span>
             </div>
@@ -205,7 +205,7 @@ export const Hero = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.5, y: [0, 8, 0] }}
         transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut', delay: 1.2 }}
-        className="mt-16 select-none cursor-default text-slate-400 flex flex-col items-center gap-1"
+        className="mt-16 select-none cursor-default text-slate-400 dark:text-slate-500 flex flex-col items-center gap-1"
       >
         <span className="font-mono-origin text-[9px] tracking-widest uppercase">SCROLL TO CODE</span>
         <ChevronDown size={14} className="animate-pulse" />
