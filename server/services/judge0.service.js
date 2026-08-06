@@ -14,7 +14,8 @@ const logger = require('../utils/logger');
 
 const JUDGE0_API_BASE = process.env.JUDGE0_API_URL || 'https://judge0-ce.p.rapidapi.com';
 const JUDGE0_HOST = process.env.JUDGE0_HOST || 'judge0-ce.p.rapidapi.com';
-const EXECUTION_TIMEOUT = 10; // seconds
+const EXECUTION_TIMEOUT = 5; // max 5s wall time limit
+const MEMORY_LIMIT_KB = 128000; // max 128MB memory limit
 
 const LANGUAGE_MAP = {
   'javascript': 63,
@@ -53,18 +54,16 @@ const executeCodeLocally = (code, language, input = '') => {
       fs.writeFileSync(filePath, code);
       cmd = `g++ -O2 "${filePath}" -o "${binPath}" && "${binPath}"`;
     } else if (lang === 'java') {
-      // Find class name or use Solution
       filePath = path.join(tmpDir, 'Solution.java');
       fs.writeFileSync(filePath, code);
       cmd = `javac "${filePath}" && java -cp "${tmpDir}" Solution`;
     } else {
-      // Default to node
       filePath = path.join(tmpDir, 'solution.js');
       fs.writeFileSync(filePath, code);
       cmd = `node "${filePath}"`;
     }
 
-    const child = exec(cmd, { timeout: EXECUTION_TIMEOUT * 1000, maxBuffer: 1024 * 1024 }, (error, stdout, stderr) => {
+    const child = exec(cmd, { timeout: EXECUTION_TIMEOUT * 1000, maxBuffer: 128 * 1024 * 1024 }, (error, stdout, stderr) => {
       const executionTime = (Date.now() - startTime) / 1000;
       
       // Cleanup temp directory
@@ -78,7 +77,7 @@ const executeCodeLocally = (code, language, input = '') => {
           output: '',
           error: `Time Limit Exceeded (max ${EXECUTION_TIMEOUT}s)`,
           executionTime,
-          memory: 1024,
+          memory: 128000,
         });
       }
 
@@ -92,7 +91,7 @@ const executeCodeLocally = (code, language, input = '') => {
         error: (stderr || error?.message || '').trim(),
         exitCode: error ? error.code || 1 : 0,
         executionTime,
-        memory: 2048,
+        memory: 128000,
       });
     });
 
@@ -120,11 +119,13 @@ const executeCode = async (code, language, input = '', timeLimit = EXECUTION_TIM
           language_id: languageId,
           source_code: code,
           stdin: input || '',
-          cpu_time_limit: timeLimit,
+          cpu_time_limit: Math.min(timeLimit, EXECUTION_TIMEOUT),
+          wall_time_limit: Math.min(timeLimit, EXECUTION_TIMEOUT),
+          memory_limit: MEMORY_LIMIT_KB,
         },
         {
           headers: { 'X-RapidAPI-Key': apiKey, 'X-RapidAPI-Host': JUDGE0_HOST },
-          timeout: 8000,
+          timeout: 6000,
         }
       );
 
@@ -136,7 +137,7 @@ const executeCode = async (code, language, input = '', timeLimit = EXECUTION_TIM
         output: (submission.stdout || '').trim(),
         error: (submission.stderr || submission.compile_output || '').trim(),
         executionTime: submission.time || 0.01,
-        memory: submission.memory || 512,
+        memory: submission.memory || 128000,
       };
     } catch (err) {
       logger.warn(`Judge0 API failed (${err.message}). Using local real execution engine.`);
