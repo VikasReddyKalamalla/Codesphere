@@ -450,6 +450,7 @@ export const VisualRoadmapTree = ({
                     </div>
                   )}
                 </React.Fragment>
+              );
             })}
           </div>
         )}
