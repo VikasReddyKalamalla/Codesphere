@@ -1,9 +1,4 @@
-/**
- * Native Roadmaps Data for CodeSphere
- * Auto-generated from official roadmaps for all 43 tech tracks.
- */
-
-export const NATIVE_ROADMAPS = [
+[
   {
     "id": "ai-agents",
     "title": "AI Agents & Multi-Agent Architecture Roadmap",
@@ -8948,6 +8943,4 @@ export const NATIVE_ROADMAPS = [
       }
     ]
   }
-];
-
-export default NATIVE_ROADMAPS;
+]

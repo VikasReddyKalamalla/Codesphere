@@ -149,72 +149,82 @@ async function seed() {
   const [vikas, sarah, james, priya, admin, alex] = users;
   console.log(`✓ Seeded ${users.length} users`);
 
-  // ── 3. Learning Paths ─────────────────────────────────────────────────────
-  const paths = await LearningPath.insertMany([
-    {
-      title: 'Full-Stack JavaScript Development',
-      description: 'Master Node.js, Express, React, and MongoDB. Build production-ready applications from scratch.',
-      category: 'Web Development', difficulty: 'intermediate',
-      duration: 1200, rating: 4.8, totalStudents: 340,
-      createdBy: sarah._id, isPublished: true, isPremium: false,
-    },
-    {
-      title: 'Python for Data Engineering',
-      description: 'Learn Python, pandas, NumPy, SQL, and build real data pipelines. Industry-level curriculum.',
-      category: 'Data Science', difficulty: 'advanced',
-      duration: 900, rating: 4.6, totalStudents: 210,
-      createdBy: james._id, isPublished: true, isPremium: true,
-    },
-    {
-      title: 'React & TypeScript Masterclass',
-      description: 'From zero to production — hooks, context, Redux Toolkit, testing, and deployment.',
-      category: 'Frontend', difficulty: 'intermediate',
-      duration: 720, rating: 4.9, totalStudents: 520,
-      createdBy: sarah._id, isPublished: true, isPremium: false,
-    },
-    {
-      title: 'System Design Fundamentals',
-      description: 'Scalable systems, load balancers, databases, caching, message queues, and real-world architecture patterns.',
-      category: 'Software Engineering', difficulty: 'advanced',
-      duration: 600, rating: 4.7, totalStudents: 180,
-      createdBy: james._id, isPublished: true, isPremium: true,
-    },
-  ]);
-  console.log(`✓ Seeded ${paths.length} learning paths`);
+  // ── 3. Learning Paths & Modules ─────────────────────────────────────────────
+  let roadmapsData = [];
+  try {
+    roadmapsData = require('./data/roadmapsData.json');
+  } catch (err) {
+    console.log('[Seed] roadmapsData.json not found, using default sample paths');
+    roadmapsData = [
+      {
+        title: 'Full-Stack JavaScript Development',
+        description: 'Master Node.js, Express, React, and MongoDB. Build production-ready applications from scratch.',
+        category: 'Web Development', difficulty: 'intermediate',
+        duration: 1200, rating: 4.8, totalStudents: 340,
+        modules: []
+      }
+    ];
+  }
 
-  // ── 4. Modules & Lessons ──────────────────────────────────────────────────
-  const mod1 = await Module.create({
-    learningPathId: paths[0]._id, title: 'JavaScript Fundamentals', order: 1,
-    description: 'Variables, types, functions, async/await, and ES6+ features.', duration: 180,
-  });
-  const mod2 = await Module.create({
-    learningPathId: paths[0]._id, title: 'Node.js & Express', order: 2,
-    description: 'Build REST APIs, middleware, authentication, and file uploads.', duration: 240,
-  });
-  const mod3 = await Module.create({
-    learningPathId: paths[2]._id, title: 'React Core Concepts', order: 1,
-    description: 'Components, props, state, hooks, and lifecycle.', duration: 200,
-  });
+  const seededPaths = [];
+  let totalSeededModules = 0;
+  let totalSeededLessons = 0;
 
-  const lessons = await Lesson.insertMany([
-    { moduleId: mod1._id, title: 'Variables and Data Types',   type: 'video',   videoUrl: 'https://example.com/l1', duration: 25, order: 1, isFree: true  },
-    { moduleId: mod1._id, title: 'Functions & Arrow Functions', type: 'video',   videoUrl: 'https://example.com/l2', duration: 30, order: 2, isFree: true  },
-    { moduleId: mod1._id, title: 'Async / Await Deep Dive',    type: 'article', article: '# Async/Await\nAsync functions return promises...', duration: 20, order: 3 },
-    { moduleId: mod1._id, title: 'ES6+ Features Practice',     type: 'code',    code: 'const nums = [1,2,3];\nconsole.log(nums.map(n => n * 2));', duration: 15, order: 4 },
-    { moduleId: mod2._id, title: 'Setting Up Express Server',  type: 'video',   videoUrl: 'https://example.com/l5', duration: 35, order: 1, isFree: true  },
-    { moduleId: mod2._id, title: 'REST API Design Patterns',   type: 'article', article: '# REST API Patterns\nUse nouns for endpoints...', duration: 25, order: 2 },
-    { moduleId: mod3._id, title: 'Components and Props',       type: 'video',   videoUrl: 'https://example.com/l7', duration: 28, order: 1, isFree: true  },
-    { moduleId: mod3._id, title: 'useState and useEffect',     type: 'video',   videoUrl: 'https://example.com/l8', duration: 32, order: 2 },
-    { moduleId: mod3._id, title: 'Custom Hooks',               type: 'code',    code: 'function useDebounce(val, delay) { ... }', duration: 20, order: 3 },
-  ]);
+  for (const rd of roadmapsData) {
+    const createdPath = await LearningPath.create({
+      title: rd.title,
+      description: rd.description,
+      category: rd.category || 'General',
+      difficulty: rd.difficulty || 'beginner',
+      duration: rd.duration || 180,
+      rating: 4.8,
+      totalStudents: Math.floor(Math.random() * 800) + 200,
+      createdBy: sarah._id,
+      isPublished: true,
+      isPremium: false,
+    });
+    seededPaths.push(createdPath);
 
-  // Link lessons to modules
-  await Module.findByIdAndUpdate(mod1._id, { lessons: lessons.slice(0, 4).map(l => l._id) });
-  await Module.findByIdAndUpdate(mod2._id, { lessons: lessons.slice(4, 6).map(l => l._id) });
-  await Module.findByIdAndUpdate(mod3._id, { lessons: lessons.slice(6, 9).map(l => l._id) });
-  await LearningPath.findByIdAndUpdate(paths[0]._id, { modules: [mod1._id, mod2._id] });
-  await LearningPath.findByIdAndUpdate(paths[2]._id, { modules: [mod3._id] });
-  console.log(`✓ Seeded ${lessons.length} lessons across 3 modules`);
+    const createdModuleIds = [];
+    if (rd.modules && rd.modules.length > 0) {
+      for (const modData of rd.modules) {
+        const createdMod = await Module.create({
+          learningPathId: createdPath._id,
+          title: modData.title,
+          order: modData.order || 1,
+          description: modData.description || `Module covering ${modData.title}`,
+          duration: 180,
+        });
+        createdModuleIds.push(createdMod._id);
+        totalSeededModules++;
+
+        const createdLessonIds = [];
+        if (modData.lessons && modData.lessons.length > 0) {
+          for (let lIdx = 0; lIdx < modData.lessons.length; lIdx++) {
+            const lData = modData.lessons[lIdx];
+            const createdLesson = await Lesson.create({
+              moduleId: createdMod._id,
+              title: lData.title,
+              type: lData.type || 'article',
+              duration: lData.duration || 25,
+              order: lIdx + 1,
+              isFree: lIdx === 0,
+              article: `# ${lData.title}\n\n## Overview\nWelcome to **${lData.title}** as part of **${modData.title}** in the **${rd.title}** learning path.\n\n## Key Takeaways\n- Understand foundational concepts and industry best practices.\n- Apply concepts step-by-step with practical hands-on exercises.\n- Practice coding challenges in the CodeSphere interactive sandbox.`,
+              videoUrl: lData.type === 'video' ? 'https://sample-videos.com/video123/mp4/720/big_buck_bunny_720p_1mb.mp4' : '',
+              code: lData.type === 'code' ? `// ${lData.title}\n// Write your solution below\n\nconsole.log("Practicing ${lData.title}");` : ''
+            });
+            createdLessonIds.push(createdLesson._id);
+            totalSeededLessons++;
+          }
+        }
+        await Module.findByIdAndUpdate(createdMod._id, { lessons: createdLessonIds });
+      }
+    }
+    await LearningPath.findByIdAndUpdate(createdPath._id, { modules: createdModuleIds });
+  }
+
+  const paths = seededPaths;
+  console.log(`✓ Seeded ${paths.length} learning paths, ${totalSeededModules} modules, and ${totalSeededLessons} lessons`);
 
   // ── 5. Sandbox Projects ───────────────────────────────────────────────────
   const projects = await SandboxProject.insertMany([
