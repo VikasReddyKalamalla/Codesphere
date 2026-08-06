@@ -26,19 +26,6 @@ const SKILLS = [
   { name: 'Tailwind CSS', color: '#06B6D4', text: '#fff' },
 ];
 
-const ACHIEVEMENTS = [
-  { icon: '🏆', title: 'Code Master',     desc: 'Solved 100 coding challenges',  date: 'May 10, 2025' },
-  { icon: '⭐', title: 'Top Contributor', desc: 'Active in the community',        date: 'Apr 28, 2025' },
-  { icon: '🎯', title: 'Quiz Expert',     desc: 'Scored 95%+ in 10 tests',        date: 'Apr 15, 2025' },
-];
-
-const ACTIVITY = [
-  { icon: Code2,      color: '#3b82f6', bg: '#dbeafe', title: 'Solved Two Sum problem',      sub: 'in Data Structures',       time: '2 hours ago'  },
-  { icon: Award,      color: '#8b5cf6', bg: '#ede9fe', title: 'Completed React.js Basics test', sub: 'Score: 92%',            time: '1 day ago'    },
-  { icon: Download,   color: '#f59e0b', bg: '#fef3c7', title: 'Downloaded System Design Notes', sub: 'PDF',                   time: '2 days ago'   },
-  { icon: MessageSquare, color: '#10b981', bg: '#d1fae5', title: 'Joined the community',     sub: 'React Developers',          time: '3 days ago'  },
-];
-
 /* ─────────────────────────────── main component ─────────────────────── */
 export const Profile = () => {
   const dispatch   = useDispatch();
@@ -487,11 +474,11 @@ export const Profile = () => {
               <button className="text-xs font-bold text-[#04AA6D] dark:text-emerald-400 hover:underline font-mono cursor-pointer">View All</button>
             </div>
             <div className="flex flex-col gap-4">
-              {xp > 0 ? (
-                ACTIVITY.map((a, i) => (
+              {profile?.activity && profile.activity.length > 0 ? (
+                profile.activity.map((a, i) => (
                   <div key={i} className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0" style={{ background: a.bg }}>
-                      <a.icon className="w-4 h-4" style={{ color: a.color }} />
+                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-emerald-500/10 text-[#04AA6D]">
+                      <Code2 className="w-4 h-4" />
                     </div>
                     <div>
                       <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{a.title}</p>

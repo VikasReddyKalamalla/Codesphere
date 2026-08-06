@@ -126,10 +126,10 @@ export const DashboardHome = () => {
   const cardClass = "bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800 rounded-3xl p-6 shadow-xs hover:shadow-md transition-all duration-300";
 
   const activePath = dbData?.continueLearning?.[0] || {
-    title: 'Full Stack Web Development (MERN)',
-    completionPercentage: 35,
-    continueRoute: '/learning/full-stack-web-development',
-    nextLesson: 'Module 2: REST APIs & MongoDB Express Architecture'
+    title: 'No Active Pathway Enrolled',
+    completionPercentage: 0,
+    continueRoute: '/learning',
+    nextLesson: 'Explore 83 Tech Roadmaps to enroll in a learning path!'
   };
 
   const currentDateStr = new Date().toLocaleDateString('en-US', {
