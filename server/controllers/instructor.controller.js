@@ -47,10 +47,60 @@ const updateProfile = asyncHandler(async (req, res) => {
   successResponse(res, 200, 'Profile updated successfully', { instructor });
 });
 
+/**
+ * POST /api/instructors/payouts
+ * Request an instructor payout withdrawal.
+ */
+const requestPayout = asyncHandler(async (req, res) => {
+  const payout = await instructorService.requestPayout(req.user._id, req.body);
+  successResponse(res, 201, 'Payout withdrawal request submitted successfully', { payout });
+});
+
+/**
+ * GET /api/instructors/payouts
+ * Get payout withdrawal history for the instructor.
+ */
+const getPayouts = asyncHandler(async (req, res) => {
+  const payouts = await instructorService.getPayoutHistory(req.user._id);
+  successResponse(res, 200, 'Payout history fetched successfully', { payouts });
+});
+
+/**
+ * POST /api/instructors/courses/:id/submit-approval
+ * Submit course for admin verification before publishing.
+ */
+const submitCourseApproval = asyncHandler(async (req, res) => {
+  const course = await instructorService.submitCourseForApproval(req.user._id, req.params.id);
+  successResponse(res, 200, 'Course submitted for admin approval', { course });
+});
+
+/**
+ * PUT /api/instructors/admin/courses/:id/approve
+ * Admin approves course for publication.
+ */
+const approveCourse = asyncHandler(async (req, res) => {
+  const course = await instructorService.approveCourseAdmin(req.params.id, req.user._id);
+  successResponse(res, 200, 'Course approved and published successfully', { course });
+});
+
+/**
+ * PUT /api/instructors/admin/courses/:id/reject
+ * Admin rejects course with remarks.
+ */
+const rejectCourse = asyncHandler(async (req, res) => {
+  const course = await instructorService.rejectCourseAdmin(req.params.id, req.user._id, req.body.reason);
+  successResponse(res, 200, 'Course rejected with feedback', { course });
+});
+
 module.exports = {
   getAllInstructors,
   getMyProfile,
   getDashboard,
   getInstructorById,
   updateProfile,
+  requestPayout,
+  getPayouts,
+  submitCourseApproval,
+  approveCourse,
+  rejectCourse,
 };

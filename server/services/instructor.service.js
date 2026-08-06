@@ -209,10 +209,104 @@ const getInstructorDashboard = async (userId) => {
   };
 };
 
+// ─── INSTRUCTOR PAYOUT & REVENUE SPLIT SYSTEM ──────────────────────────────────
+const InstructorPayout = require('../models/InstructorPayout');
+
+/**
+ * Request an instructor payout withdrawal with 70% revenue split calculation.
+ */
+const requestPayout = async (userId, data) => {
+  const instructor = await Instructor.findOne({ user: userId, status: 'Active' });
+  if (!instructor) throw createError('Active instructor profile not found', 404);
+
+  const { grossEarnings, payoutMethod, paymentDetails } = data;
+  if (!grossEarnings || grossEarnings <= 0) throw createError('Gross earnings must be greater than 0', 400);
+
+  const revenueSharePercentage = 70; // 70% revenue share to creator
+  const netPayout = Math.round((grossEarnings * revenueSharePercentage) / 100 * 100) / 100;
+
+  const payout = await InstructorPayout.create({
+    instructor: instructor._id,
+    user: userId,
+    grossEarnings,
+    revenueSharePercentage,
+    netPayout,
+    payoutMethod: payoutMethod || 'Bank_Transfer',
+    paymentDetails: paymentDetails || {},
+    status: 'Pending',
+  });
+
+  return payout;
+};
+
+/**
+ * Get payout history for an instructor.
+ */
+const getPayoutHistory = async (userId) => {
+  const instructor = await Instructor.findOne({ user: userId });
+  if (!instructor) throw createError('Instructor profile not found', 404);
+
+  const payouts = await InstructorPayout.find({ instructor: instructor._id }).sort({ createdAt: -1 });
+  return payouts;
+};
+
+// ─── COURSE APPROVAL WORKFLOW ──────────────────────────────────────────────────
+
+/**
+ * Instructor submits course for admin verification.
+ */
+const submitCourseForApproval = async (userId, courseId) => {
+  const course = await LearningPath.findOne({ _id: courseId, createdBy: userId });
+  if (!course) throw createError('Course not found or unauthorized', 404);
+
+  course.approvalStatus = 'Pending_Approval';
+  course.submittedForApprovalAt = new Date();
+  await course.save();
+
+  return course;
+};
+
+/**
+ * Admin approves course for publication.
+ */
+const approveCourseAdmin = async (courseId, adminId) => {
+  const course = await LearningPath.findById(courseId);
+  if (!course) throw createError('Course not found', 404);
+
+  course.approvalStatus = 'Approved';
+  course.isPublished = true;
+  course.approvedBy = adminId;
+  course.approvedAt = new Date();
+  course.rejectionReason = undefined;
+  await course.save();
+
+  return course;
+};
+
+/**
+ * Admin rejects course with remarks.
+ */
+const rejectCourseAdmin = async (courseId, adminId, reason) => {
+  const course = await LearningPath.findById(courseId);
+  if (!course) throw createError('Course not found', 404);
+
+  course.approvalStatus = 'Rejected';
+  course.isPublished = false;
+  course.rejectionReason = reason || 'Course does not meet platform quality guidelines.';
+  await course.save();
+
+  return course;
+};
+
 module.exports = {
   getAllInstructors,
   getInstructorById,
   getMyInstructorProfile,
   updateInstructorProfile,
   getInstructorDashboard,
+  requestPayout,
+  getPayoutHistory,
+  submitCourseForApproval,
+  approveCourseAdmin,
+  rejectCourseAdmin,
 };

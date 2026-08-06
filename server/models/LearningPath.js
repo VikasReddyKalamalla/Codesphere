@@ -39,9 +39,19 @@ const learningPathSchema = new mongoose.Schema(
       required: [true, 'Creator is required'],
     },
 
-    // ─── Access ───────────────────────────────────────────────────────────────
+    // ─── Access & Verification Workflow ────────────────────────────────────
     isPremium:   { type: Boolean, default: false },
     isPublished: { type: Boolean, default: false },
+    approvalStatus: {
+      type: String,
+      enum: ['Draft', 'Pending_Approval', 'Approved', 'Rejected'],
+      default: 'Approved',
+      index: true,
+    },
+    submittedForApprovalAt: { type: Date },
+    approvedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    approvedAt: { type: Date },
+    rejectionReason: { type: String, trim: true },
   },
   { timestamps: true }
 );
