@@ -53,10 +53,15 @@ router.get('/globe/markers',       getGlobeEvents);
 router.get('/analytics/summary',   getEventAnalyticsSummary);
 router.get('/ai/recommendations', getAiRecommendations);
 
+// ─── User Specific Routes ─────────────────────────────────────────────────────
+router.get('/my/organized',    protect, getMyEvents);
+router.get('/my/registrations', protect, getUserRegistrations);
+router.get('/my/bookmarks',     protect, getUserBookmarks);
+router.get('/my/certificates',  protect, getMyCertificates);
+
 // ─── Event CRUD ───────────────────────────────────────────────────────────────
 router.get   ('/',           getAllEvents);
 router.get   ('/slug/:slug', getEventBySlug);
-router.get   ('/my/organized', protect, getMyEvents);
 router.get   ('/:id',        getEventById);
 router.post  ('/',           protect, restrictTo('instructor', 'admin'), createEvent);
 router.put   ('/:id',        protect, updateEvent);
@@ -75,13 +80,11 @@ router.get('/:id/analytics', protect, getEventAnalytics);
 router.post  ('/:id/register',            protect, registerForEvent);
 router.delete('/:id/register',            protect, cancelRegistration);
 router.get   ('/:id/registrations',       protect, getEventRegistrations);
-router.get   ('/my/registrations',        protect, getUserRegistrations);
 router.get   ('/:id/registration-status', protect, checkRegistrationStatus);
 
 // ─── Bookmarks ────────────────────────────────────────────────────────────────
 router.post  ('/:id/bookmark',        protect, addBookmark);
 router.delete('/:id/bookmark',        protect, removeBookmark);
-router.get   ('/my/bookmarks',        protect, getUserBookmarks);
 router.get   ('/:id/bookmark-status', protect, isBookmarked);
 
 // ─── Reminders ────────────────────────────────────────────────────────────────
@@ -91,6 +94,5 @@ router.get ('/:id/reminders', protect, getReminders);
 // ─── Certificates ─────────────────────────────────────────────────────────────
 router.post('/:id/certificates', protect, restrictTo('instructor', 'admin'), issueCertificate);
 router.get ('/:id/certificates', protect, getEventCertificates);
-router.get ('/my/certificates',  protect, getMyCertificates);
 
 module.exports = router;

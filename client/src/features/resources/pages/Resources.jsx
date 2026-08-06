@@ -221,12 +221,16 @@ export const Resources = () => {
       <div className="flex flex-col lg:flex-row gap-6 relative z-10">
         {/* Left Sidebar */}
         <ResourceSidebar
+          activeTab={activeTab}
           activeCategory={activeCategory}
           activeResourceType={activeResourceType}
           activeDifficulty={activeDifficulty}
-          onSelectCategory={(cat) => dispatch(setActiveCategory(cat))}
-          onSelectResourceType={(type) => dispatch(setActiveResourceType(type))}
-          onSelectDifficulty={(diff) => dispatch(setActiveDifficulty(diff))}
+          priceFilter={priceFilter}
+          onTabChange={(tab) => dispatch(setActiveTab(tab))}
+          onCategoryChange={(cat) => dispatch(setActiveCategory(cat))}
+          onTypeChange={(type) => dispatch(setActiveResourceType(type))}
+          onDifficultyChange={(diff) => dispatch(setActiveDifficulty(diff))}
+          onPriceChange={(price) => dispatch(setPriceFilter(price))}
           onReset={() => dispatch(resetFilters())}
         />
 
@@ -235,20 +239,59 @@ export const Resources = () => {
           <div className="flex justify-between items-center pb-2 border-b border-slate-200 dark:border-slate-800">
             <h2 className="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
               <Layers className="w-4 h-4 text-[#04AA6D]" />
-              <span>Found {filteredResources.length} Programming Resources</span>
+              <span className="capitalize">
+                {activeTab === 'explore' && `Found ${filteredResources.length} Programming Resources`}
+                {activeTab === 'trending' && `Trending Knowledge Items (${trendingResources.length})`}
+                {activeTab === 'bookmarks' && `Bookmarked Resources (${userBookmarks.length})`}
+                {activeTab === 'history' && `Recently Viewed (${userHistory.length})`}
+                {activeTab === 'collections' && `Playlists & Resource Kits (${collections.length})`}
+              </span>
             </h2>
             <span className="text-xs text-slate-500 dark:text-slate-400 font-mono capitalize">
               Filter: {activeCategory !== 'all' ? activeCategory : 'All Topics'}
             </span>
           </div>
 
-          {/* Featured Rail on Explore tab */}
+          {/* Tab & Featured Content logic */}
           {(() => {
-            const showFeatured = activeTab === 'explore' && featuredResources.length > 0 && !searchQuery;
-            const featuredItems = showFeatured ? featuredResources.slice(0, 2) : [];
-            const featuredIds = featuredItems.map(r => String(r._id || r.id));
+            if (activeTab === 'collections') {
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {collections.map((c) => (
+                    <div
+                      key={c.id}
+                      onClick={() => dispatch(setActiveCategory('all'))}
+                      className="p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 hover:border-[#04AA6D] cursor-pointer transition-all flex flex-col gap-2 shadow-xs"
+                    >
+                      <div className="flex justify-between items-center">
+                        <span className="text-xs font-mono font-bold text-[#04AA6D] uppercase">{c.icon || 'Kit'}</span>
+                        <span className="text-[10px] bg-emerald-500/10 text-emerald-500 font-mono font-bold px-2 py-0.5 rounded-md">{c.count} Resources</span>
+                      </div>
+                      <h4 className="font-extrabold text-sm text-slate-900 dark:text-slate-100">{c.title}</h4>
+                    </div>
+                  ))}
+                </div>
+              );
+            }
 
-            const mainGridResources = filteredResources.filter(r => !featuredIds.includes(String(r._id || r.id)));
+            const isExplore = activeTab === 'explore';
+            const showFeatured = isExplore && featuredResources.length > 0 && !searchQuery && activeCategory === 'all' && activeResourceType === 'all' && activeDifficulty === 'all';
+            const featuredItems = showFeatured ? featuredResources.slice(0, 2) : [];
+            const featuredIds = new Set(featuredItems.map(r => String(r._id || r.id)));
+
+            let baseItems = filteredResources;
+            if (activeTab === 'trending') {
+              baseItems = trendingResources.length > 0
+                ? trendingResources
+                : [...filteredResources].sort((a, b) => (b.views || 0) - (a.views || 0));
+            } else if (activeTab === 'bookmarks') {
+              const bSet = new Set(userBookmarks.map(String));
+              baseItems = filteredResources.filter(r => bSet.has(String(r._id || r.id)));
+            } else if (activeTab === 'history') {
+              baseItems = userHistory;
+            }
+
+            const mainGridResources = baseItems.filter(r => !featuredIds.has(String(r._id || r.id)));
 
             return (
               <>
@@ -261,9 +304,9 @@ export const Resources = () => {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       {featuredItems.map((res) => (
                         <ResourceCard
-                          key={res._id || res.id}
+                          key={String(res._id || res.id)}
                           resource={res}
-                          isBookmarked={userBookmarks.includes(res._id || res.id)}
+                          isBookmarked={userBookmarks.map(String).includes(String(res._id || res.id))}
                           onSelect={handleSelectResource}
                           onBookmark={handleBookmark}
                           onDownload={handleDownload}
@@ -277,8 +320,14 @@ export const Resources = () => {
                 {mainGridResources.length === 0 && !showFeatured ? (
                   <div className="p-12 text-center bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-900 rounded-3xl flex flex-col items-center gap-3">
                     <Layers className="w-12 h-12 text-slate-400 dark:text-slate-600" />
-                    <h3 className="font-extrabold text-slate-800 dark:text-slate-200">No resources matched your search filters</h3>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">Try adjusting your topic, resource format, or difficulty filter.</p>
+                    <h3 className="font-extrabold text-slate-800 dark:text-slate-200">No resources found</h3>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {activeTab === 'bookmarks'
+                        ? 'You have not bookmarked any resources yet.'
+                        : activeTab === 'history'
+                        ? 'You have not viewed any resources recently.'
+                        : 'Try adjusting your topic, resource format, or difficulty filter.'}
+                    </p>
                     <button
                       onClick={() => dispatch(resetFilters())}
                       className="mt-2 px-4 py-2 bg-[#04AA6D] hover:bg-emerald-600 text-white font-bold text-xs rounded-xl cursor-pointer"
@@ -290,9 +339,9 @@ export const Resources = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                     {mainGridResources.map((res) => (
                       <ResourceCard
-                        key={res._id || res.id}
+                        key={String(res._id || res.id)}
                         resource={res}
-                        isBookmarked={userBookmarks.includes(res._id || res.id)}
+                        isBookmarked={userBookmarks.map(String).includes(String(res._id || res.id))}
                         onSelect={handleSelectResource}
                         onBookmark={handleBookmark}
                         onDownload={handleDownload}

@@ -62,7 +62,7 @@ const indexSpecs = {
   Payment: [
     { spec: { userId: 1, createdAt: -1 }, options: {} },
     { spec: { status: 1, createdAt: -1 }, options: {} },
-    { spec: { transactionId: 1 }, options: { unique: true } },
+    { spec: { transactionId: 1 }, options: { unique: true, sparse: true } },
   ],
   Notification: [
     { spec: { userId: 1, read: 1, createdAt: -1 }, options: {} },
@@ -99,8 +99,13 @@ const createIndexes = async () => {
           await model.collection.createIndex(index.spec, index.options);
           logger.info(`✓ Index created for ${modelName}: ${JSON.stringify(index.spec)}`);
         } catch (error) {
-          if (error.code === 85) {
-            // Index with same name but different spec already exists
+          if (
+            error.code === 85 ||
+            error.code === 86 ||
+            error.codeName === 'IndexOptionsConflict' ||
+            (error.message && error.message.includes('An existing index has the same name'))
+          ) {
+            // Index with same name but different spec/options already exists
             logger.warn(`Index already exists for ${modelName}, skipping...`);
           } else {
             logger.error(`Failed to create index for ${modelName}: ${error.message}`);

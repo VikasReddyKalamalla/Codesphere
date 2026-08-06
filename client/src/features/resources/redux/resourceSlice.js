@@ -28,7 +28,14 @@ const resourceSlice = createSlice({
   initialState,
   reducers: {
     setResources: (state, action) => {
-      state.items = action.payload;
+      const list = Array.isArray(action.payload) ? action.payload : [];
+      const seen = new Set();
+      state.items = list.filter((r) => {
+        const id = String(r._id || r.id || r.title);
+        if (!id || seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
     },
     setFeaturedResources: (state, action) => {
       state.featuredItems = action.payload;
@@ -42,7 +49,7 @@ const resourceSlice = createSlice({
     setSelectedResource: (state, action) => {
       state.selectedResource = action.payload;
       if (action.payload) {
-        const exists = state.userHistory.find(h => (h._id || h.id) === (action.payload._id || action.payload.id));
+        const exists = state.userHistory.find(h => String(h._id || h.id) === String(action.payload._id || action.payload.id));
         if (!exists) {
           state.userHistory = [action.payload, ...state.userHistory].slice(0, 15);
         }
@@ -67,14 +74,17 @@ const resourceSlice = createSlice({
       state.priceFilter = action.payload;
     },
     toggleBookmark: (state, action) => {
-      const id = action.payload;
+      const id = String(action.payload);
       if (state.userBookmarks.includes(id)) {
-        state.userBookmarks = state.userBookmarks.filter(bId => bId !== id);
+        state.userBookmarks = state.userBookmarks.filter(bId => String(bId) !== id);
       } else {
         state.userBookmarks.push(id);
       }
     },
     addResourceItem: (state, action) => {
+      if (!action.payload) return;
+      const id = String(action.payload._id || action.payload.id || action.payload.title);
+      state.items = state.items.filter(r => String(r._id || r.id || r.title) !== id);
       state.items.unshift(action.payload);
     },
     resetFilters: (state) => {
