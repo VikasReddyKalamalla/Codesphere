@@ -41,6 +41,25 @@ export const Codex = () => {
 
   useEffect(() => {
     loadData();
+
+    const handleWorkspaceChanged = (evt) => {
+      const entity = evt?.entity;
+      if (!entity || entity === 'workspace' || entity === 'all') {
+        loadData();
+      }
+    };
+
+    import('../../../socket/socket.js').then((m) => {
+      m.socket.on('admin:data_changed', handleWorkspaceChanged);
+      m.socket.on('workspace:changed', handleWorkspaceChanged);
+    });
+
+    return () => {
+      import('../../../socket/socket.js').then((m) => {
+        m.socket.off('admin:data_changed', handleWorkspaceChanged);
+        m.socket.off('workspace:changed', handleWorkspaceChanged);
+      });
+    };
   }, []);
 
   // Templates seeding trigger

@@ -30,6 +30,26 @@ export const Sessions = () => {
     dispatch(fetchSessionsThunk());
     dispatch(fetchMySessionsThunk());
     dispatch(fetchCertificatesThunk());
+
+    const handleSessionChanged = (evt) => {
+      const entity = evt?.entity;
+      if (!entity || entity === 'session' || entity === 'all') {
+        dispatch(fetchSessionsThunk());
+        dispatch(fetchMySessionsThunk());
+      }
+    };
+
+    import('../../../socket/socket.js').then((m) => {
+      m.socket.on('admin:data_changed', handleSessionChanged);
+      m.socket.on('session:changed', handleSessionChanged);
+    });
+
+    return () => {
+      import('../../../socket/socket.js').then((m) => {
+        m.socket.off('admin:data_changed', handleSessionChanged);
+        m.socket.off('session:changed', handleSessionChanged);
+      });
+    };
   }, [dispatch]);
 
   const handleDuplicate = async (e, id) => {

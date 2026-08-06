@@ -1,6 +1,7 @@
 const asyncHandler        = require('../utils/asyncHandler');
 const { successResponse } = require('../utils/apiResponse');
 const workspaceService    = require('../services/workspace.service');
+const { broadcastDataChange } = require('../utils/realtimeBroadcast');
 
 // GET /api/workspaces
 const getAllWorkspaces = asyncHandler(async (req, res) => {
@@ -25,36 +26,42 @@ const getWorkspaceById = asyncHandler(async (req, res) => {
 // POST /api/workspaces
 const createWorkspace = asyncHandler(async (req, res) => {
   const data = await workspaceService.createWorkspace(req.body, req.user._id);
+  broadcastDataChange('workspace', 'created', data);
   return successResponse(res, 201, 'Workspace created successfully', data);
 });
 
 // PUT /api/workspaces/:id
 const updateWorkspace = asyncHandler(async (req, res) => {
   const data = await workspaceService.updateWorkspace(req.params.id, req.body, req.user._id, req.user.role);
+  broadcastDataChange('workspace', 'updated', data);
   return successResponse(res, 200, 'Workspace updated successfully', data);
 });
 
 // DELETE /api/workspaces/:id
 const deleteWorkspace = asyncHandler(async (req, res) => {
   await workspaceService.deleteWorkspace(req.params.id, req.user._id, req.user.role);
+  broadcastDataChange('workspace', 'deleted', { id: req.params.id });
   return successResponse(res, 200, 'Workspace deleted successfully');
 });
 
 // PATCH /api/workspaces/:id/archive
 const archiveWorkspace = asyncHandler(async (req, res) => {
   const data = await workspaceService.archiveWorkspace(req.params.id, req.user._id, req.user.role);
+  broadcastDataChange('workspace', 'archived', data);
   return successResponse(res, 200, 'Workspace archived successfully', data);
 });
 
 // PATCH /api/workspaces/:id/restore
 const restoreWorkspace = asyncHandler(async (req, res) => {
   const data = await workspaceService.restoreWorkspace(req.params.id, req.user._id, req.user.role);
+  broadcastDataChange('workspace', 'restored', data);
   return successResponse(res, 200, 'Workspace restored successfully', data);
 });
 
 // POST /api/workspaces/:id/duplicate
 const duplicateWorkspace = asyncHandler(async (req, res) => {
   const data = await workspaceService.duplicateWorkspace(req.params.id, req.user._id);
+  broadcastDataChange('workspace', 'created', data);
   return successResponse(res, 201, 'Workspace duplicated successfully', data);
 });
 

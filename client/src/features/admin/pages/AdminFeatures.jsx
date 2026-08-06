@@ -6,7 +6,7 @@ import {
   Plus, Edit, Trash2, Search, Filter, Check, X, Eye, RefreshCw,
   BarChart2, FileText, Layers, ShieldCheck, Sparkles, Activity,
   ChevronRight, ExternalLink, Play, Lock, Globe, ToggleLeft, ToggleRight,
-  Clock, Award, Users, AlertCircle, CheckCircle2, Upload
+  Clock, Award, Users, AlertCircle, CheckCircle2, Upload, Video
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,11 +19,177 @@ export default function AdminFeaturesPage({ defaultTab }) {
   const [searchParams, setSearchParams] = useSearchParams();
   const navigate = useNavigate();
 
-  // Active Tab: 'learning' | 'sandboxes' | 'tests' | 'events' | 'resources' | 'toggles'
+  // Active Tab: 'learning' | 'sandboxes' | 'tests' | 'events' | 'resources' | 'codex' | 'sessions' | 'toggles'
   const activeTab = searchParams.get('tab') || defaultTab || 'learning';
 
   const handleTabChange = (tabKey) => {
     setSearchParams({ tab: tabKey });
+  };
+
+  // ─── TAB: CODEX WORKSPACES STATE & HANDLERS ─────────────────────────────
+  const [workspacesList, setWorkspacesList] = useState([]);
+  const [workspaceLoading, setWorkspaceLoading] = useState(false);
+  const [workspaceSearch, setWorkspaceSearch] = useState('');
+  const [workspaceVisibility, setWorkspaceVisibility] = useState('');
+  const [workspaceStatusFilter, setWorkspaceStatusFilter] = useState('');
+  const [isWorkspaceModalOpen, setIsWorkspaceModalOpen] = useState(false);
+  const [editingWorkspace, setEditingWorkspace] = useState(null);
+  const [workspaceForm, setWorkspaceForm] = useState({
+    name: '',
+    description: '',
+    technologyStack: 'React, Node.js, MongoDB',
+    visibility: 'public',
+    githubRepo: '',
+    status: 'active',
+  });
+
+  const fetchWorkspacesList = async () => {
+    setWorkspaceLoading(true);
+    try {
+      const res = await apiClient.get('/workspaces', {
+        params: {
+          search: workspaceSearch || undefined,
+          visibility: workspaceVisibility || undefined,
+          status: workspaceStatusFilter || undefined,
+        },
+      });
+      const data = res.data?.data?.workspaces || res.data?.workspaces || res.data?.data || res.data || [];
+      setWorkspacesList(Array.isArray(data) ? data : []);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to fetch workspaces');
+      setWorkspacesList([]);
+    } finally {
+      setWorkspaceLoading(false);
+    }
+  };
+
+  const handleSaveWorkspace = async (e) => {
+    e.preventDefault();
+    if (!workspaceForm.name) return toast.error('Workspace name is required');
+    const loader = toast.loading('Saving workspace...');
+    try {
+      const payload = {
+        ...workspaceForm,
+        technologyStack: typeof workspaceForm.technologyStack === 'string'
+          ? workspaceForm.technologyStack.split(',').map((s) => s.trim()).filter(Boolean)
+          : workspaceForm.technologyStack,
+      };
+
+      if (editingWorkspace) {
+        await apiClient.put(`/workspaces/${editingWorkspace._id}`, payload);
+        toast.success('Workspace updated successfully!', { id: loader });
+      } else {
+        await apiClient.post('/workspaces', payload);
+        toast.success('Workspace created successfully!', { id: loader });
+      }
+      setIsWorkspaceModalOpen(false);
+      fetchWorkspacesList();
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to save workspace', { id: loader });
+    }
+  };
+
+  const handleDeleteWorkspace = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this workspace?')) return;
+    const loader = toast.loading('Deleting workspace...');
+    try {
+      await apiClient.delete(`/workspaces/${id}`);
+      toast.success('Workspace deleted successfully!', { id: loader });
+      fetchWorkspacesList();
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to delete workspace', { id: loader });
+    }
+  };
+
+  const handleToggleWorkspaceStatus = async (item) => {
+    const isArchived = item.status === 'archived';
+    const endpoint = `/workspaces/${item._id}/${isArchived ? 'restore' : 'archive'}`;
+    const loader = toast.loading(`${isArchived ? 'Restoring' : 'Archiving'} workspace...`);
+    try {
+      await apiClient.patch(endpoint);
+      toast.success(`Workspace ${isArchived ? 'restored' : 'archived'}!`, { id: loader });
+      fetchWorkspacesList();
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Action failed', { id: loader });
+    }
+  };
+
+  // ─── TAB: LIVE WEBCASTS / SESSIONS STATE & HANDLERS ──────────────────────
+  const [sessionsList, setSessionsList] = useState([]);
+  const [sessionLoading, setSessionLoading] = useState(false);
+  const [sessionSearch, setSessionSearch] = useState('');
+  const [sessionStatusFilter, setSessionStatusFilter] = useState('');
+  const [sessionDifficultyFilter, setSessionDifficultyFilter] = useState('');
+  const [isSessionModalOpen, setIsSessionModalOpen] = useState(false);
+  const [editingSession, setEditingSession] = useState(null);
+  const [sessionForm, setSessionForm] = useState({
+    title: '',
+    description: '',
+    category: 'Full Stack & Web Dev',
+    instructorName: '',
+    startTime: '',
+    duration: 60,
+    meetingUrl: '',
+    status: 'upcoming',
+    difficulty: 'intermediate',
+    isPremium: false,
+  });
+
+  const fetchSessionsList = async () => {
+    setSessionLoading(true);
+    try {
+      const res = await apiClient.get('/sessions', {
+        params: {
+          search: sessionSearch || undefined,
+          status: sessionStatusFilter || undefined,
+          difficulty: sessionDifficultyFilter || undefined,
+        },
+      });
+      const data = res.data?.data?.sessions || res.data?.sessions || res.data?.data || res.data || [];
+      setSessionsList(Array.isArray(data) ? data : []);
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to fetch live sessions');
+      setSessionsList([]);
+    } finally {
+      setSessionLoading(false);
+    }
+  };
+
+  const handleSaveSession = async (e) => {
+    e.preventDefault();
+    if (!sessionForm.title) return toast.error('Session title is required');
+    const loader = toast.loading('Saving webcast session...');
+    try {
+      const payload = {
+        ...sessionForm,
+        duration: Number(sessionForm.duration) || 60,
+        isPremium: Boolean(sessionForm.isPremium),
+      };
+
+      if (editingSession) {
+        await apiClient.put(`/sessions/${editingSession._id}`, payload);
+        toast.success('Session updated successfully!', { id: loader });
+      } else {
+        await apiClient.post('/sessions', payload);
+        toast.success('Session created successfully!', { id: loader });
+      }
+      setIsSessionModalOpen(false);
+      fetchSessionsList();
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to save session', { id: loader });
+    }
+  };
+
+  const handleDeleteSession = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this live session?')) return;
+    const loader = toast.loading('Deleting session...');
+    try {
+      await apiClient.delete(`/sessions/${id}`);
+      toast.success('Session deleted successfully!', { id: loader });
+      fetchSessionsList();
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || 'Failed to delete session', { id: loader });
+    }
   };
 
   // ─── TAB 2: SANDBOXES STATE & HANDLERS ─────────────────────────────────────
@@ -490,6 +656,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
     if (activeTab === 'tests') fetchTests();
     if (activeTab === 'events') fetchEvents();
     if (activeTab === 'resources') fetchResources();
+    if (activeTab === 'codex') fetchWorkspacesList();
+    if (activeTab === 'sessions') fetchSessionsList();
     if (activeTab === 'toggles') fetchToggles();
   }, [activeTab]);
 
@@ -501,6 +669,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
       if (!entity || entity === 'test' || activeTab === 'tests') fetchTests();
       if (!entity || entity === 'event' || activeTab === 'events') fetchEvents();
       if (!entity || entity === 'resource' || activeTab === 'resources') fetchResources();
+      if (!entity || entity === 'workspace' || activeTab === 'codex') fetchWorkspacesList();
+      if (!entity || entity === 'session' || activeTab === 'sessions') fetchSessionsList();
       if (!entity || entity === 'feature' || activeTab === 'toggles') fetchToggles();
     };
 
@@ -509,6 +679,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
     socket.on('test:changed', fetchTests);
     socket.on('event:changed', fetchEvents);
     socket.on('resource:changed', fetchResources);
+    socket.on('workspace:changed', fetchWorkspacesList);
+    socket.on('session:changed', fetchSessionsList);
     socket.on('feature:changed', fetchToggles);
 
     return () => {
@@ -517,6 +689,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
       socket.off('test:changed', fetchTests);
       socket.off('event:changed', fetchEvents);
       socket.off('resource:changed', fetchResources);
+      socket.off('workspace:changed', fetchWorkspacesList);
+      socket.off('session:changed', fetchSessionsList);
       socket.off('feature:changed', fetchToggles);
     };
   }, [activeTab]);
@@ -527,6 +701,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
     { key: 'tests', label: 'Practice Tests', icon: HelpCircle, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
     { key: 'events', label: 'Events & Workshops', icon: Calendar, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
     { key: 'resources', label: 'Knowledge Resources', icon: BookOpen, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    { key: 'sessions', label: 'Live Webcasts', icon: Video, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    { key: 'codex', label: 'Codex Workspaces', icon: Code2, badgeColor: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
     { key: 'toggles', label: 'Feature Toggles', icon: Sliders, badgeColor: 'bg-slate-100 text-slate-700 border-slate-200' },
   ];
 
@@ -545,7 +721,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
               Admin Hub
             </h1>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              Consolidated control center to manage all user-facing learning paths, interactive coding sandboxes, timed practice assessments, live events, documentation resources, and platform feature flags.
+              Consolidated control center to manage all user-facing learning paths, interactive coding sandboxes, timed practice assessments, live events, documentation resources, live webcasts, Codex workspaces, and platform feature flags.
             </p>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -555,6 +731,8 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 if (activeTab === 'tests') fetchTests();
                 if (activeTab === 'events') fetchEvents();
                 if (activeTab === 'resources') fetchResources();
+                if (activeTab === 'codex') fetchWorkspacesList();
+                if (activeTab === 'sessions') fetchSessionsList();
                 if (activeTab === 'toggles') fetchToggles();
                 toast.success('Refreshed data');
               }}
@@ -1400,6 +1578,380 @@ export default function AdminFeaturesPage({ defaultTab }) {
         </div>
       )}
 
+      {/* ── TAB: LIVE WEBCASTS / SESSIONS ──────────────────────────────────── */}
+      {activeTab === 'sessions' && (
+        <div className="space-y-6">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Webcasts</span>
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center">
+                  <Video size={18} />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">{sessionsList.length}</p>
+            </div>
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Live Now</span>
+                <div className="w-8 h-8 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 flex items-center justify-center">
+                  <Activity size={18} />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
+                {sessionsList.filter((s) => s.status === 'live').length}
+              </p>
+            </div>
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Upcoming Classes</span>
+                <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <Clock size={18} />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
+                {sessionsList.filter((s) => s.status === 'upcoming').length}
+              </p>
+            </div>
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Attendees</span>
+                <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                  <Users size={18} />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
+                {sessionsList.reduce((acc, s) => acc + (s.attendeesCount || s.attendees?.length || 0), 0)}
+              </p>
+            </div>
+          </div>
+
+          {/* Controls Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-64">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search live sessions..."
+                  value={sessionSearch}
+                  onChange={(e) => setSessionSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && fetchSessionsList()}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-[#04AA6D]"
+                />
+              </div>
+              <select
+                value={sessionStatusFilter}
+                onChange={(e) => setSessionStatusFilter(e.target.value)}
+                className="py-2 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium outline-none"
+              >
+                <option value="">All Statuses</option>
+                <option value="live">Live Now</option>
+                <option value="upcoming">Upcoming</option>
+                <option value="completed">Completed</option>
+                <option value="draft">Draft</option>
+              </select>
+            </div>
+            <button
+              onClick={() => {
+                setEditingSession(null);
+                setSessionForm({
+                  title: '',
+                  description: '',
+                  category: 'Full Stack & Web Dev',
+                  instructorName: '',
+                  startTime: new Date().toISOString().slice(0, 16),
+                  duration: 60,
+                  meetingUrl: 'https://meet.google.com/',
+                  status: 'upcoming',
+                  difficulty: 'intermediate',
+                  isPremium: false,
+                });
+                setIsSessionModalOpen(true);
+              }}
+              className="w-full sm:w-auto px-4 py-2.5 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+            >
+              <Plus size={16} /> Schedule Webcast
+            </button>
+          </div>
+
+          {/* Table */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            {sessionLoading ? (
+              <div className="p-12 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+                <RefreshCw size={16} className="animate-spin text-[#04AA6D]" /> Loading live sessions...
+              </div>
+            ) : sessionsList.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 text-xs">
+                No webcast sessions found. Click "Schedule Webcast" to add one!
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase font-bold tracking-wider">
+                    <tr>
+                      <th className="py-3.5 px-4">Session Title</th>
+                      <th className="py-3.5 px-4">Category</th>
+                      <th className="py-3.5 px-4">Instructor</th>
+                      <th className="py-3.5 px-4">Duration</th>
+                      <th className="py-3.5 px-4">Status</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {sessionsList.map((item) => (
+                      <tr key={item._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="py-3 px-4 font-bold text-slate-800 dark:text-white flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center shrink-0">
+                            <Video size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 dark:text-white">{item.title}</p>
+                            <p className="text-[10px] font-normal text-slate-400 truncate max-w-xs">{item.description}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-medium">{item.category || 'General'}</td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-bold">{item.instructorName || item.instructor?.fullName || 'Instructor'}</td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-mono">{item.duration || 60} mins</td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2.5 py-1 text-[10px] font-bold rounded-full uppercase border ${
+                            item.status === 'live' ? 'bg-rose-50 text-rose-600 border-rose-200 animate-pulse' :
+                            item.status === 'upcoming' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+                            item.status === 'completed' ? 'bg-slate-100 text-slate-600 border-slate-200' :
+                            'bg-amber-50 text-amber-700 border-amber-200'
+                          }`}>
+                            {item.status || 'upcoming'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right space-x-2">
+                          <button
+                            onClick={() => {
+                              setEditingSession(item);
+                              setSessionForm({
+                                title: item.title || '',
+                                description: item.description || '',
+                                category: item.category || 'Full Stack & Web Dev',
+                                instructorName: item.instructorName || item.instructor?.fullName || '',
+                                startTime: item.startTime ? new Date(item.startTime).toISOString().slice(0, 16) : '',
+                                duration: item.duration || 60,
+                                meetingUrl: item.meetingUrl || '',
+                                status: item.status || 'upcoming',
+                                difficulty: item.difficulty || 'intermediate',
+                                isPremium: item.isPremium ?? false,
+                              });
+                              setIsSessionModalOpen(true);
+                            }}
+                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer"
+                            title="Edit Session"
+                          >
+                            <Edit size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSession(item._id)}
+                            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                            title="Delete Session"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* ── TAB: CODEX WORKSPACES ───────────────────────────────────────────── */}
+      {activeTab === 'codex' && (
+        <div className="space-y-6">
+          {/* Quick Stats */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Total Workspaces</span>
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center">
+                  <Code2 size={18} />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">{workspacesList.length}</p>
+            </div>
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Active</span>
+                <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
+                  <CheckCircle2 size={18} />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
+                {workspacesList.filter((w) => w.status === 'active' || !w.status).length}
+              </p>
+            </div>
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Public Workspaces</span>
+                <div className="w-8 h-8 rounded-xl bg-purple-50 dark:bg-purple-950/40 text-purple-600 dark:text-purple-400 flex items-center justify-center">
+                  <Globe size={18} />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
+                {workspacesList.filter((w) => w.visibility === 'public').length}
+              </p>
+            </div>
+            <div className="p-4 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Private Workspaces</span>
+                <div className="w-8 h-8 rounded-xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                  <Lock size={18} />
+                </div>
+              </div>
+              <p className="text-2xl font-black text-slate-900 dark:text-white mt-2">
+                {workspacesList.filter((w) => w.visibility === 'private').length}
+              </p>
+            </div>
+          </div>
+
+          {/* Controls Bar */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-white dark:bg-slate-900 p-4 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-sm">
+            <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-64">
+                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search workspaces..."
+                  value={workspaceSearch}
+                  onChange={(e) => setWorkspaceSearch(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && fetchWorkspacesList()}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs outline-none focus:border-[#04AA6D]"
+                />
+              </div>
+              <select
+                value={workspaceVisibility}
+                onChange={(e) => setWorkspaceVisibility(e.target.value)}
+                className="py-2 px-3 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-medium outline-none"
+              >
+                <option value="">All Visibilities</option>
+                <option value="public">Public</option>
+                <option value="private">Private</option>
+              </select>
+            </div>
+            <button
+              onClick={() => {
+                setEditingWorkspace(null);
+                setWorkspaceForm({
+                  name: '',
+                  description: '',
+                  technologyStack: 'React, Node.js, MongoDB',
+                  visibility: 'public',
+                  githubRepo: '',
+                  status: 'active',
+                });
+                setIsWorkspaceModalOpen(true);
+              }}
+              className="w-full sm:w-auto px-4 py-2.5 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl text-xs font-bold flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+            >
+              <Plus size={16} /> Create Workspace
+            </button>
+          </div>
+
+          {/* Table */}
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            {workspaceLoading ? (
+              <div className="p-12 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+                <RefreshCw size={16} className="animate-spin text-[#04AA6D]" /> Loading Codex workspaces...
+              </div>
+            ) : workspacesList.length === 0 ? (
+              <div className="p-12 text-center text-slate-400 text-xs">
+                No workspaces found. Click "Create Workspace" to add one!
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-800 text-slate-500 uppercase font-bold tracking-wider">
+                    <tr>
+                      <th className="py-3.5 px-4">Workspace Name</th>
+                      <th className="py-3.5 px-4">Owner</th>
+                      <th className="py-3.5 px-4">Tech Stack</th>
+                      <th className="py-3.5 px-4">Visibility</th>
+                      <th className="py-3.5 px-4">Status</th>
+                      <th className="py-3.5 px-4 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                    {workspacesList.map((item) => (
+                      <tr key={item._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                        <td className="py-3 px-4 font-bold text-slate-800 dark:text-white flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-[#04AA6D] dark:text-emerald-400 flex items-center justify-center shrink-0">
+                            <Code2 size={16} />
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900 dark:text-white">{item.name}</p>
+                            <p className="text-[10px] font-normal text-slate-400 truncate max-w-xs">{item.description}</p>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-bold">{item.owner?.fullName || 'User'}</td>
+                        <td className="py-3 px-4 text-slate-600 dark:text-slate-300 font-mono">
+                          {Array.isArray(item.technologyStack) ? item.technologyStack.join(', ') : item.technologyStack || 'JavaScript'}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span className={`px-2 py-0.5 text-[10px] font-bold rounded uppercase ${
+                            item.visibility === 'public' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
+                          }`}>
+                            {item.visibility || 'public'}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <button
+                            onClick={() => handleToggleWorkspaceStatus(item)}
+                            className={`px-2.5 py-1 text-[10px] font-bold rounded-full border transition-all ${
+                              item.status === 'active' || !item.status
+                                ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                                : 'bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200'
+                            }`}
+                          >
+                            {item.status || 'active'}
+                          </button>
+                        </td>
+                        <td className="py-3 px-4 text-right space-x-2">
+                          <button
+                            onClick={() => {
+                              setEditingWorkspace(item);
+                              setWorkspaceForm({
+                                name: item.name || '',
+                                description: item.description || '',
+                                technologyStack: Array.isArray(item.technologyStack) ? item.technologyStack.join(', ') : item.technologyStack || '',
+                                visibility: item.visibility || 'public',
+                                githubRepo: item.githubRepo || '',
+                                status: item.status || 'active',
+                              });
+                              setIsWorkspaceModalOpen(true);
+                            }}
+                            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 hover:text-slate-900 cursor-pointer"
+                            title="Edit Workspace"
+                          >
+                            <Edit size={15} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteWorkspace(item._id)}
+                            className="p-1.5 hover:bg-rose-50 dark:hover:bg-rose-900/30 rounded-lg text-slate-400 hover:text-rose-600 cursor-pointer"
+                            title="Delete Workspace"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* ── TAB 6: MASTER FEATURE TOGGLES ────────────────────────────────────── */}
       {activeTab === 'toggles' && (
         <div className="space-y-6">
@@ -1967,6 +2519,135 @@ export default function AdminFeaturesPage({ defaultTab }) {
                 <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
                   <button type="button" onClick={() => setIsResourceModalOpen(false)} className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-bold cursor-pointer">Cancel</button>
                   <button type="submit" className="px-4 py-2 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl font-bold cursor-pointer">Save Resource</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Session Modal */}
+      <AnimatePresence>
+        {isSessionModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4 font-sans max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Video size={18} className="text-[#04AA6D]" />
+                  {editingSession ? 'Edit Live Webcast' : 'Schedule Live Webcast'}
+                </h3>
+                <button onClick={() => setIsSessionModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"><X size={16} /></button>
+              </div>
+              <form onSubmit={handleSaveSession} className="space-y-3 text-xs">
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Session Title *</label>
+                  <input type="text" required value={sessionForm.title} onChange={(e) => setSessionForm({ ...sessionForm, title: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="e.g. Masterclass: System Design Architecture" />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Description</label>
+                  <textarea rows={2} value={sessionForm.description} onChange={(e) => setSessionForm({ ...sessionForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="Webcast topic details..." />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Category</label>
+                    <input type="text" value={sessionForm.category} onChange={(e) => setSessionForm({ ...sessionForm, category: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Instructor Name</label>
+                    <input type="text" value={sessionForm.instructorName} onChange={(e) => setSessionForm({ ...sessionForm, instructorName: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="Host name..." />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Start Time</label>
+                    <input type="datetime-local" value={sessionForm.startTime} onChange={(e) => setSessionForm({ ...sessionForm, startTime: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Duration (Minutes)</label>
+                    <input type="number" value={sessionForm.duration} onChange={(e) => setSessionForm({ ...sessionForm, duration: Number(e.target.value) })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" />
+                  </div>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Meeting / Stream URL</label>
+                  <input type="url" value={sessionForm.meetingUrl} onChange={(e) => setSessionForm({ ...sessionForm, meetingUrl: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-mono focus:border-[#04AA6D]" placeholder="https://meet.google.com/..." />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Status</label>
+                    <select value={sessionForm.status} onChange={(e) => setSessionForm({ ...sessionForm, status: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]">
+                      <option value="upcoming">Upcoming</option>
+                      <option value="live">Live Now</option>
+                      <option value="completed">Completed</option>
+                      <option value="draft">Draft</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Difficulty</label>
+                    <select value={sessionForm.difficulty} onChange={(e) => setSessionForm({ ...sessionForm, difficulty: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]">
+                      <option value="beginner">Beginner</option>
+                      <option value="intermediate">Intermediate</option>
+                      <option value="advanced">Advanced</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button type="button" onClick={() => setIsSessionModalOpen(false)} className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-bold cursor-pointer">Cancel</button>
+                  <button type="submit" className="px-4 py-2 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl font-bold cursor-pointer">Save Webcast</button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Codex Workspace Modal */}
+      <AnimatePresence>
+        {isWorkspaceModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+            <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl w-full max-w-lg p-6 space-y-4 font-sans max-h-[90vh] overflow-y-auto">
+              <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                <h3 className="font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                  <Code2 size={18} className="text-[#04AA6D]" />
+                  {editingWorkspace ? 'Edit Codex Workspace' : 'Create Codex Workspace'}
+                </h3>
+                <button onClick={() => setIsWorkspaceModalOpen(false)} className="p-1 rounded-lg text-slate-400 hover:bg-slate-100 cursor-pointer"><X size={16} /></button>
+              </div>
+              <form onSubmit={handleSaveWorkspace} className="space-y-3 text-xs">
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Workspace Name *</label>
+                  <input type="text" required value={workspaceForm.name} onChange={(e) => setWorkspaceForm({ ...workspaceForm, name: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="e.g. Full Stack Microservices Workspace" />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Description</label>
+                  <textarea rows={2} value={workspaceForm.description} onChange={(e) => setWorkspaceForm({ ...workspaceForm, description: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]" placeholder="Workspace purpose and module scope..." />
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">Tech Stack (comma separated)</label>
+                  <input type="text" value={workspaceForm.technologyStack} onChange={(e) => setWorkspaceForm({ ...workspaceForm, technologyStack: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-mono focus:border-[#04AA6D]" placeholder="React, Node.js, Express, MongoDB" />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Visibility</label>
+                    <select value={workspaceForm.visibility} onChange={(e) => setWorkspaceForm({ ...workspaceForm, visibility: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]">
+                      <option value="public">Public</option>
+                      <option value="private">Private</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="font-bold text-slate-700 dark:text-slate-300">Status</label>
+                    <select value={workspaceForm.status} onChange={(e) => setWorkspaceForm({ ...workspaceForm, status: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D]">
+                      <option value="active">Active</option>
+                      <option value="archived">Archived</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="font-bold text-slate-700 dark:text-slate-300">GitHub Repository (optional)</label>
+                  <input type="url" value={workspaceForm.githubRepo} onChange={(e) => setWorkspaceForm({ ...workspaceForm, githubRepo: e.target.value })} className="w-full mt-1 p-2 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl outline-none font-mono focus:border-[#04AA6D]" placeholder="https://github.com/..." />
+                </div>
+                <div className="flex justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                  <button type="button" onClick={() => setIsWorkspaceModalOpen(false)} className="px-4 py-2 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-600 dark:text-slate-300 font-bold cursor-pointer">Cancel</button>
+                  <button type="submit" className="px-4 py-2 bg-[#04AA6D] hover:bg-[#03935e] text-white rounded-xl font-bold cursor-pointer">Save Workspace</button>
                 </div>
               </form>
             </motion.div>
