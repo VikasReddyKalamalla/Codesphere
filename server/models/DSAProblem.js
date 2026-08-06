@@ -51,8 +51,11 @@ const dsaProblemSchema = new mongoose.Schema(
     // ─── Hints (Progressive) ──────────────────────────────────────────────────
     hints: [{ type: String }], // array of strings, revealed one by one
 
-    // ─── Editorial ────────────────────────────────────────────────────────────
-    editorial: { type: String, default: '' }, // markdown — locked until solved
+    // ─── Editorial & Solution Video ───────────────────────────────────────────
+    editorial:         { type: String, default: '' }, // markdown — locked until solved
+    editorialVideoUrl: { type: String, default: '' }, // YouTube/Loom video link
+    expectedTimeComplexity:  { type: String, default: 'O(N)' },
+    expectedSpaceComplexity: { type: String, default: 'O(1)' },
 
     // ─── Classification ───────────────────────────────────────────────────────
     tags:      [{ type: String, trim: true, lowercase: true }],

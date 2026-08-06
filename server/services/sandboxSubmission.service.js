@@ -154,6 +154,67 @@ const reviewSubmission = async (submissionId, reviewData, reviewerId, userRole) 
   return submission.populate('reviewedBy', 'fullName avatar');
 };
 
+// ─── AUTOMATED HIDDEN TEST CASE VALIDATION WORKER ────────────────────────────────
+const judge0Service = require('./judge0.service');
+const { getIO }      = require('./socket.service');
+
+/**
+ * Evaluates submission code against hidden test cases and emits real-time Socket.io feedback.
+ */
+const evaluateHiddenTestCasesWorker = async (submissionId, code, language, testCases = []) => {
+  const submission = await SandboxSubmission.findById(submissionId);
+  if (!submission) return;
+
+  const io = getIO();
+  let passedCount = 0;
+  const results = [];
+
+  for (let i = 0; i < testCases.length; i++) {
+    const tc = testCases[i];
+    
+    // Emit progress via socket if socket server initialized
+    if (io) {
+      io.to(`user_${submission.userId}`).emit('submission_eval_progress', {
+        submissionId,
+        testCaseIndex: i + 1,
+        totalTestCases: testCases.length,
+        status: 'evaluating',
+      });
+    }
+
+    const execResult = await judge0Service.executeCode(code, language, tc.input);
+    const passed = execResult.success && execResult.output.trim() === tc.expectedOutput.trim();
+
+    if (passed) passedCount++;
+
+    results.push({
+      testCaseIndex: i + 1,
+      passed,
+      timeTaken: execResult.executionTime,
+      memory: execResult.memory,
+      error: execResult.error || null,
+    });
+  }
+
+  const allPassed = passedCount === testCases.length;
+  submission.status = allPassed ? 'approved' : 'rejected';
+  submission.reviewNotes = `Automated Evaluation: ${passedCount}/${testCases.length} Test Cases Passed.`;
+  await submission.save();
+
+  // Emit final evaluation complete event
+  if (io) {
+    io.to(`user_${submission.userId}`).emit('submission_eval_completed', {
+      submissionId,
+      status: submission.status,
+      passedCount,
+      totalTestCases: testCases.length,
+      results,
+    });
+  }
+
+  return { status: submission.status, passedCount, totalTestCases: testCases.length, results };
+};
+
 module.exports = {
   submitProject,
   updateSubmission,
@@ -161,4 +222,5 @@ module.exports = {
   getProjectSubmissions,
   getMySubmissions,
   reviewSubmission,
+  evaluateHiddenTestCasesWorker,
 };
