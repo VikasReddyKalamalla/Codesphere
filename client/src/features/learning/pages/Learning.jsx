@@ -240,20 +240,20 @@ export const Learning = () => {
       </div>
 
       {/* ── Featured Interactive Compiler Banner ── */}
-      <div className="mb-6 p-6 rounded-3xl bg-gradient-to-r from-slate-900 via-slate-900 to-slate-950 text-white border border-slate-800 shadow-xl flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden">
-        <div className="absolute -right-10 -bottom-10 w-56 h-56 bg-[#04AA6D]/15 rounded-full blur-3xl pointer-events-none" />
+      <div className="mb-6 p-6 rounded-3xl bg-white dark:bg-slate-900 text-slate-900 dark:text-white border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-center justify-between gap-5 relative overflow-hidden transition-colors duration-200">
+        <div className="absolute -right-10 -bottom-10 w-56 h-56 bg-emerald-500/10 dark:bg-[#04AA6D]/15 rounded-full blur-3xl pointer-events-none" />
         
         <div className="flex items-center gap-4 text-left relative z-10">
-          <div className="w-14 h-14 rounded-2xl bg-[#04AA6D]/20 border border-[#04AA6D]/40 flex items-center justify-center text-2xl shrink-0">
+          <div className="w-14 h-14 rounded-2xl bg-emerald-50 dark:bg-[#04AA6D]/20 border border-emerald-200 dark:border-[#04AA6D]/40 flex items-center justify-center text-2xl shrink-0">
             ⚡
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-[#04AA6D]/20 text-[#04AA6D] border border-[#04AA6D]/30 uppercase">LIVE COMPILER & DSA ROADMAP</span>
-              <span className="text-xs text-slate-300 font-semibold">• LeetCode Problems & Playpen</span>
+              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold font-mono bg-emerald-50 dark:bg-[#04AA6D]/20 text-[#04AA6D] dark:text-emerald-400 border border-emerald-200 dark:border-[#04AA6D]/30 uppercase">LIVE COMPILER & DSA ROADMAP</span>
+              <span className="text-xs text-slate-500 dark:text-slate-300 font-semibold">• LeetCode Problems & Playpen</span>
             </div>
-            <h2 className="text-lg font-black mt-1 text-white font-mono">Data Structures, Algorithms & Real-time Compiler</h2>
-            <p className="text-xs text-slate-300 mt-1 max-w-xl leading-relaxed">
+            <h2 className="text-lg font-black mt-1 text-slate-900 dark:text-white font-mono">Data Structures, Algorithms & Real-time Compiler</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 max-w-xl leading-relaxed">
               Solve LeetCode-style algorithms with live Python/JS/C++/Java compilation, test case runners, visual graphs, and progressive hints.
             </p>
           </div>
@@ -261,7 +261,7 @@ export const Learning = () => {
 
         <button
           onClick={() => window.open('/dsa', '_blank')}
-          className="px-6 py-3 bg-[#04AA6D] hover:bg-emerald-600 font-bold text-xs text-white rounded-2xl shadow-lg transition-all shrink-0 flex items-center gap-2 cursor-pointer border border-emerald-500/30 relative z-10"
+          className="px-6 py-3 bg-[#04AA6D] hover:bg-emerald-600 font-bold text-xs text-white rounded-2xl shadow-md transition-all shrink-0 flex items-center gap-2 cursor-pointer border border-emerald-500/30 relative z-10"
         >
           <span>Open DSA Compiler Sandbox ↗</span>
           <ChevronRight size={14} />

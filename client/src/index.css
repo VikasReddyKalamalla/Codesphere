@@ -34,7 +34,7 @@
     transition: background-color 0.25s ease, color 0.25s ease;
   }
 
-  :focus-visible { outline: 2px solid #6366f1; outline-offset: 2px; }
+  :focus-visible { outline: 2px solid #04AA6D; outline-offset: 2px; }
 
   /* Custom scrollbars */
   ::-webkit-scrollbar        { width: 6px; height: 6px; }
@@ -46,7 +46,7 @@
   html:not(.dark) ::-webkit-scrollbar-thumb  { background: #cbd5e1; border-radius: 9999px; }
   html:not(.dark) ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
-  ::selection { background-color: rgba(99, 102, 241, 0.25); color: inherit; }
+  ::selection { background-color: rgba(4, 170, 109, 0.25); color: inherit; }
   a   { text-decoration: none; color: inherit; }
   img, video { max-width: 100%; display: block; }
 }
