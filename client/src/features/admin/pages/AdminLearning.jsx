@@ -28,6 +28,7 @@ export default function AdminLearning() {
   const [category, setCategory] = useState('');
   const [difficulty, setDifficulty] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
+  const [limit, setLimit] = useState(100);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
@@ -85,7 +86,7 @@ export default function AdminLearning() {
       const res = await apiClient.get('/admin/content/learning-paths', {
         params: {
           page,
-          limit: 15,
+          limit,
           search,
           category,
           difficulty,
@@ -134,7 +135,7 @@ export default function AdminLearning() {
       socket.off('learning:changed', handleSocketEvent);
       socket.off('admin:data_changed');
     };
-  }, [page, category, difficulty, statusFilter]);
+  }, [page, limit, category, difficulty, statusFilter]);
 
   // Debounced search trigger
   useEffect(() => {
@@ -405,8 +406,8 @@ export default function AdminLearning() {
           )}
 
           {/* Filters Row */}
-          <div className="bg-white border border-slate-200/85 p-4 rounded-2xl shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] grid grid-cols-1 md:grid-cols-4 gap-3">
-            <div className="relative">
+          <div className="bg-white border border-slate-200/85 p-4 rounded-2xl shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="relative md:col-span-1">
               <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
                 <Search size={14} />
               </span>
@@ -420,18 +421,25 @@ export default function AdminLearning() {
             </div>
             <select
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
+              onChange={(e) => { setCategory(e.target.value); setPage(1); }}
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-500 focus:bg-white focus:outline-none"
             >
               <option value="">All Categories</option>
               <option value="Web Development">Web Development</option>
-              <option value="Data Science">Data Science</option>
+              <option value="Backend">Backend</option>
               <option value="Frontend">Frontend</option>
+              <option value="Data Science">Data Science</option>
+              <option value="DevOps & Cloud">DevOps & Cloud</option>
+              <option value="Security">Security</option>
+              <option value="Mobile Development">Mobile Development</option>
+              <option value="Database">Database</option>
+              <option value="System Design">System Design</option>
               <option value="Software Engineering">Software Engineering</option>
+              <option value="Management & Career">Management & Career</option>
             </select>
             <select
               value={difficulty}
-              onChange={(e) => setDifficulty(e.target.value)}
+              onChange={(e) => { setDifficulty(e.target.value); setPage(1); }}
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-500 focus:bg-white focus:outline-none"
             >
               <option value="">All Difficulties</option>
@@ -441,12 +449,22 @@ export default function AdminLearning() {
             </select>
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
               className="px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-500 focus:bg-white focus:outline-none"
             >
               <option value="">All Statuses</option>
               <option value="published">Published</option>
               <option value="draft">Drafts</option>
+            </select>
+            <select
+              value={limit}
+              onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+              className="px-3 py-2 bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-xl text-xs font-mono font-bold focus:bg-white focus:outline-none"
+            >
+              <option value={100}>Show All (83 Paths)</option>
+              <option value={15}>15 per page</option>
+              <option value={30}>30 per page</option>
+              <option value={50}>50 per page</option>
             </select>
           </div>
 
@@ -463,132 +481,163 @@ export default function AdminLearning() {
                 <p className="text-sm font-bold text-slate-700">No learning paths registered</p>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse select-none">
-                  <thead>
-                    <tr className="bg-slate-50 border-b border-slate-100 text-[9px] font-extrabold uppercase tracking-wider text-slate-400 font-mono-origin">
-                      <th className="py-3 px-4">Thumbnail & Path Details</th>
-                      <th className="py-3 px-4">Category</th>
-                      <th className="py-3 px-4">Difficulty</th>
-                      <th className="py-3 px-4">Creator / Instructor</th>
-                      <th className="py-3 px-4 text-center">Enrolled</th>
-                      <th className="py-3 px-4 text-center">Completion Rate</th>
-                      <th className="py-3 px-4">Status</th>
-                      <th className="py-3 px-4 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100 text-xs text-slate-600 font-semibold">
-                    {paths.map((p) => (
-                      <tr key={p._id} className="hover:bg-slate-50/50 transition-colors">
-                        <td className="py-3.5 px-4">
-                          <div className="flex items-center gap-3">
-                            <div className="w-14 h-9 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center relative">
-                              <GraduationCap size={18} className="text-emerald-600 dark:text-emerald-400 absolute" />
-                              {p.thumbnail ? (
-                                <img
-                                  src={p.thumbnail}
-                                  alt={p.title || 'course'}
-                                  className="w-full h-full object-cover relative z-10"
-                                  onError={(e) => {
-                                    e.currentTarget.style.display = 'none';
-                                  }}
-                                />
-                              ) : null}
-                            </div>
-                            <div>
-                              <p className="font-extrabold text-slate-800 text-xs line-clamp-1">{p.title}</p>
-                              <p className="text-[10px] text-slate-400 mt-0.5 font-mono-origin">{p.estimatedTime || 120} Mins estimated</p>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 font-bold text-slate-700">{p.category}</td>
-                        <td className="py-3.5 px-4">
-                          <span className={`px-2 py-0.5 rounded-lg text-[8.5px] uppercase font-bold tracking-wider leading-none
-                            ${p.difficulty === 'advanced' ? 'bg-rose-100 text-rose-700' :
-                              p.difficulty === 'intermediate' ? 'bg-orange-100 text-orange-700' :
-                              'bg-sky-100 text-sky-700'}`}>
-                            {p.difficulty}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4">
-                          <div className="flex flex-col text-[10px] text-slate-400">
-                            <span className="font-bold text-slate-700">{p.createdBy?.fullName || 'Platform Admin'}</span>
-                            <span className="font-mono-origin text-[9px]">{p.createdBy?.email || ''}</span>
-                          </div>
-                        </td>
-                        <td className="py-3.5 px-4 text-center font-mono-origin text-slate-750 font-bold">{p.studentsEnrolled}</td>
-                        <td className="py-3.5 px-4 text-center font-mono-origin text-slate-750 font-bold">{p.completionRate}%</td>
-                        <td className="py-3.5 px-4">
-                          <span className={`px-2 py-0.5 rounded-lg text-[8.5px] uppercase font-bold tracking-wider leading-none
-                            ${p.isPublished ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                            {p.isPublished ? 'Published' : 'Draft'}
-                          </span>
-                        </td>
-                        <td className="py-3.5 px-4 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => handleOpenBuilder(p)}
-                              className="p-1.5 border border-slate-200 hover:bg-slate-50 text-slate-650 rounded-lg text-[10px] font-bold uppercase transition-all whitespace-nowrap"
-                              title="Builder"
-                            >
-                              Structure Builder
-                            </button>
-                            <button
-                              onClick={() => handleOpenAnalytics(p)}
-                              className="p-1.5 border border-slate-200 hover:bg-slate-50 text-slate-650 rounded-lg text-[10px] font-bold uppercase transition-all"
-                              title="Analytics"
-                            >
-                              <BarChart2 size={13} />
-                            </button>
-                            <button
-                              onClick={() => {
-                                setEditingPath(p);
-                                setPathForm({ ...p });
-                                setIsPathModalOpen(true);
-                              }}
-                              className="p-1 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100"
-                              title="Edit Details"
-                            >
-                              <Edit size={14} />
-                            </button>
-                            <button
-                              onClick={() => handlePathAction('duplicate', p._id)}
-                              className="p-1 text-slate-400 hover:text-slate-750 rounded hover:bg-slate-100"
-                              title="Duplicate Path"
-                            >
-                              <Copy size={14} />
-                            </button>
-                            {p.isPublished ? (
-                              <button
-                                onClick={() => handlePathAction('archive', p._id)}
-                                className="p-1 text-slate-400 hover:text-amber-600 rounded hover:bg-slate-100"
-                                title="Archive path"
-                              >
-                                <X size={14} />
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handlePathAction('publish', p._id)}
-                                className="p-1 text-slate-450 hover:text-emerald-600 rounded hover:bg-slate-100"
-                                title="Publish path"
-                              >
-                                <Check size={14} />
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handlePathAction('delete', p._id)}
-                              className="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100"
-                              title="Delete Path"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
-                        </td>
+              <>
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse select-none">
+                    <thead>
+                      <tr className="bg-slate-50 border-b border-slate-100 text-[9px] font-extrabold uppercase tracking-wider text-slate-400 font-mono-origin">
+                        <th className="py-3 px-4">Thumbnail & Path Details</th>
+                        <th className="py-3 px-4">Category</th>
+                        <th className="py-3 px-4">Difficulty</th>
+                        <th className="py-3 px-4">Creator / Instructor</th>
+                        <th className="py-3 px-4 text-center">Enrolled</th>
+                        <th className="py-3 px-4 text-center">Completion Rate</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 text-xs text-slate-600 font-semibold">
+                      {paths.map((p) => (
+                        <tr key={p._id} className="hover:bg-slate-50/50 transition-colors">
+                          <td className="py-3.5 px-4">
+                            <div className="flex items-center gap-3">
+                              <div className="w-14 h-9 rounded-lg overflow-hidden border border-slate-200 shrink-0 bg-emerald-50 dark:bg-emerald-950/40 flex items-center justify-center relative">
+                                <GraduationCap size={18} className="text-emerald-600 dark:text-emerald-400 absolute" />
+                                {p.thumbnail ? (
+                                  <img
+                                    src={p.thumbnail}
+                                    alt={p.title || 'course'}
+                                    className="w-full h-full object-cover relative z-10"
+                                    onError={(e) => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                ) : null}
+                              </div>
+                              <div>
+                                <p className="font-extrabold text-slate-800 text-xs line-clamp-1">{p.title}</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5 font-mono-origin">{p.estimatedTime || 120} Mins estimated</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 font-bold text-slate-700">{p.category}</td>
+                          <td className="py-3.5 px-4">
+                            <span className={`px-2 py-0.5 rounded-lg text-[8.5px] uppercase font-bold tracking-wider leading-none
+                              ${p.difficulty === 'advanced' ? 'bg-rose-100 text-rose-700' :
+                                p.difficulty === 'intermediate' ? 'bg-orange-100 text-orange-700' :
+                                'bg-sky-100 text-sky-700'}`}>
+                              {p.difficulty}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4">
+                            <div className="flex flex-col text-[10px] text-slate-400">
+                              <span className="font-bold text-slate-700">{p.createdBy?.fullName || 'Platform Admin'}</span>
+                              <span className="font-mono-origin text-[9px]">{p.createdBy?.email || ''}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-4 text-center font-mono-origin text-slate-750 font-bold">{p.studentsEnrolled}</td>
+                          <td className="py-3.5 px-4 text-center font-mono-origin text-slate-750 font-bold">{p.completionRate}%</td>
+                          <td className="py-3.5 px-4">
+                            <span className={`px-2 py-0.5 rounded-lg text-[8.5px] uppercase font-bold tracking-wider leading-none
+                              ${p.isPublished ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                              {p.isPublished ? 'Published' : 'Draft'}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-4 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleOpenBuilder(p)}
+                                className="p-1.5 border border-slate-200 hover:bg-slate-50 text-slate-650 rounded-lg text-[10px] font-bold uppercase transition-all whitespace-nowrap"
+                                title="Builder"
+                              >
+                                Structure Builder
+                              </button>
+                              <button
+                                onClick={() => handleOpenAnalytics(p)}
+                                className="p-1.5 border border-slate-200 hover:bg-slate-50 text-slate-650 rounded-lg text-[10px] font-bold uppercase transition-all"
+                                title="Analytics"
+                              >
+                                <BarChart2 size={13} />
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setEditingPath(p);
+                                  setPathForm({ ...p });
+                                  setIsPathModalOpen(true);
+                                }}
+                                className="p-1 text-slate-400 hover:text-slate-700 rounded hover:bg-slate-100"
+                                title="Edit Details"
+                              >
+                                <Edit size={14} />
+                              </button>
+                              <button
+                                onClick={() => handlePathAction('duplicate', p._id)}
+                                className="p-1 text-slate-400 hover:text-slate-750 rounded hover:bg-slate-100"
+                                title="Duplicate Path"
+                              >
+                                <Copy size={14} />
+                              </button>
+                              {p.isPublished ? (
+                                <button
+                                  onClick={() => handlePathAction('archive', p._id)}
+                                  className="p-1 text-slate-400 hover:text-amber-600 rounded hover:bg-slate-100"
+                                  title="Archive path"
+                                >
+                                  <X size={14} />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handlePathAction('publish', p._id)}
+                                  className="p-1 text-slate-450 hover:text-emerald-600 rounded hover:bg-slate-100"
+                                  title="Publish path"
+                                >
+                                  <Check size={14} />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handlePathAction('delete', p._id)}
+                                className="p-1 text-slate-400 hover:text-rose-600 rounded hover:bg-slate-100"
+                                title="Delete Path"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pagination Controls Footer */}
+                <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 flex flex-wrap items-center justify-between gap-4 text-xs font-mono select-none">
+                  <span className="text-slate-500 text-[11px] font-bold">
+                    Showing <span className="text-slate-800">{paths.length}</span> of <span className="text-slate-800">{stats?.totalPaths || paths.length}</span> registered learning paths
+                  </span>
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                        disabled={page === 1}
+                        className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-slate-700 transition-all cursor-pointer"
+                      >
+                        ← Previous
+                      </button>
+                      <span className="px-3 py-1 text-slate-600 font-bold">
+                        Page {page} of {totalPages}
+                      </span>
+                      <button
+                        onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                        disabled={page === totalPages}
+                        className="px-3 py-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed font-bold text-slate-700 transition-all cursor-pointer"
+                      >
+                        Next →
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </>
             )}
           </div>
         </>

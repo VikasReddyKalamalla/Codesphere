@@ -48,13 +48,14 @@ const getLearningPaths = async (query = {}) => {
     ];
   }
 
-  const skip = (Number(page) - 1) * Number(limit);
+  const limitNum = Number(limit) === 0 ? 1000 : Number(limit);
+  const skip = (Number(page) - 1) * limitNum;
   const [items, total, totalPublished, totalDrafts] = await Promise.all([
     LearningPath.find(filter)
       .populate('createdBy', 'fullName email')
       .sort({ createdAt: -1 })
       .skip(skip)
-      .limit(Number(limit))
+      .limit(limitNum)
       .lean(),
     LearningPath.countDocuments(filter),
     LearningPath.countDocuments({ isPublished: true }),
