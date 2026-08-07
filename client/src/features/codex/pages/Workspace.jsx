@@ -26,6 +26,7 @@ import { WorkspaceAnalytics } from '../components/WorkspaceAnalytics.jsx';
 import { KanbanBoard } from '../components/KanbanBoard.jsx';
 import { TaskModal } from '../components/TaskModal.jsx';
 import { APITester } from '../components/APITester.jsx';
+import { WorkspaceVoiceBar } from '../components/WorkspaceVoiceBar.jsx';
 import { SessionManagerModal } from '../../../components/SessionManagerModal.jsx';
 import { BackButton } from '@components/common/BackButton.jsx';
 import { Button } from '@components/common/Button.jsx';
@@ -794,6 +795,14 @@ export const Workspace = () => {
           </button>
         </div>
       </div>
+
+      {/* ─── Live WebRTC Voice Channel Bar ──────────────────────────────────── */}
+      <WorkspaceVoiceBar 
+        socket={socket} 
+        workspaceId={workspaceId} 
+        currentUser={currentUser} 
+        onlineUsers={onlineUsers} 
+      />
 
       {/* ─── Secondary Tab Navigation Bar ──────────────────────────────────────── */}
       <div className="h-11 border-b border-slate-200 dark:border-slate-800/80 bg-slate-100/50 dark:bg-slate-900 flex items-center justify-between px-6 select-none shrink-0">

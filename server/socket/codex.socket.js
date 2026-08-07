@@ -281,17 +281,57 @@ const handleCodex = (socket, io) => {
     socket.to(roomKey).emit('task_completed', { task });
   });
 
-  // ─── GENERIC ACTIVITY LOGGING ──────────────────────────────────────────────
-  socket.on('activity_added', async ({ workspaceId, activityType, description }) => {
+  // ─── WEBRTC AUDIO VOICE CHANNEL RELAY ─────────────────────────────────────
+  socket.on('voice_join', ({ workspaceId }) => {
     const roomKey = `workspace:${workspaceId}`;
-    await activityService.log(workspaceId, user._id, activityType, description);
-    io.to(roomKey).emit('activity_added', {
-      activity: {
-        userId: { _id: user._id, fullName: user.fullName, avatar: user.avatar },
-        activityType,
-        description,
-        createdAt: new Date(),
-      }
+    socket.to(roomKey).emit('voice_user_joined', {
+      userId: user._id,
+      fullName: user.fullName,
+      avatar: user.avatar
+    });
+  });
+
+  socket.on('voice_leave', ({ workspaceId }) => {
+    const roomKey = `workspace:${workspaceId}`;
+    socket.to(roomKey).emit('voice_user_left', {
+      userId: user._id,
+      fullName: user.fullName
+    });
+  });
+
+  socket.on('voice_offer', ({ workspaceId, targetUserId, sdp }) => {
+    const roomKey = `workspace:${workspaceId}`;
+    socket.to(roomKey).emit('voice_offer', {
+      senderId: user._id,
+      targetUserId,
+      sdp
+    });
+  });
+
+  socket.on('voice_answer', ({ workspaceId, targetUserId, sdp }) => {
+    const roomKey = `workspace:${workspaceId}`;
+    socket.to(roomKey).emit('voice_answer', {
+      senderId: user._id,
+      targetUserId,
+      sdp
+    });
+  });
+
+  socket.on('voice_ice_candidate', ({ workspaceId, targetUserId, candidate }) => {
+    const roomKey = `workspace:${workspaceId}`;
+    socket.to(roomKey).emit('voice_ice_candidate', {
+      senderId: user._id,
+      targetUserId,
+      candidate
+    });
+  });
+
+  socket.on('voice_state_toggle', ({ workspaceId, isMuted, isDeafened }) => {
+    const roomKey = `workspace:${workspaceId}`;
+    socket.to(roomKey).emit('voice_state_changed', {
+      userId: user._id,
+      isMuted,
+      isDeafened
     });
   });
 
