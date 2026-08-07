@@ -171,7 +171,7 @@ export const DashboardHome = () => {
             {/* Quick Action CTA Buttons */}
             <div className="flex items-center gap-3 shrink-0">
               <Link
-                to="/sandbox"
+                to="/ide"
                 className="flex items-center gap-2 px-4 py-3 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-mono font-bold rounded-2xl border border-slate-200 dark:border-slate-700 transition-all cursor-pointer shadow-xs"
               >
                 <Terminal size={15} className="text-[#04AA6D] dark:text-emerald-400" />
