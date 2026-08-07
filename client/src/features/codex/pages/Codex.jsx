@@ -148,20 +148,20 @@ export const Codex = () => {
   const templatesList = projects.length > 0 ? projects : defaultTemplates;
 
   return (
-    <div className="flex flex-col gap-6 w-full animate-fade-in text-left select-none bg-slate-50 dark:bg-slate-950 min-h-[calc(100vh-100px)] p-6 text-slate-800 dark:text-slate-200">
+    <div className="flex flex-col gap-6 w-full animate-fade-in text-left select-none bg-slate-50 dark:bg-slate-950 min-h-[calc(100vh-100px)] p-6 text-slate-800 dark:text-slate-200 font-sans">
       
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 dark:border-slate-800/80 pb-5">
         <WorkspaceHeader title="Codex Collaboration Hub" />
-        <Button variant="primary" icon={Plus} onClick={() => navigate('/codex/create')} className="bg-[#04AA6D] hover:bg-[#03935e] border-emerald-500/20 shadow-lg shadow-emerald-500/20 cursor-pointer">
+        <Button variant="primary" icon={Plus} onClick={() => navigate('/codex/create')} className="bg-[#04AA6D] hover:bg-emerald-600 border-emerald-500/20 shadow-lg shadow-emerald-500/20 cursor-pointer font-mono text-xs uppercase tracking-wider font-bold">
           New Workspace
         </Button>
       </div>
 
       {/* Templates Row */}
       <div className="flex flex-col gap-3">
-        <span className="text-[10px] font-bold text-[#04AA6D] uppercase tracking-widest font-mono flex items-center gap-1.5">
-          <Sparkles size={11} /> Quick Launch templates
+        <span className="text-[10px] font-extrabold text-[#04AA6D] uppercase tracking-widest font-mono flex items-center gap-1.5">
+          <Sparkles size={12} className="animate-spin-slow" /> Quick Launch Templates
         </span>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {templatesList.slice(0, 3).map((tmpl, idx) => {
@@ -171,14 +171,16 @@ export const Codex = () => {
               <div 
                 key={idx} 
                 onClick={() => handleLaunchTemplate(tmpl.title, lang, framework)}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 hover:border-[#6366f1]/40 transition-all cursor-pointer shadow-sm hover:shadow-indigo-500/5 group"
+                className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl border border-slate-200 dark:border-slate-800/80 rounded-2xl p-5 hover:border-[#04AA6D]/50 hover:scale-[1.02] transition-all duration-300 cursor-pointer shadow-md hover:shadow-emerald-500/10 group relative overflow-hidden"
               >
-                <div className="flex justify-between items-start">
-                  <Code2 className="w-5 h-5 text-[#6366f1] group-hover:scale-110 transition-transform" />
-                  <span className="text-[8px] font-bold font-mono bg-indigo-50 dark:bg-indigo-950/30 text-[#6366f1] px-1.5 py-0.5 rounded uppercase">{lang}</span>
+                <div className="flex justify-between items-start z-10 relative">
+                  <div className="p-2 bg-[#04AA6D]/10 text-[#04AA6D] rounded-xl group-hover:scale-110 transition-transform">
+                    <Code2 className="w-5 h-5" />
+                  </div>
+                  <span className="text-[9px] font-extrabold font-mono bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-2 py-0.5 rounded-full uppercase">{lang}</span>
                 </div>
-                <h4 className="text-xs font-bold text-slate-800 dark:text-white mt-3 font-mono">{tmpl.title}</h4>
-                <p className="text-[10px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">{tmpl.description || tmpl.desc}</p>
+                <h4 className="text-xs font-black text-slate-800 dark:text-white mt-3.5 font-mono tracking-wide group-hover:text-[#04AA6D] transition-colors">{tmpl.title}</h4>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 line-clamp-2 leading-relaxed font-sans">{tmpl.description || tmpl.desc}</p>
               </div>
             );
           })}
