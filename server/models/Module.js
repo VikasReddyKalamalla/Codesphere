@@ -14,12 +14,12 @@ const moduleSchema = new mongoose.Schema(
       type:      String,
       required:  [true, 'Module title is required'],
       trim:      true,
-      maxlength: [100, 'Title cannot exceed 100 characters'],
+      maxlength: [300, 'Title cannot exceed 300 characters'],
     },
     description: {
       type:      String,
       default:   '',
-      maxlength: [500, 'Description cannot exceed 500 characters'],
+      maxlength: [2000, 'Description cannot exceed 2000 characters'],
     },
 
     // ─── Ordering ─────────────────────────────────────────────────────────────

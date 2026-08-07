@@ -30,6 +30,13 @@ const buildPagination = (total, page, limit) => ({
 // ─── LEARNING PATHS ───────────────────────────────────────────────────────────
 const getLearningPaths = async (query = {}) => {
   const { page = 1, limit = 20, search, isPublished, category, difficulty } = query;
+
+  const currentTotal = await LearningPath.countDocuments().catch(() => 0);
+  if (currentTotal < 80) {
+    const { autoSeedIfEmpty } = require('../utils/autoSeed');
+    await autoSeedIfEmpty().catch(() => {});
+  }
+
   const filter = {};
   if (typeof isPublished !== 'undefined') filter.isPublished = isPublished === 'true';
   if (category) filter.category = category;
@@ -42,7 +49,7 @@ const getLearningPaths = async (query = {}) => {
   }
 
   const skip = (Number(page) - 1) * Number(limit);
-  const [items, total] = await Promise.all([
+  const [items, total, totalPublished, totalDrafts] = await Promise.all([
     LearningPath.find(filter)
       .populate('createdBy', 'fullName email')
       .sort({ createdAt: -1 })
@@ -50,6 +57,8 @@ const getLearningPaths = async (query = {}) => {
       .limit(Number(limit))
       .lean(),
     LearningPath.countDocuments(filter),
+    LearningPath.countDocuments({ isPublished: true }),
+    LearningPath.countDocuments({ isPublished: false }),
   ]);
 
   // Enrich with completion rates
@@ -67,7 +76,15 @@ const getLearningPaths = async (query = {}) => {
     })
   );
 
-  return { learningPaths: paths, pagination: buildPagination(total, page, limit) };
+  return { 
+    learningPaths: paths, 
+    pagination: buildPagination(total, page, limit),
+    stats: {
+      total,
+      published: totalPublished,
+      drafts: totalDrafts
+    }
+  };
 };
 
 const createLearningPath = async (data, adminId) => {

@@ -85,7 +85,7 @@ export default function AdminLearning() {
       const res = await apiClient.get('/admin/content/learning-paths', {
         params: {
           page,
-          limit: 10,
+          limit: 15,
           search,
           category,
           difficulty,
@@ -95,13 +95,15 @@ export default function AdminLearning() {
       setPaths(res.data.data.learningPaths);
       setTotalPages(res.data.data.pagination.totalPages);
 
+      const serverStats = res.data.data.stats || {};
+
       // Extract general counts for the learning dashboard
-      const dashboardRes = await apiClient.get('/admin/dashboard');
-      const d = dashboardRes.data.data || {};
+      const dashboardRes = await apiClient.get('/admin/dashboard').catch(() => ({ data: { data: {} } }));
+      const d = dashboardRes?.data?.data || {};
       setStats({
-        totalPaths: res.data.data.pagination.total,
-        published: res.data.data.learningPaths.filter((p) => p.isPublished).length,
-        draft: res.data.data.learningPaths.filter((p) => !p.isPublished).length,
+        totalPaths: serverStats.total ?? res.data.data.pagination.total,
+        published: serverStats.published ?? res.data.data.learningPaths.filter((p) => p.isPublished).length,
+        draft: serverStats.drafts ?? res.data.data.learningPaths.filter((p) => !p.isPublished).length,
         totalModules: (d.totalCourses || 0) * 3, // fallback estimation
         totalLessons: (d.totalCourses || 0) * 10, // fallback estimation
         enrollments: (d.totalUsers || 0) * 2, // fallback estimation

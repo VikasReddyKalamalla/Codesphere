@@ -14,19 +14,24 @@ const createError = (message, statusCode) => {
  * Supports: category, difficulty, isPremium, search (text), page, limit
  */
 const getAllPaths = async ({ page = 1, limit = 10, category, difficulty, isPremium, search }) => {
+  const currentTotal = await LearningPath.countDocuments().catch(() => 0);
+  if (currentTotal < 80) {
+    const { autoSeedIfEmpty } = require('../utils/autoSeed');
+    await autoSeedIfEmpty().catch(() => {});
+  }
+
   const filter = {};
   if (category)   filter.category   = category;
   if (difficulty) filter.difficulty = difficulty;
   if (isPremium !== undefined) filter.isPremium = isPremium === 'true';
-  if (search)     filter.$text = { $search: search };
-
-  let total = await LearningPath.countDocuments(filter).catch(() => 0);
-  if (total === 0) {
-    const { autoSeedIfEmpty } = require('../utils/autoSeed');
-    await autoSeedIfEmpty().catch(() => {});
-    total = await LearningPath.countDocuments(filter).catch(() => 0);
+  if (search) {
+    filter.$or = [
+      { title: { $regex: search, $options: 'i' } },
+      { description: { $regex: search, $options: 'i' } }
+    ];
   }
 
+  const total = await LearningPath.countDocuments(filter).catch(() => 0);
   const { skip, ...meta } = getPagination(page, limit, total);
 
   const paths = await LearningPath

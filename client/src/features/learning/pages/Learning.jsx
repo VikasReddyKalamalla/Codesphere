@@ -67,10 +67,10 @@ export const Learning = () => {
         createdBy: { fullName: 'CodeSphere Engineering' }
       }));
 
-      const merged = [...nativeFormatted];
-      fetched.forEach(f => {
-        if (!merged.some(m => m._id === f._id || m.title.toLowerCase() === f.title?.toLowerCase())) {
-          merged.push(f);
+      const merged = [...fetched];
+      nativeFormatted.forEach(n => {
+        if (!merged.some(m => (m._id && m._id === n._id) || m.title?.toLowerCase() === n.title.toLowerCase())) {
+          merged.push(n);
         }
       });
 

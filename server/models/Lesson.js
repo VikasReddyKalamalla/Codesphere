@@ -26,7 +26,7 @@ const lessonSchema = new mongoose.Schema(
       type:      String,
       required:  [true, 'Lesson title is required'],
       trim:      true,
-      maxlength: [100, 'Title cannot exceed 100 characters'],
+      maxlength: [300, 'Title cannot exceed 300 characters'],
     },
     type: {
       type:     String,
