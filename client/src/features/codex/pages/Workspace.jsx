@@ -305,6 +305,15 @@ export const Workspace = () => {
       dispatch(addActivity(activity));
     });
 
+    socket.on('file_tree_changed', ({ action, file, senderName }) => {
+      fetchWorkspaceFilesAPI(workspaceId).then((res) => {
+        if (res?.success) {
+          dispatch(setFiles(res.data?.files || res.data || []));
+          toast.success(`${senderName || 'Collaborator'} ${action} "${file?.name || 'file'}"`);
+        }
+      });
+    });
+
     return () => {
       socket.emit('leave_workspace', { workspaceId });
       socket.off('workspace_joined');
@@ -321,6 +330,7 @@ export const Workspace = () => {
       socket.off('task_updated');
       socket.off('task_completed');
       socket.off('activity_added');
+      socket.off('file_tree_changed');
       socket.disconnect();
     };
   }, [workspaceId, currentUser, dispatch]);
@@ -432,6 +442,25 @@ export const Workspace = () => {
     navigate('/codex');
   };
 
+  const handleFollowUser = (user) => {
+    if (!user) return;
+    const userCursor = cursors[user._id];
+    if (userCursor && userCursor.filePath) {
+      dispatch(setActiveTab('code'));
+      const targetFile = files.find(f => f.path === userCursor.filePath);
+      if (targetFile) {
+        dispatch(setActiveFile(targetFile));
+      }
+      if (editorRef.current && userCursor.row) {
+        editorRef.current.revealLineInCenter(userCursor.row);
+        editorRef.current.setPosition({ lineNumber: userCursor.row, column: userCursor.col || 1 });
+      }
+      toast.success(`Following ${user.fullName} at ${userCursor.filePath} (Ln ${userCursor.row})`);
+    } else {
+      toast(`Following ${user.fullName} (Active in workspace)`, { icon: '👀' });
+    }
+  };
+
   // Files CRUD wrappers
   const handleSelectFile = (file) => {
     dispatch(setActiveFile(file));
@@ -444,6 +473,7 @@ export const Workspace = () => {
       if (res.success) {
         dispatch(addFile(res.data.file));
         dispatch(setActiveFile(res.data.file));
+        socket.emit('file_tree_changed', { workspaceId, action: 'created', file: res.data.file });
         socket.emit('activity_added', { workspaceId, activityType: 'file_created', description: `Created file "${name}"` });
       }
     } catch (err) {
@@ -456,6 +486,7 @@ export const Workspace = () => {
       const res = await createWorkspaceFileAPI(workspaceId, { name, path, type: 'folder' });
       if (res.success) {
         dispatch(addFile(res.data.file));
+        socket.emit('file_tree_changed', { workspaceId, action: 'created folder', file: res.data.file });
         socket.emit('activity_added', { workspaceId, activityType: 'file_created', description: `Created folder "${name}"` });
       }
     } catch (err) {
@@ -468,6 +499,7 @@ export const Workspace = () => {
       const res = await updateWorkspaceFileAPI(workspaceId, fileId, { name, path });
       if (res.success) {
         dispatch(updateFile(res.data.file));
+        socket.emit('file_tree_changed', { workspaceId, action: 'renamed', file: res.data.file });
         const listRes = await fetchWorkspaceFilesAPI(workspaceId);
         if (listRes.success) dispatch(setFiles(listRes.data.files));
       }
@@ -481,6 +513,7 @@ export const Workspace = () => {
       const res = await deleteWorkspaceFileAPI(workspaceId, fileId);
       if (res.success) {
         dispatch(deleteFile(fileId));
+        socket.emit('file_tree_changed', { workspaceId, action: 'deleted', file: { _id: fileId } });
         socket.emit('activity_added', { workspaceId, activityType: 'file_deleted', description: `Deleted file/folder` });
       }
     } catch (err) {
@@ -748,8 +781,9 @@ export const Workspace = () => {
                   key={user._id} 
                   src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${user.fullName}`} 
                   alt={user.fullName} 
-                  title={user.fullName}
-                  className="w-5 h-5 rounded-full border-2 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-950" 
+                  title={`Click to follow ${user.fullName}'s live cursor`}
+                  onClick={() => handleFollowUser(user)}
+                  className="w-5 h-5 rounded-full border-2 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-950 cursor-pointer hover:scale-125 transition-transform hover:z-10" 
                 />
               ))}
               {onlineUsers.length > 4 && (
@@ -893,6 +927,7 @@ export const Workspace = () => {
                 <WorkspaceFiles
                   files={files}
                   activeFile={activeFile}
+                  activeCursors={cursors}
                   onSelectFile={handleSelectFile}
                   onCreateFile={handleCreateFile}
                   onCreateFolder={handleCreateFolder}
@@ -1278,6 +1313,7 @@ export const Workspace = () => {
             <WorkspaceFiles
               files={files}
               activeFile={activeFile}
+              activeCursors={cursors}
               onSelectFile={handleSelectFile}
               onCreateFile={handleCreateFile}
               onCreateFolder={handleCreateFolder}

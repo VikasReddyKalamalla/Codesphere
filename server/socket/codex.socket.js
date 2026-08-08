@@ -133,6 +133,26 @@ const handleCodex = (socket, io) => {
     });
   });
 
+  // ─── FILE TREE MUTATION SYNC ────────────────────────────────────────────────
+  socket.on('file_tree_changed', ({ workspaceId, action, file }) => {
+    const roomKey = `workspace:${workspaceId}`;
+    socket.to(roomKey).emit('file_tree_changed', {
+      action, // 'created' | 'deleted' | 'renamed'
+      file,
+      senderId: user._id,
+      senderName: user.fullName
+    });
+  });
+
+  // ─── FOLLOW USER REQUEST ────────────────────────────────────────────────────
+  socket.on('follow_user_request', ({ workspaceId, targetUserId }) => {
+    const roomKey = `workspace:${workspaceId}`;
+    socket.to(roomKey).emit('follow_user_ping', {
+      requesterId: user._id,
+      targetUserId
+    });
+  });
+
   // ─── FILE SAVE ─────────────────────────────────────────────────────────────
   socket.on('file_save', async ({ workspaceId, filePath, content }) => {
     const roomKey = `workspace:${workspaceId}`;
@@ -200,10 +220,14 @@ const handleCodex = (socket, io) => {
 
         // Pipe outputs
         term.stdout.on('data', (data) => {
-          socket.emit('terminal_output', { tabId, text: data.toString() });
+          const text = data.toString();
+          socket.emit('terminal_output', { tabId, text });
+          socket.to(`workspace:${workspaceId}`).emit('terminal_output', { tabId, text, senderId: user._id, senderName: user.fullName });
         });
         term.stderr.on('data', (data) => {
-          socket.emit('terminal_output', { tabId, text: data.toString() });
+          const text = data.toString();
+          socket.emit('terminal_output', { tabId, text });
+          socket.to(`workspace:${workspaceId}`).emit('terminal_output', { tabId, text, senderId: user._id, senderName: user.fullName });
         });
 
         term.on('close', (code) => {

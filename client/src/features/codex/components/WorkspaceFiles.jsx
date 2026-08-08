@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 export const WorkspaceFiles = ({ 
   files = [], 
   activeFile = null, 
+  activeCursors = {},
   onSelectFile, 
   onCreateFile, 
   onCreateFolder, 
@@ -143,6 +144,22 @@ export const WorkspaceFiles = ({
               <FileCode size={15} className={isActive ? 'text-[#6366f1]' : 'text-slate-455 dark:text-slate-550'} />
             )}
             <span className="text-xs truncate font-mono">{node.name}</span>
+            {/* Active Collaborators Presence Badges */}
+            {!isFolder && (
+              <div className="flex -space-x-1 ml-1.5">
+                {Object.values(activeCursors)
+                  .filter(c => c && c.filePath === node.path)
+                  .map((cur, i) => (
+                    <img 
+                      key={i} 
+                      src={cur.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${cur.name}`}
+                      alt={cur.name}
+                      title={`${cur.name} is editing this file`}
+                      className="w-3.5 h-3.5 rounded-full border border-slate-900 bg-emerald-500 animate-pulse"
+                    />
+                  ))}
+              </div>
+            )}
           </div>
 
           <div className="hidden group-hover:flex items-center gap-1.5 text-slate-400 dark:text-slate-450 hover:text-slate-800 dark:hover:text-slate-300">
