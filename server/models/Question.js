@@ -34,6 +34,7 @@ const questionSchema = new mongoose.Schema(
     // ─── Options (for MCQ/true-false) ─────────────────────────────────────────
     options:       [{ type: String, trim: true }],
     correctAnswer: { type: String, default: '' },  // stores option index/text or correct answer for other types
+    imageUrl:      { type: String, default: '' },  // for image-based questions
 
     // ─── Classification ───────────────────────────────────────────────────────
     difficulty: {

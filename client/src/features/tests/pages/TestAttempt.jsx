@@ -259,11 +259,18 @@ export const TestAttempt = () => {
       {/* Adapts Mongoose question schema to QuestionCard props */}
       <QuestionCard 
         question={{
-          text: currentQ.questionTitle,
-          options: currentQ.options
+          text: currentQ.questionTitle || currentQ.text,
+          description: currentQ.questionDescription,
+          type: currentQ.questionType || currentQ.type,
+          options: currentQ.options,
+          imageUrl: currentQ.imageUrl,
+          codeSnippet: currentQ.codeSnippet,
+          marks: currentQ.marks
         }}
         selectedOption={selectedOptionIndex !== -1 ? selectedOptionIndex : null}
         onSelectOption={handleSelectOption}
+        textAnswer={selectedAnswerText}
+        onChangeTextAnswer={(val) => setAnswers(prev => ({ ...prev, [currentQ._id]: val }))}
       />
 
       <div className="flex justify-between items-center gap-3 mt-4">
