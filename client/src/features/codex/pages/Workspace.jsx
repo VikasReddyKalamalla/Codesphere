@@ -629,9 +629,14 @@ export const Workspace = () => {
       return;
     }
 
+    const currentCode = editorRef.current ? editorRef.current.getValue() : (activeFile.content || '');
     handleSaveFile();
-    const fileName = activeFile.name || 'main.js';
-    const ext = fileName.split('.').pop().toLowerCase();
+
+    const fileName = activeFile.name || activeFile.path || 'main.js';
+    let ext = 'js';
+    if (fileName.includes('.')) {
+      ext = fileName.split('.').pop().toLowerCase();
+    }
 
     // If Web file, auto reload live preview
     if (ext === 'html' || ext === 'css') {
@@ -646,7 +651,7 @@ export const Workspace = () => {
 
     try {
       const res = await runUniversalCodeAPI({
-        code: activeFile.content || '',
+        code: currentCode,
         language: ext,
         input: ''
       });
@@ -670,7 +675,7 @@ export const Workspace = () => {
         }));
 
         if (error && !output) {
-          toast.error(`Execution warning: ${error.split('\n')[0]}`, { id: toastId });
+          toast.error(`Execution error in ${fileName}`, { id: toastId });
         } else {
           toast.success(`Executed ${fileName} successfully!`, { id: toastId });
         }

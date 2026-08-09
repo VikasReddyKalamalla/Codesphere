@@ -58,25 +58,27 @@ const executeCodeLocally = (code, language, input = '') => {
     let filePath = '';
 
     const lang = (language || '').toLowerCase().trim();
+    const isWin = process.platform === 'win32';
 
-    if (lang === 'python' || lang === 'python3' || lang === 'py') {
+    if (lang === 'python' || lang === 'python3' || lang === 'py' || lang === 'py3') {
       filePath = path.join(tmpDir, 'solution.py');
       fs.writeFileSync(filePath, code);
-      cmd = `python3 "${filePath}" || python "${filePath}"`;
-    } else if (lang === 'javascript' || lang === 'js' || lang === 'node') {
+      const pyBin = isWin ? 'python' : 'python3';
+      cmd = `${pyBin} "${filePath}"`;
+    } else if (lang === 'javascript' || lang === 'js' || lang === 'node' || lang === 'jsx') {
       filePath = path.join(tmpDir, 'solution.js');
       fs.writeFileSync(filePath, code);
       cmd = `node "${filePath}"`;
-    } else if (lang === 'typescript' || lang === 'ts') {
+    } else if (lang === 'typescript' || lang === 'ts' || lang === 'tsx') {
       filePath = path.join(tmpDir, 'solution.ts');
       fs.writeFileSync(filePath, code);
-      cmd = `npx -y ts-node "${filePath}" || node "${filePath}"`;
+      cmd = `npx -y ts-node "${filePath}"`;
     } else if (lang === 'c') {
       filePath = path.join(tmpDir, 'solution.c');
       const binPath = path.join(tmpDir, 'solution');
       fs.writeFileSync(filePath, code);
       cmd = `gcc -O2 "${filePath}" -o "${binPath}" && "${binPath}"`;
-    } else if (lang === 'cpp' || lang === 'c++') {
+    } else if (lang === 'cpp' || lang === 'c++' || lang === 'cc' || lang === 'cxx') {
       filePath = path.join(tmpDir, 'solution.cpp');
       const binPath = path.join(tmpDir, 'solution');
       fs.writeFileSync(filePath, code);
@@ -102,7 +104,7 @@ const executeCodeLocally = (code, language, input = '') => {
       filePath = path.join(tmpDir, 'solution.rb');
       fs.writeFileSync(filePath, code);
       cmd = `ruby "${filePath}"`;
-    } else if (lang === 'bash' || lang === 'sh' || lang === 'shell') {
+    } else if (lang === 'bash' || lang === 'sh' || lang === 'shell' || lang === 'zsh') {
       filePath = path.join(tmpDir, 'solution.sh');
       fs.writeFileSync(filePath, code);
       cmd = `bash "${filePath}"`;
