@@ -223,7 +223,7 @@ const getDefaultLanguageTemplate = (fileName) => {
     case 'bash':
       return `#!/bin/bash\necho "Hello from CodeSphere Shell Sandbox!"\n`;
     case 'html':
-      return `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>Document</title>\n</head>\n<body>\n  <h1>Hello from CodeSphere Web Preview!</h1>\n</body>\n</html>\n`;
+      return `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>Codesphere Workspace</title>\n  <script src="https://cdn.tailwindcss.com"></script>\n</head>\n<body class="bg-slate-900 text-white p-8">\n  <h1 class="text-3xl font-bold text-purple-400">Hello from CodeSphere Web Preview!</h1>\n</body>\n</html>\n`;
     case 'css':
       return `/* Custom Workspace CSS */\nbody {\n  font-family: sans-serif;\n}\n`;
     case 'json':

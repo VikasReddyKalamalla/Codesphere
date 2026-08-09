@@ -123,6 +123,7 @@ export const Workspace = () => {
   // Preview states
   const [previewDevice, setPreviewDevice] = useState('desktop'); 
   const [previewCacheBuster, setPreviewCacheBuster] = useState(Date.now());
+  const [customPreviewUrl, setCustomPreviewUrl] = useState('');
   const [previewTab, setPreviewTab] = useState('preview'); 
 
   // Voice states
@@ -852,7 +853,8 @@ export const Workspace = () => {
     );
   }
 
-  const previewUrl = `http://localhost:5000/preview/${workspaceId}/index.html?cb=${previewCacheBuster}`;
+  const defaultPreviewUrl = `http://localhost:5000/preview/${workspaceId}/index.html?cb=${previewCacheBuster}`;
+  const activePreviewUrl = customPreviewUrl || defaultPreviewUrl;
 
   return (
     <div className="flex flex-col h-[calc(100vh-80px)] w-full text-slate-800 dark:text-slate-200 select-none overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans">
@@ -1301,14 +1303,17 @@ export const Workspace = () => {
                     
                     <div className="flex items-center gap-1">
                       <button 
-                        onClick={() => setPreviewCacheBuster(Date.now())}
-                        title="Reload Preview Frame"
+                        onClick={() => {
+                          handleSaveFile();
+                          setTimeout(() => setPreviewCacheBuster(Date.now()), 500);
+                        }}
+                        title="Save & Reload Preview"
                         className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
                       >
                         <RefreshCw size={12} />
                       </button>
                       <a 
-                        href={previewUrl} 
+                        href={activePreviewUrl} 
                         target="_blank" 
                         rel="noreferrer"
                         title="Open Preview in New Window"
@@ -1331,12 +1336,17 @@ export const Workspace = () => {
                             <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
                             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
                           </div>
-                          <div className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded text-[8px] font-mono text-slate-400 dark:text-slate-500 px-2 py-0.5 select-text truncate text-left">
-                            https://codesphere.live/sandbox-preview
-                          </div>
+                          <input 
+                            type="text"
+                            className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded text-[10px] font-mono text-slate-600 dark:text-slate-300 px-2 py-0.5 outline-none focus:border-purple-500 transition-colors"
+                            placeholder={defaultPreviewUrl.split('?')[0]}
+                            value={customPreviewUrl}
+                            onChange={(e) => setCustomPreviewUrl(e.target.value)}
+                            title="Enter URL for node/vite/react apps (e.g. http://localhost:3000)"
+                          />
                         </div>
                         <iframe
-                          src={previewUrl}
+                          src={activePreviewUrl}
                           title="Live sandbox compiler frame"
                           className="flex-1 border-none bg-slate-950"
                         />
