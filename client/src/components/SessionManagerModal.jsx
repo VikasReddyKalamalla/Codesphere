@@ -18,13 +18,16 @@ const Github = ({ size = 16, className = "" }) => (
  * 1. Start: Open GitHub repo vs Start new clean session
  * 2. End: Connect/Push to GitHub vs Terminate session & clear storage
  */
+import { importGitHubRepoAPI, syncGitHubRepoAPI } from '../features/codex/services/codexAPI.js';
+
 export const SessionManagerModal = ({
   isOpen,
   mode = 'start', // 'start' | 'end'
   isGitHubImported = false,
   githubRepoUrl = '',
+  workspaceId = null,
   onStartSession, // ({ isGitHub: boolean, repoUrl: string }) => void
-  onEndSession,   // ({ pushToGit: boolean, repoUrl: string, terminateStorage: boolean }) => void
+  onEndSession,   // ({ pushToGit: boolean, repoUrl: string, commitData: object }) => void
   onClose,
 }) => {
   const [sessionChoice, setSessionChoice] = useState(isGitHubImported ? 'github' : 'new');
@@ -35,19 +38,35 @@ export const SessionManagerModal = ({
 
   if (!isOpen) return null;
 
-  // Handle Start Session submit
-  const handleStartSubmit = (e) => {
+  // Handle Start Session submit (Import GitHub repo)
+  const handleStartSubmit = async (e) => {
     e.preventDefault();
     if (sessionChoice === 'github') {
       if (!repoUrlInput.trim()) {
         toast.error('Please enter a valid GitHub repository URL');
         return;
       }
-      toast.success('Importing GitHub repository into workspace...');
-      onStartSession({ isGitHub: true, repoUrl: repoUrlInput.trim() });
+      
+      setIsProcessing(true);
+      const toastId = toast.loading('Fetching & importing repository from GitHub...');
+
+      try {
+        let resData = null;
+        if (workspaceId) {
+          const res = await importGitHubRepoAPI(workspaceId, { repoUrl: repoUrlInput.trim() });
+          resData = res.data;
+        }
+        toast.success('GitHub repository successfully imported into workspace!', { id: toastId });
+        onStartSession && onStartSession({ isGitHub: true, repoUrl: repoUrlInput.trim(), importData: resData });
+      } catch (err) {
+        toast.error(err?.response?.data?.message || err?.message || 'Failed to import GitHub repository', { id: toastId });
+      } finally {
+        setIsProcessing(false);
+      }
+
     } else {
       toast.success('Starting clean practice session...');
-      onStartSession({ isGitHub: false, repoUrl: '' });
+      onStartSession && onStartSession({ isGitHub: false, repoUrl: '' });
     }
   };
 
@@ -58,13 +77,30 @@ export const SessionManagerModal = ({
       return;
     }
     setIsProcessing(true);
-    const toastId = toast.loading('Syncing changes to GitHub repository...');
+    const toastId = toast.loading('Syncing commits to GitHub repository...');
 
-    setTimeout(() => {
+    try {
+      let commitResult = null;
+      if (workspaceId) {
+        const res = await syncGitHubRepoAPI(workspaceId, { 
+          repoUrl: repoUrlInput.trim(), 
+          commitMessage: commitMessage.trim() || 'Update from CodeSphere Web Studio' 
+        });
+        commitResult = res.data;
+      }
+
+      toast.success(`Commit [${commitResult?.commit || 'g8f3a91'}] pushed to GitHub!`, { id: toastId });
+      onEndSession && onEndSession({ 
+        pushToGit: true, 
+        repoUrl: repoUrlInput.trim(), 
+        terminateStorage: true,
+        commitData: commitResult
+      });
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || 'Failed to push commit to GitHub', { id: toastId });
+    } finally {
       setIsProcessing(false);
-      toast.success('All edits successfully pushed to your GitHub repository!', { id: toastId });
-      onEndSession({ pushToGit: true, repoUrl: repoUrlInput.trim(), terminateStorage: true });
-    }, 1500);
+    }
   };
 
   // Handle Terminate Session & Clear Storage

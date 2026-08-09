@@ -65,6 +65,17 @@ const getWorkspaceById = async (id, userId) => {
   if (workspace.visibility === 'private') {
     const isMember = await WorkspaceMember.findOne({ workspaceId: id, userId });
     if (!isMember) throw createError('You do not have access to this workspace', 403);
+  } else if (userId) {
+    // For public workspaces, auto-register new visiting users as members
+    try {
+      const isMember = await WorkspaceMember.findOne({ workspaceId: id, userId });
+      if (!isMember) {
+        await WorkspaceMember.create({ workspaceId: id, userId, role: 'member' });
+        await Workspace.findByIdAndUpdate(id, { $inc: { memberCount: 1 } });
+      }
+    } catch (mErr) {
+      console.warn('[WorkspaceService] Auto member register warning:', mErr.message);
+    }
   }
 
   return workspace;

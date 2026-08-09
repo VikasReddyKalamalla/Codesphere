@@ -38,20 +38,29 @@ const seedDefaultFiles = async (workspaceId) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Codesphere Live Collaborative App</title>
+  <title>Codesphere Live Workspace</title>
+  <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="styles.css">
 </head>
-<body class="bg-slate-950 text-white flex items-center justify-center min-h-screen font-sans">
-  <div class="max-w-md w-full bg-slate-900 border border-purple-500/20 rounded-2xl p-8 shadow-2xl text-center space-y-6">
-    <div class="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto animate-pulse">
-      <span class="text-2xl font-bold">CS</span>
+<body class="bg-slate-950 text-slate-100 flex items-center justify-center min-h-screen p-6 font-sans">
+  <div class="max-w-sm w-full bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl text-center space-y-5 backdrop-blur-xl">
+    <div class="w-12 h-12 bg-emerald-500/20 text-[#04AA6D] border border-emerald-500/30 rounded-xl flex items-center justify-center mx-auto shadow-inner font-mono font-bold text-lg">
+      CS
     </div>
-    <h1 class="text-3xl font-extrabold tracking-tight bg-gradient-to-r from-purple-400 to-indigo-400 bg-clip-text text-transparent">Codex Playpen</h1>
-    <p class="text-slate-400 text-sm">Welcome to your real-time collaborative coding space. Edit code to see live hot-reloading preview updates instantly!</p>
-    <div class="p-4 bg-slate-950/50 rounded-xl border border-purple-500/10">
-      <p id="time-message" class="text-purple-300 font-mono text-xs">Loading script...</p>
+    
+    <div>
+      <h1 class="text-xl font-extrabold tracking-tight text-white font-mono">Codex Playground</h1>
+      <p class="text-slate-400 text-xs mt-1.5 leading-relaxed">Real-time collaborative sandbox environment with instant hot-reloading.</p>
     </div>
-    <button onclick="changeColor()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-700 transition-all rounded-xl text-sm font-semibold shadow-lg shadow-purple-500/20 hover:scale-105 active:scale-95">Interactive Button</button>
+
+    <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 flex items-center justify-between">
+      <span class="text-[10px] font-mono text-slate-500 uppercase font-semibold">Compiler Status</span>
+      <span id="time-message" class="text-emerald-400 font-mono text-[11px] font-bold">Initializing...</span>
+    </div>
+
+    <button onclick="changeColor()" class="w-full py-2.5 bg-[#04AA6D] hover:bg-emerald-600 active:scale-95 transition-all rounded-xl text-xs font-mono font-bold text-white shadow-lg shadow-emerald-500/20 cursor-pointer">
+      Test Interactive Script
+    </button>
   </div>
   <script src="main.js"></script>
 </body>

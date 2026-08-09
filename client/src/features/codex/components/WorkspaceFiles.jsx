@@ -233,57 +233,63 @@ export const WorkspaceFiles = ({
   const tree = buildTree();
 
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800/85 rounded-2xl overflow-hidden text-left">
-      <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
-        <span className="text-xs font-bold text-slate-800 dark:text-white tracking-wide uppercase font-mono">Workspace Files</span>
-        <div className="flex items-center gap-1.5">
+    <div className="flex flex-col h-full bg-transparent text-left select-none overflow-hidden">
+      {/* Top action bar */}
+      <div className="pb-3 border-b border-slate-200 dark:border-slate-800/70 flex items-center justify-between">
+        <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 tracking-wider uppercase font-mono flex items-center gap-2">
+          <Folder size={14} className="text-[#04AA6D]" />
+          Files
+        </span>
+        <div className="flex items-center gap-1">
           <button 
             title="Create File at Root"
             onClick={() => handleStartCreate('file', '')} 
-            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer"
+            className="p-1 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
           >
-            <Plus size={15} />
+            <Plus size={14} />
           </button>
           <label 
             title="Upload File"
-            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-805 rounded-lg text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer"
+            className="p-1 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
           >
-            <Upload size={14} />
+            <Upload size={13} />
             <input type="file" onChange={handleFileUpload} className="hidden" />
           </label>
         </div>
       </div>
 
-      <div className="p-3 border-b border-slate-150 dark:border-slate-800/50">
+      {/* Search Input */}
+      <div className="py-2.5">
         <div className="relative">
-          <Search size={13} className="absolute left-2.5 top-2.5 text-slate-450 dark:text-slate-500" />
+          <Search size={12} className="absolute left-2.5 top-2.5 text-slate-400 dark:text-slate-500" />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search path..."
-            className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-805 pl-8 pr-3 py-1.5 rounded-xl text-xs outline-none text-slate-700 dark:text-slate-355 focus:border-[#6366f1] font-mono"
+            placeholder="Filter files..."
+            className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 pl-8 pr-2.5 py-1.5 rounded-lg text-[11px] outline-none text-slate-700 dark:text-slate-200 focus:border-[#04AA6D] font-mono transition-colors"
           />
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-3 no-scrollbar space-y-1">
+      {/* File Tree List */}
+      <div className="flex-1 overflow-y-auto pr-1 no-scrollbar space-y-0.5">
         {namingInput && namingInput.parentPath === '' && (
-          <form onSubmit={handleSaveCreate} className="pl-4 py-1 flex items-center gap-1.5">
-            {namingInput.type === 'folder' ? <Folder size={14} className="text-[#6366f1]" /> : <FileCode size={14} className="text-slate-450 dark:text-slate-500" />}
+          <form onSubmit={handleSaveCreate} className="pl-3 py-1 flex items-center gap-1.5">
+            {namingInput.type === 'folder' ? <Folder size={13} className="text-[#04AA6D]" /> : <FileCode size={13} className="text-slate-400" />}
             <input
               autoFocus
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               placeholder={`New ${namingInput.type}...`}
               onBlur={() => setNamingInput(null)}
-              className="bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-xs px-2 py-0.5 rounded outline-none font-mono text-slate-800 dark:text-white max-w-[150px]"
+              className="bg-white dark:bg-slate-950 border border-[#04AA6D] text-[11px] px-2 py-0.5 rounded outline-none font-mono text-slate-800 dark:text-white max-w-[140px]"
             />
           </form>
         )}
         
         {files.length === 0 ? (
-          <div className="text-[11px] text-slate-500 font-mono py-10 text-center">
-            Explorer is empty
+          <div className="text-[11px] text-slate-400 dark:text-slate-500 font-mono py-8 text-center">
+            No files in workspace
           </div>
         ) : (
           renderNode(tree)
@@ -292,3 +298,4 @@ export const WorkspaceFiles = ({
     </div>
   );
 };
+

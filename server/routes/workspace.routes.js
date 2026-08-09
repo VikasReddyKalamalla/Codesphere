@@ -46,6 +46,12 @@ router.patch('/:id/archive',  protect, archiveWorkspace);
 router.patch('/:id/restore',  protect, restoreWorkspace);
 router.post ('/:id/duplicate',protect, duplicateWorkspace);
 
+const { importGitHubRepo, syncGitHubRepo } = require('../controllers/githubSync.controller');
+
+// ─── GitHub Sync ──────────────────────────────────────────────────────────────
+router.post('/:id/github/import', protect, importGitHubRepo);
+router.post('/:id/github/sync',   protect, syncGitHubRepo);
+
 // ─── Stats ────────────────────────────────────────────────────────────────────
 router.get('/:id/stats', protect, getWorkspaceStats);
 

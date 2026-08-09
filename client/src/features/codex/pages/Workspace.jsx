@@ -28,6 +28,7 @@ import { TaskModal } from '../components/TaskModal.jsx';
 import { APITester } from '../components/APITester.jsx';
 import { WorkspaceVoiceBar } from '../components/WorkspaceVoiceBar.jsx';
 import { SessionManagerModal } from '../../../components/SessionManagerModal.jsx';
+import { InviteModal } from '../components/InviteModal.jsx';
 import { BackButton } from '@components/common/BackButton.jsx';
 import { Button } from '@components/common/Button.jsx';
 
@@ -91,7 +92,14 @@ export const Workspace = () => {
   const [loading, setLoading] = useState(true);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   
+  // Layout panel states
+  const [isLeftSidebarOpen, setIsLeftSidebarOpen] = useState(true);
+  const [isRightPanelOpen, setIsRightPanelOpen] = useState(true);
+  const [sidebarTab, setSidebarTab] = useState('files'); // 'files' | 'info' | 'collaborators'
+  const [rightWidgetTab, setRightWidgetTab] = useState('tasks'); // 'tasks' | 'activity'
+
   const { theme } = useContext(ThemeContext);
   const isDarkMode = theme === 'dark';
 
@@ -132,23 +140,46 @@ export const Workspace = () => {
   const [isGitHubImported, setIsGitHubImported]     = useState(false);
   const [activeRepoUrl, setActiveRepoUrl]           = useState('');
 
-  const handleStartSessionFlow = ({ isGitHub, repoUrl }) => {
+  const handleStartSessionFlow = async ({ isGitHub, repoUrl, importData }) => {
     setIsGitHubImported(isGitHub);
     setActiveRepoUrl(repoUrl);
     setIsSessionModalOpen(false);
     if (isGitHub && repoUrl) {
-      toast.success(`GitHub Repository "${repoUrl}" connected to session!`);
+      toast.success(`GitHub Repository "${repoUrl}" connected to workspace!`);
+      // Reload workspace files to display imported GitHub files
+      try {
+        const filesRes = await fetchWorkspaceFilesAPI(workspaceId);
+        if (filesRes.success && filesRes.data?.files) {
+          dispatch(setFiles(filesRes.data.files));
+          if (filesRes.data.files.length > 0) {
+            dispatch(setActiveFile(filesRes.data.files[0]));
+          }
+        }
+      } catch (fErr) {
+        console.warn('[Workspace] File refresh after GitHub import error:', fErr);
+      }
     }
   };
 
-  const handleEndSessionFlow = ({ pushToGit, repoUrl, terminateStorage }) => {
+  const handleEndSessionFlow = ({ pushToGit, repoUrl, terminateStorage, commitData }) => {
     setIsSessionModalOpen(false);
     if (pushToGit && repoUrl) {
-      toast.success(`Session edits pushed to GitHub "${repoUrl}"!`);
+      toast.success(`Session edits pushed to GitHub repository "${repoUrl}"!`);
+      if (commitData) {
+        setGitHistory(prev => [
+          {
+            commit: commitData.commit || 'g8f3a91',
+            message: commitData.message || 'Update from CodeSphere Web Studio',
+            author: currentUser?.fullName || 'You',
+            date: new Date().toLocaleTimeString()
+          },
+          ...prev
+        ]);
+      }
     }
     if (terminateStorage) {
-      toast.success('Workspace session terminated. Cloud storage cleared.');
-      navigate('/dashboard');
+      toast.success('Workspace session terminated cleanly.');
+      navigate('/codex');
     }
   };
 
@@ -693,18 +724,9 @@ export const Workspace = () => {
     });
   };
 
-  // Invite member email trigger
-  const handleInviteUser = async () => {
-    const email = prompt("Enter team collaborator's email:");
-    if (!email) return;
-    try {
-      const res = await inviteWorkspaceMemberAPI(workspaceId, { email, role: 'editor' });
-      if (res.success) {
-        toast.success('Invitation sent successfully!');
-      }
-    } catch (err) {
-      toast.error(err.message || 'Error sending invite');
-    }
+  // Invite member modal trigger
+  const handleInviteUser = () => {
+    setIsInviteModalOpen(true);
   };
 
   // Editor language detection
@@ -732,97 +754,101 @@ export const Workspace = () => {
   const previewUrl = `http://localhost:5000/preview/${workspaceId}/index.html?cb=${previewCacheBuster}`;
 
   return (
-    <div className="flex flex-col h-[calc(100vh-90px)] w-full text-slate-800 dark:text-slate-200 select-none overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans">
+    <div className="flex flex-col h-[calc(100vh-80px)] w-full text-slate-800 dark:text-slate-200 select-none overflow-hidden bg-slate-50 dark:bg-slate-950 font-sans">
       
       {/* ─── Top Navbar ────────────────────────────────────────────────────────── */}
-      <div className="h-14 border-b border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-center justify-between px-6 z-20 shrink-0">
-        <div className="flex items-center gap-4 text-left">
+      <div className="h-14 border-b border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex items-center justify-between px-5 z-20 shrink-0">
+        <div className="flex items-center gap-3.5 text-left">
+          <button 
+            onClick={() => navigate('/codex')}
+            title="Back to Codex Hub"
+            className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
+          >
+            <ArrowRight size={16} className="rotate-180" />
+          </button>
+          
           <div className="p-2 bg-[#04AA6D]/10 text-[#04AA6D] rounded-lg">
             <FolderCode className="w-4 h-4" />
           </div>
+          
           <div className="flex flex-col">
             <div className="flex items-center gap-2">
-              <h1 className="text-sm font-bold text-slate-900 dark:text-white font-mono uppercase tracking-wider">
-                {currentWorkspace?.name || 'Collaborative Platform'}
+              <h1 className="text-xs font-bold text-slate-900 dark:text-white font-mono uppercase tracking-wider">
+                {currentWorkspace?.name || 'Collaborative Workspace'}
               </h1>
-              <Lock size={12} className="text-slate-400 dark:text-slate-500" />
-              <span className="text-[9px] bg-slate-200 dark:bg-slate-800/60 text-slate-600 dark:text-slate-400 font-mono px-2 py-0.5 rounded border border-slate-300 dark:border-slate-700 capitalize">
+              <span className="text-[9px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-mono px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700/60 capitalize flex items-center gap-1">
+                <Lock size={9} />
                 {currentWorkspace?.visibility || 'private'}
               </span>
             </div>
-            <span className="text-[10px] text-slate-500 font-sans mt-0.5">
-              {currentWorkspace?.description || 'Full-stack collaborative project'}
+            <span className="text-[10px] text-slate-400 dark:text-slate-500 font-sans truncate max-w-[220px]">
+              {currentWorkspace?.description || 'Collaborative development space'}
             </span>
           </div>
         </div>
 
         {/* Global Workspace Search */}
-        <div className="relative w-full max-w-md hidden md:block">
+        <div className="relative w-full max-w-sm hidden md:block">
           <input
             value={globalSearch}
             onChange={(e) => setGlobalSearch(e.target.value)}
-            placeholder="Search in workspace..."
-            className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-9 pr-8 py-1.5 text-xs outline-none text-slate-800 dark:text-slate-200 focus:border-[#04AA6D] font-sans"
+            placeholder="Search workspace..."
+            className="w-full bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-lg pl-8 pr-8 py-1.5 text-xs outline-none text-slate-800 dark:text-slate-200 focus:border-[#04AA6D] font-sans transition-colors"
           />
-          <Search size={13} className="absolute left-3 top-2.5 text-slate-400 dark:text-slate-500" />
-          <span className="absolute right-3 top-2 text-[9px] font-mono text-slate-400 dark:text-slate-550 border border-slate-200 dark:border-slate-800 px-1 rounded bg-white dark:bg-slate-900">
-            K
+          <Search size={13} className="absolute left-2.5 top-2.5 text-slate-400 dark:text-slate-500" />
+          <span className="absolute right-2.5 top-2 text-[9px] font-mono text-slate-400 dark:text-slate-500 border border-slate-200 dark:border-slate-800 px-1 rounded bg-white dark:bg-slate-900">
+            ⌘K
           </span>
         </div>
 
-        {/* Indicators Navbar Right */}
-        <div className="flex items-center gap-5">
-          <div className="flex items-center gap-2">
-            <span className="w-2 h-2 bg-indigo-500 rounded-full" />
-            <span className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">Online</span>
-            <div className="flex -space-x-1.5 ml-1">
+        {/* Indicators & Right Navbar Actions */}
+        <div className="flex items-center gap-3">
+          {/* Online Users Avatar Stack */}
+          <div className="flex items-center gap-2 border-r border-slate-200 dark:border-slate-800/80 pr-3">
+            <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+            <div className="flex -space-x-1.5">
               {onlineUsers.slice(0, 4).map((user) => (
                 <img 
                   key={user._id} 
                   src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${user.fullName}`} 
                   alt={user.fullName} 
-                  title={`Click to follow ${user.fullName}'s live cursor`}
+                  title={`Click to follow ${user.fullName}'s cursor`}
                   onClick={() => handleFollowUser(user)}
-                  className="w-5 h-5 rounded-full border-2 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-950 cursor-pointer hover:scale-125 transition-transform hover:z-10" 
+                  className="w-6 h-6 rounded-full border-2 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-950 cursor-pointer hover:scale-110 transition-transform hover:z-10" 
                 />
               ))}
               {onlineUsers.length > 4 && (
-                <div className="w-5 h-5 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[7px] font-bold text-slate-700 dark:text-white font-mono">
+                <div className="w-6 h-6 rounded-full border-2 border-white dark:border-slate-900 bg-slate-200 dark:bg-slate-800 flex items-center justify-center text-[8px] font-bold text-slate-700 dark:text-white font-mono">
                   +{onlineUsers.length - 4}
                 </div>
               )}
             </div>
           </div>
 
-          <div className="flex items-center gap-3 border-l border-slate-200 dark:border-slate-800 pl-4">
-            <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-850 rounded-lg text-slate-400 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all relative">
-              <Bell size={14} />
-              <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-rose-500 rounded-full flex items-center justify-center text-[7px] font-bold text-white">
-                12
-              </span>
-            </button>
-            <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-850 rounded-lg text-slate-400 hover:text-white transition-all">
-              <MessageSquare size={14} />
-            </button>
-            <button className="p-1.5 hover:bg-slate-100 dark:hover:bg-slate-850 rounded-lg text-slate-400 hover:text-white transition-all">
-              <HelpCircle size={14} />
-            </button>
-          </div>
+          {/* Compact Voice Trigger */}
+          <WorkspaceVoiceBar 
+            socket={socket} 
+            workspaceId={workspaceId} 
+            currentUser={currentUser} 
+            onlineUsers={onlineUsers} 
+          />
 
+          {/* GitHub Sync */}
           <button
             onClick={() => {
               setSessionModalMode('end');
               setIsSessionModalOpen(true);
             }}
-            className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-mono font-bold rounded-lg cursor-pointer flex items-center gap-1.5 transition-all border border-slate-300 dark:border-slate-700"
+            className="px-2.5 py-1 bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-mono font-semibold rounded-lg cursor-pointer flex items-center gap-1.5 transition-colors border border-slate-200 dark:border-slate-700/60"
           >
-            <GitBranch size={13} className="text-purple-500" />
-            <span>End Session / GitHub Sync</span>
+            <GitBranch size={13} className="text-purple-400" />
+            <span>GitHub Sync</span>
           </button>
 
+          {/* Primary Invite Button */}
           <button 
             onClick={handleInviteUser}
-            className="px-3.5 py-1.5 bg-[#04AA6D] hover:bg-[#4f46e5] active:scale-95 text-white text-xs font-mono font-bold rounded-lg shadow-lg shadow-indigo-500/10 cursor-pointer flex items-center gap-1.5 transition-all"
+            className="px-3 py-1 bg-[#04AA6D] hover:bg-emerald-600 active:scale-95 text-white text-xs font-mono font-bold rounded-lg shadow-sm cursor-pointer flex items-center gap-1 transition-all"
           >
             <Plus size={13} />
             <span>Invite</span>
@@ -830,35 +856,25 @@ export const Workspace = () => {
         </div>
       </div>
 
-      {/* ─── Live WebRTC Voice Channel Bar ──────────────────────────────────── */}
-      <WorkspaceVoiceBar 
-        socket={socket} 
-        workspaceId={workspaceId} 
-        currentUser={currentUser} 
-        onlineUsers={onlineUsers} 
-      />
-
-      {/* ─── Secondary Tab Navigation Bar ──────────────────────────────────────── */}
-      <div className="h-11 border-b border-slate-200 dark:border-slate-800/80 bg-slate-100/50 dark:bg-slate-900 flex items-center justify-between px-6 select-none shrink-0">
-        <div className="flex gap-1.5">
+      {/* ─── Secondary View Selector Bar ──────────────────────────────────────── */}
+      <div className="h-10 border-b border-slate-200 dark:border-slate-800/80 bg-slate-100/40 dark:bg-slate-900/60 flex items-center justify-between px-4 select-none shrink-0">
+        <div className="flex gap-1">
           {[
+            { id: 'code', label: 'Code Editor', icon: Code2 },
+            { id: 'tasks', label: 'Tasks Kanban', icon: CheckSquare },
             { id: 'overview', label: 'Overview', icon: FolderCode },
-            { id: 'tasks', label: 'Tasks', icon: CheckSquare },
-            { id: 'code', label: 'Code', icon: Code2 },
-            { id: 'milestones', label: 'Milestones', icon: Award },
+            { id: 'discussions', label: 'Chat', icon: MessageSquare },
             { id: 'members', label: 'Members', icon: Users },
-            { id: 'discussions', label: 'Discussions', icon: MessageSquare },
-            { id: 'files', label: 'Files', icon: FolderCode },
             { id: 'commits', label: 'Commits', icon: GitCommit },
             { id: 'settings', label: 'Settings', icon: Settings }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => dispatch(setActiveTab(tab.id))}
-              className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition-all cursor-pointer border ${
+              className={`text-xs font-mono font-semibold px-3 py-1 rounded-md flex items-center gap-1.5 transition-colors cursor-pointer ${
                 activeTab === tab.id 
-                  ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/50 text-[#04AA6D] shadow-sm shadow-slate-100 dark:shadow-none' 
-                  : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-350'
+                  ? 'bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/60 text-[#04AA6D] shadow-xs font-bold' 
+                  : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
               }`}
             >
               <tab.icon size={13} />
@@ -867,149 +883,207 @@ export const Workspace = () => {
           ))}
         </div>
 
-        <select
-          value="default"
-          onChange={() => dispatch(setActiveTab('settings'))}
-          className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[10px] font-mono font-bold text-slate-550 dark:text-slate-400 py-1 px-2.5 rounded-lg outline-none cursor-pointer"
-        >
-          <option value="default">Workspace Settings</option>
-          <option value="settings">Settings Manager</option>
-        </select>
+        {/* Panel Visibility Toggle Controls */}
+        {activeTab === 'code' && (
+          <div className="flex items-center gap-1 text-slate-400 dark:text-slate-500">
+            <button
+              onClick={() => setIsLeftSidebarOpen(!isLeftSidebarOpen)}
+              title={isLeftSidebarOpen ? "Collapse Left Sidebar" : "Expand Left Sidebar"}
+              className={`px-2 py-1 text-[11px] font-mono rounded flex items-center gap-1 transition-colors cursor-pointer border ${
+                isLeftSidebarOpen
+                  ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-[#04AA6D]'
+                  : 'border-transparent hover:text-slate-200'
+              }`}
+            >
+              Sidebar
+            </button>
+
+            <button
+              onClick={() => setIsRightPanelOpen(!isRightPanelOpen)}
+              title={isRightPanelOpen ? "Collapse Live Preview" : "Expand Live Preview"}
+              className={`px-2 py-1 text-[11px] font-mono rounded flex items-center gap-1 transition-colors cursor-pointer border ${
+                isRightPanelOpen
+                  ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-[#04AA6D]'
+                  : 'border-transparent hover:text-slate-200'
+              }`}
+            >
+              Preview Panel
+            </button>
+          </div>
+        )}
       </div>
 
       {/* ─── Main Content Splitter ────────────────────────────────────────────── */}
       <div className="flex-1 flex overflow-hidden min-h-0">
         
-        {/* If Active Tab is Code (mockup layout: 3-column layout) */}
+        {/* CODE VIEW 3-COLUMN LAYOUT */}
         {activeTab === 'code' ? (
           <div className="flex-1 flex overflow-hidden min-h-0">
             
             {/* COLUMN 1: LEFT SIDEBAR PANEL */}
-            <div className="w-[280px] border-r border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex flex-col gap-4 p-4 overflow-y-auto no-scrollbar shrink-0">
-              
-              {/* Workspace Info */}
-              <div className="bg-slate-50/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/60 rounded-2xl p-4 flex flex-col gap-3.5 text-left">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest font-mono">Workspace Info</span>
-                
-                <div className="flex flex-col gap-2 text-xs">
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span>Tech Stack</span>
-                    <div className="flex gap-1">
-                      <span className="px-1 text-[9px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono rounded">React</span>
-                      <span className="px-1 text-[9px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono rounded">Node</span>
-                      <span className="px-1 text-[9px] bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-mono rounded">+2</span>
-                    </div>
-                  </div>
-                  <div className="flex flex-col gap-1 text-[11px]">
-                    <span className="text-slate-500">Repository</span>
-                    <a 
-                      href={`https://${currentWorkspace?.githubRepo || 'github.com/codesphere'}`}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-[#04AA6D] hover:underline font-mono truncate"
-                    >
-                      {currentWorkspace?.githubRepo || 'github.com/codesphere/sandbox'}
-                    </a>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span>Created On</span>
-                    <span className="font-mono text-slate-700 dark:text-slate-300">12 Apr 2025</span>
-                  </div>
-                  <div className="flex items-center justify-between text-slate-500">
-                    <span>Owner</span>
-                    <span className="font-mono text-[#04AA6D] font-bold">Arjun Verma</span>
-                  </div>
+            {isLeftSidebarOpen && (
+              <div className="w-[260px] border-r border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex flex-col p-3 overflow-hidden shrink-0">
+                {/* Sidebar Header Segmented Switcher */}
+                <div className="flex bg-slate-100 dark:bg-slate-950 p-1 rounded-lg mb-3 shrink-0">
+                  <button
+                    onClick={() => setSidebarTab('files')}
+                    className={`flex-1 py-1 text-[10px] font-mono font-bold rounded-md transition-all cursor-pointer ${
+                      sidebarTab === 'files'
+                        ? 'bg-white dark:bg-slate-800 text-[#04AA6D] shadow-xs'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Files
+                  </button>
+                  <button
+                    onClick={() => setSidebarTab('info')}
+                    className={`flex-1 py-1 text-[10px] font-mono font-bold rounded-md transition-all cursor-pointer ${
+                      sidebarTab === 'info'
+                        ? 'bg-white dark:bg-slate-800 text-[#04AA6D] shadow-xs'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Info
+                  </button>
+                  <button
+                    onClick={() => setSidebarTab('collaborators')}
+                    className={`flex-1 py-1 text-[10px] font-mono font-bold rounded-md transition-all cursor-pointer ${
+                      sidebarTab === 'collaborators'
+                        ? 'bg-white dark:bg-slate-800 text-[#04AA6D] shadow-xs'
+                        : 'text-slate-400 hover:text-slate-200'
+                    }`}
+                  >
+                    Team
+                  </button>
                 </div>
-              </div>
 
-              {/* Code Explorer Files tree */}
-              <div className="flex-1 flex flex-col min-h-[300px]">
-                <WorkspaceFiles
-                  files={files}
-                  activeFile={activeFile}
-                  activeCursors={cursors}
-                  onSelectFile={handleSelectFile}
-                  onCreateFile={handleCreateFile}
-                  onCreateFolder={handleCreateFolder}
-                  onRename={handleRenameFile}
-                  onDelete={handleDeleteFile}
-                  onDuplicate={handleDuplicateFile}
-                  onUpload={handleFileUpload}
-                />
-              </div>
-
-              {/* Live Cursor Positions */}
-              <div className="bg-slate-50/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/60 rounded-2xl p-4 flex flex-col gap-3 text-left">
-                <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest font-mono">Live Cursor</span>
-                <div className="flex flex-col gap-2.5">
-                  {[
-                    { name: 'Priya Sharma', path: 'src/pages/Home.jsx', line: 45, color: '#9c27b0' },
-                    { name: 'Rohan Mehta', path: 'src/components/Navbar.jsx', line: 22, color: '#3f51b5' },
-                    { name: 'Neha Gupta', path: 'src/context/CartContext.jsx', line: 10, color: '#04AA6D' }
-                  ].map((cur, idx) => (
-                    <div key={idx} className="flex items-start gap-2.5 text-[11px] font-sans">
-                      <div className="w-1.5 h-1.5 rounded-full mt-1.5" style={{ backgroundColor: cur.color }} />
-                      <div className="flex flex-col min-w-0">
-                        <span className="font-bold text-slate-700 dark:text-slate-200">{cur.name}</span>
-                        <span className="text-[9px] text-slate-400 dark:text-slate-550 font-mono truncate">{cur.path} (Line {cur.line})</span>
+                {/* Sidebar Tab Content */}
+                {sidebarTab === 'files' ? (
+                  <div className="flex-1 flex flex-col min-h-0">
+                    <WorkspaceFiles
+                      files={files}
+                      activeFile={activeFile}
+                      activeCursors={cursors}
+                      onSelectFile={handleSelectFile}
+                      onCreateFile={handleCreateFile}
+                      onCreateFolder={handleCreateFolder}
+                      onRename={handleRenameFile}
+                      onDelete={handleDeleteFile}
+                      onDuplicate={handleDuplicateFile}
+                      onUpload={handleFileUpload}
+                    />
+                  </div>
+                ) : sidebarTab === 'info' ? (
+                  <div className="flex-1 overflow-y-auto space-y-4 p-1 text-left">
+                    <div className="bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl p-3.5 space-y-3">
+                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono">Project Summary</span>
+                      <div className="space-y-2 text-xs">
+                        <div className="flex justify-between items-center text-slate-500">
+                          <span>Tech Stack</span>
+                          <div className="flex gap-1 font-mono text-[9px]">
+                            <span className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-300">React</span>
+                            <span className="px-1.5 py-0.5 bg-slate-200 dark:bg-slate-800 rounded text-slate-700 dark:text-slate-300">Node</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col gap-1 text-[11px]">
+                          <span className="text-slate-500">Repository</span>
+                          <a 
+                            href={`https://${currentWorkspace?.githubRepo || 'github.com/codesphere/sandbox'}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-[#04AA6D] hover:underline font-mono truncate"
+                          >
+                            {currentWorkspace?.githubRepo || 'github.com/codesphere/sandbox'}
+                          </a>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-500">
+                          <span>Owner</span>
+                          <span className="font-mono font-bold text-slate-700 dark:text-slate-200">Arjun Verma</span>
+                        </div>
+                        <div className="flex justify-between items-center text-slate-500">
+                          <span>Created On</span>
+                          <span className="font-mono text-slate-600 dark:text-slate-400">12 Apr 2025</span>
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 overflow-y-auto space-y-3 p-1 text-left">
+                    <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono block mb-2">Live Collaborators</span>
+                    {[
+                      { name: 'Priya Sharma', path: 'src/pages/Home.jsx', line: 45, color: '#9c27b0' },
+                      { name: 'Rohan Mehta', path: 'src/components/Navbar.jsx', line: 22, color: '#3f51b5' },
+                      { name: 'Neha Gupta', path: 'src/context/CartContext.jsx', line: 10, color: '#04AA6D' }
+                    ].map((cur, idx) => (
+                      <div key={idx} className="p-2 bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 rounded-xl flex items-center justify-between">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: cur.color }} />
+                          <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-bold text-slate-800 dark:text-slate-200 truncate">{cur.name}</span>
+                            <span className="text-[9px] text-slate-400 font-mono truncate">{cur.path}:{cur.line}</span>
+                          </div>
+                        </div>
+                        <button 
+                          onClick={() => handleFollowUser({ fullName: cur.name })}
+                          className="text-[9px] font-mono text-[#04AA6D] hover:underline font-bold"
+                        >
+                          Follow
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
 
             {/* COLUMN 2: MIDDLE EDITOR CORE */}
             <div className="flex-1 flex flex-col border-r border-slate-200 dark:border-slate-800/80 overflow-hidden min-w-0">
               
               {/* File tabs bar */}
-              <div className="h-11 border-b border-slate-200 dark:border-slate-800/80 bg-slate-100/50 dark:bg-slate-900 flex items-center justify-between px-4 select-none shrink-0">
-                <div className="flex gap-1.5">
-                  {files.filter(f => f.type === 'file').slice(0, 5).map((file) => (
+              <div className="h-10 border-b border-slate-200 dark:border-slate-800/80 bg-slate-100/60 dark:bg-slate-900 flex items-center justify-between px-3 select-none shrink-0">
+                <div className="flex gap-1 overflow-x-auto no-scrollbar">
+                  {files.filter(f => f.type === 'file').slice(0, 6).map((file) => (
                     <button
                       key={file._id}
                       onClick={() => handleSelectFile(file)}
-                      className={`text-xs font-mono font-bold px-3 py-1.5 rounded-lg border transition-all cursor-pointer ${
+                      className={`text-xs font-mono font-semibold px-3 py-1 rounded-md border transition-all cursor-pointer flex items-center gap-2 ${
                         activeFile && activeFile._id === file._id
-                          ? 'bg-white dark:bg-slate-850 border-slate-200 dark:border-slate-700/60 text-[#04AA6D] shadow-xs'
-                          : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-355'
+                          ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/60 text-[#04AA6D] shadow-xs font-bold'
+                          : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
                       }`}
                     >
-                      {file.name}
+                      <span>{file.name}</span>
                     </button>
                   ))}
-                  <button className="text-slate-450 hover:text-slate-800 dark:hover:text-white px-2 py-1 text-xs">+</button>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <button 
                     onClick={handleSaveFile}
-                    className="px-3 py-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 hover:border-indigo-500/20 text-[#04AA6D] text-xs font-mono font-bold rounded-lg transition-all cursor-pointer flex items-center gap-1.5 shadow-xs"
+                    className="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#04AA6D] text-[11px] font-mono font-bold rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex items-center gap-1 shadow-xs"
                   >
-                    <Share2 size={13} />
-                    <span>Share</span>
+                    <Save size={12} />
+                    <span>Save</span>
                   </button>
                 </div>
               </div>
 
               {/* Path Breadcrumbs */}
-              <div className="h-8 bg-slate-50/50 dark:bg-slate-950/60 border-b border-slate-200 dark:border-slate-800/50 px-4 flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-500 shrink-0">
-                <div className="flex items-center gap-1">
+              <div className="h-7 bg-slate-50/70 dark:bg-slate-950/40 border-b border-slate-200 dark:border-slate-800/60 px-4 flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-500 shrink-0">
+                <div className="flex items-center gap-1.5">
                   <span>frontend</span>
-                  <span>&gt;</span>
+                  <span>/</span>
                   <span>src</span>
-                  <span>&gt;</span>
+                  <span>/</span>
                   <span>pages</span>
-                  <span>&gt;</span>
-                  <span className="text-slate-700 dark:text-slate-300 font-bold">{activeFile?.name || 'Home.jsx'}</span>
+                  <span>/</span>
+                  <span className="text-slate-800 dark:text-slate-200 font-bold">{activeFile?.name || 'index.html'}</span>
                 </div>
-                <div>
-                  <span>You, 2 minutes ago | 3 authors (You and others)</span>
-                </div>
+                <span>You, live editing</span>
               </div>
 
-              {/* Editor Workspace */}
-              <div className="flex-1 min-h-[250px] bg-white dark:bg-slate-900/20">
+              {/* Monaco Code Editor Workspace */}
+              <div className="flex-1 min-h-[220px] bg-white dark:bg-slate-900/20">
                 {activeFile ? (
                   <Editor
                     height="100%"
@@ -1031,249 +1105,226 @@ export const Workspace = () => {
                 ) : (
                   <div className="h-full flex flex-col justify-center items-center text-center gap-2">
                     <FolderCode size={30} className="text-slate-300 dark:text-slate-700 animate-bounce" />
-                    <span className="text-[10px] font-mono text-slate-400 dark:text-slate-550 uppercase tracking-widest">Select a file from the explorer to begin.</span>
+                    <span className="text-xs font-mono text-slate-400 dark:text-slate-500">Select a file to edit</span>
                   </div>
                 )}
               </div>
 
               {/* Editor Status Bar */}
-              <div className="h-8 bg-slate-100/50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800/60 px-4 flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-500 select-none shrink-0">
+              <div className="h-7 bg-slate-100/50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800/60 px-4 flex items-center justify-between text-[10px] font-mono text-slate-400 dark:text-slate-500 select-none shrink-0">
                 <div className="flex items-center gap-3">
                   <span>Ln 45, Col 12</span>
-                  <span>Spaces: 2</span>
                   <span>UTF-8</span>
-                  <span>LF</span>
                   <span>JavaScript JSX</span>
                 </div>
-                <div className="flex items-center gap-1.5 text-[#6366f1] font-bold hover:underline cursor-pointer">
+                <div className="flex items-center gap-1 text-[#04AA6D] font-bold hover:underline cursor-pointer">
                   <Play size={10} />
-                  <span>Go Live</span>
+                  <span>Ready</span>
                 </div>
               </div>
 
-              {/* Split bottom pane: Terminal + Commits */}
-              <div className="h-[220px] border-t border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex overflow-hidden select-text shrink-0">
-                {/* Bottom Left: Terminal */}
-                <div className="flex-1 border-r border-slate-200 dark:border-slate-800/60 flex flex-col overflow-hidden">
-                  <div className="h-9 border-b border-slate-200 dark:border-slate-850 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-950/20 select-none">
-                    <div className="flex gap-2">
-                      {terminalTabs.map(tab => (
-                        <button
-                          key={tab.id}
-                          onClick={() => setActiveTermId(tab.id)}
-                          className={`text-[9px] font-mono font-bold px-2 py-0.5 rounded-lg border transition-all cursor-pointer ${
-                            activeTermId === tab.id
-                              ? 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 text-[#6366f1] shadow-xs'
-                              : 'border-transparent text-slate-455 dark:text-slate-500 hover:text-slate-800 dark:hover:text-slate-350'
-                          }`}
-                        >
-                          {tab.name}
-                        </button>
-                      ))}
-                    </div>
-                    <select className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-850 text-[9px] font-mono text-slate-500 dark:text-slate-400 px-1 py-0.5 rounded outline-none">
-                      <option>Local</option>
-                    </select>
-                  </div>
-                  
-                  <div className="flex-1 bg-slate-900 dark:bg-slate-950/85 p-3.5 font-mono text-[10px] leading-relaxed text-slate-300 overflow-y-auto no-scrollbar flex flex-col gap-0.5">
-                    {terminalTabs.find(t => t.id === activeTermId)?.logs.map((logLine, idx) => (
-                      <div key={idx} className="whitespace-pre-wrap">{logLine}</div>
-                    ))}
-                  </div>
-                  
-                  <form onSubmit={handleTerminalSubmit} className="p-2 bg-slate-955 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-850 flex items-center gap-2">
-                    <span className="text-[10px] font-mono font-bold text-[#6366f1] select-none">$</span>
-                    <input
-                      value={termInputText}
-                      onChange={(e) => setTermInputText(e.target.value)}
-                      placeholder="Type command..."
-                      className="flex-1 bg-transparent border-none outline-none font-mono text-[10px] text-slate-900 dark:text-white"
-                    />
-                  </form>
-                </div>
-
-                {/* Bottom Right: Commits Timeline */}
-                <div className="w-[300px] flex flex-col overflow-hidden shrink-0">
-                  <div className="h-9 border-b border-slate-200 dark:border-slate-850 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-950/20 select-none">
-                    <span className="text-[9px] font-bold text-slate-700 dark:text-white tracking-widest uppercase font-mono">Commits</span>
-                    <button className="text-[8px] text-[#6366f1] hover:underline font-mono uppercase font-bold">View All</button>
-                  </div>
-                  <div className="flex-1 p-3 overflow-y-auto no-scrollbar space-y-2.5 select-none text-left">
-                    {gitHistory.map((git, idx) => (
-                      <div key={idx} className="flex items-center justify-between gap-3 p-1.5 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-900 transition-all border border-transparent hover:border-slate-150 dark:hover:border-slate-850">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${git.author}`} className="w-5 h-5 rounded-full bg-slate-200 dark:bg-slate-800" alt="" />
-                          <div className="flex flex-col min-w-0">
-                            <span className="text-[10px] font-bold text-slate-700 dark:text-slate-200 truncate">{git.message}</span>
-                            <span className="text-[8px] text-slate-400 dark:text-slate-500 font-mono truncate">{git.author}</span>
-                          </div>
-                        </div>
-                        <span className="text-[8px] bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-mono px-1 rounded">{git.commit}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* COLUMN 3: RIGHT PANEL SIDEBAR */}
-            <div className="w-[380px] lg:w-[420px] flex flex-col overflow-hidden shrink-0">
-              
-              {/* Live Preview Panel (Top half) */}
-              <div className="flex-1 flex flex-col border-b border-slate-200 dark:border-slate-800/80 overflow-hidden">
-                <div className="h-11 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between px-4 bg-slate-100/50 dark:bg-slate-900 select-none shrink-0">
-                  <div className="flex gap-2">
-                    {['Live Preview', 'API', 'Terminal'].map(tab => (
+              {/* Full-width Clean Terminal & Output Panel */}
+              <div className="h-[210px] border-t border-slate-200 dark:border-slate-800/80 bg-slate-900 dark:bg-slate-950 flex flex-col overflow-hidden select-text shrink-0">
+                <div className="h-8 border-b border-slate-800 flex items-center justify-between px-3 bg-slate-950/80 select-none shrink-0">
+                  <div className="flex gap-1.5">
+                    {terminalTabs.map(tab => (
                       <button
-                        key={tab}
-                        onClick={() => setPreviewTab(tab.toLowerCase())}
-                        className={`text-[9px] font-mono font-bold px-2 py-1 rounded-lg border transition-all cursor-pointer ${
-                          previewTab === tab.toLowerCase()
-                            ? 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700/60 text-[#6366f1] shadow-xs'
-                            : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-355'
+                        key={tab.id}
+                        onClick={() => setActiveTermId(tab.id)}
+                        className={`text-[10px] font-mono font-bold px-2.5 py-0.5 rounded transition-all cursor-pointer ${
+                          activeTermId === tab.id
+                            ? 'bg-slate-800 text-emerald-400 border border-slate-700'
+                            : 'text-slate-400 hover:text-slate-200'
                         }`}
                       >
-                        {tab}
+                        {tab.name}
                       </button>
                     ))}
                   </div>
-                  
-                  <div className="flex items-center gap-1.5">
-                    <button 
-                      onClick={() => setPreviewCacheBuster(Date.now())}
-                      className="p-1 hover:bg-slate-200 dark:hover:bg-slate-850 rounded text-slate-450 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white cursor-pointer"
-                    >
-                      <RefreshCw size={11} />
-                    </button>
-                    <a 
-                      href={previewUrl} 
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="p-1 hover:bg-slate-200 dark:hover:bg-slate-850 rounded text-slate-455 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white cursor-pointer"
-                    >
-                      <Link2 size={11} />
-                    </a>
+                  <span className="text-[10px] font-mono text-slate-500">Node JS Sandbox</span>
+                </div>
+                
+                <div className="flex-1 p-3 font-mono text-[11px] leading-relaxed text-slate-300 overflow-y-auto no-scrollbar flex flex-col gap-0.5">
+                  {terminalTabs.find(t => t.id === activeTermId)?.logs.map((logLine, idx) => (
+                    <div key={idx} className="whitespace-pre-wrap">{logLine}</div>
+                  ))}
+                </div>
+                
+                <form onSubmit={handleTerminalSubmit} className="p-2 bg-slate-950 border-t border-slate-800 flex items-center gap-2">
+                  <span className="text-[11px] font-mono font-bold text-emerald-400 select-none">$</span>
+                  <input
+                    value={termInputText}
+                    onChange={(e) => setTermInputText(e.target.value)}
+                    placeholder="Type command..."
+                    className="flex-1 bg-transparent border-none outline-none font-mono text-[11px] text-white"
+                  />
+                </form>
+              </div>
+            </div>
+
+            {/* COLUMN 3: RIGHT PANEL (Live Preview & Tools) */}
+            {isRightPanelOpen && (
+              <div className="w-[380px] lg:w-[400px] flex flex-col overflow-hidden shrink-0 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800/80">
+                
+                {/* Live Preview Panel (Top half) */}
+                <div className="flex-1 flex flex-col overflow-hidden min-h-0">
+                  <div className="h-10 border-b border-slate-200 dark:border-slate-800/80 flex items-center justify-between px-3 bg-slate-100/60 dark:bg-slate-900 select-none shrink-0">
+                    <div className="flex gap-1.5">
+                      {['Live Preview', 'API Tester'].map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => setPreviewTab(tab.toLowerCase().includes('api') ? 'api' : 'preview')}
+                          className={`text-[10px] font-mono font-bold px-2.5 py-1 rounded-md transition-all cursor-pointer ${
+                            (previewTab === 'api' && tab.includes('API')) || (previewTab !== 'api' && !tab.includes('API'))
+                              ? 'bg-white dark:bg-slate-800 text-[#04AA6D] shadow-xs'
+                              : 'text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+                    
+                    <div className="flex items-center gap-1">
+                      <button 
+                        onClick={() => setPreviewCacheBuster(Date.now())}
+                        title="Reload Preview Frame"
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                      >
+                        <RefreshCw size={12} />
+                      </button>
+                      <a 
+                        href={previewUrl} 
+                        target="_blank" 
+                        rel="noreferrer"
+                        title="Open Preview in New Window"
+                        className="p-1 hover:bg-slate-200 dark:hover:bg-slate-800 rounded text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                      >
+                        <Link2 size={12} />
+                      </a>
+                    </div>
+                  </div>
+
+                  {/* Preview view */}
+                  <div className="flex-1 bg-slate-50 dark:bg-slate-950/20 p-2.5 flex flex-col overflow-hidden min-h-0">
+                    {previewTab === 'api' ? (
+                      <APITester />
+                    ) : (
+                      <div className="flex-1 bg-white dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800/80 shadow-md flex flex-col overflow-hidden">
+                        <div className="h-6 bg-slate-100 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center px-2.5 gap-1.5 shrink-0">
+                          <div className="flex gap-1 shrink-0">
+                            <span className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+                            <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
+                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+                          </div>
+                          <div className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded text-[8px] font-mono text-slate-400 dark:text-slate-500 px-2 py-0.5 select-text truncate text-left">
+                            https://codesphere.live/sandbox-preview
+                          </div>
+                        </div>
+                        <iframe
+                          src={previewUrl}
+                          title="Live sandbox compiler frame"
+                          className="flex-1 border-none bg-slate-950"
+                        />
+                      </div>
+                    )}
                   </div>
                 </div>
 
-                {/* Preview view */}
-                <div className="flex-1 bg-slate-50 dark:bg-slate-950/20 p-3 flex flex-col overflow-hidden">
-                  {previewTab === 'api' ? (
-                    <APITester />
+                {/* Bottom Tools Panel (Tabbed Tasks vs Activity Feed) */}
+                <div className="h-[210px] border-t border-slate-200 dark:border-slate-800/80 bg-white dark:bg-slate-900 flex flex-col overflow-hidden select-none shrink-0">
+                  <div className="h-8 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between px-3 bg-slate-50 dark:bg-slate-950/40">
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setRightWidgetTab('tasks')}
+                        className={`text-[10px] font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                          rightWidgetTab === 'tasks' ? 'text-[#04AA6D]' : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        Tasks ({tasks.length})
+                      </button>
+                      <button
+                        onClick={() => setRightWidgetTab('activity')}
+                        className={`text-[10px] font-mono font-bold uppercase tracking-wider transition-colors cursor-pointer ${
+                          rightWidgetTab === 'activity' ? 'text-[#04AA6D]' : 'text-slate-400 hover:text-slate-200'
+                        }`}
+                      >
+                        Activity Stream
+                      </button>
+                    </div>
+                    <button 
+                      onClick={() => dispatch(setActiveTab(rightWidgetTab === 'tasks' ? 'tasks' : 'activity'))} 
+                      className="text-[9px] text-[#04AA6D] hover:underline font-mono uppercase font-bold"
+                    >
+                      View All
+                    </button>
+                  </div>
+                  
+                  {rightWidgetTab === 'tasks' ? (
+                    <div className="flex-1 p-2.5 overflow-y-auto no-scrollbar space-y-1.5 text-left">
+                      {tasks.slice(0, 3).map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 dark:bg-slate-950/50 border border-slate-200 dark:border-slate-800/60 rounded-lg">
+                          <input 
+                            type="checkbox" 
+                            checked={item.status === 'completed'}
+                            onChange={() => handleTaskStatusChange(item, item.status === 'completed' ? 'todo' : 'completed')}
+                            className="rounded accent-[#04AA6D] cursor-pointer"
+                          />
+                          <span className={`text-[11px] font-semibold text-slate-800 dark:text-slate-200 truncate flex-1 ${item.status === 'completed' ? 'line-through text-slate-400' : ''}`}>
+                            {item.title}
+                          </span>
+                          <span className="text-[8px] font-mono font-bold px-1.5 py-0.5 rounded uppercase bg-emerald-500/10 text-emerald-400">
+                            {item.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      ))}
+                      
+                      <button 
+                        onClick={() => { setSelectedTask(null); setIsTaskModalOpen(true); }}
+                        className="w-full py-1 border border-dashed border-slate-300 dark:border-slate-800 hover:border-[#04AA6D] text-slate-500 hover:text-[#04AA6D] rounded-lg text-[10px] font-mono font-bold flex items-center justify-center gap-1 transition-colors cursor-pointer"
+                      >
+                        <Plus size={11} />
+                        <span>New Task Card</span>
+                      </button>
+                    </div>
                   ) : (
-                    <div className="flex-1 bg-white dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800/80 shadow-2xl flex flex-col overflow-hidden">
-                      <div className="h-7 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-850 flex items-center px-3 gap-2 shrink-0">
-                        <div className="flex gap-1 shrink-0">
-                          <span className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
-                          <span className="w-1.5 h-1.5 bg-amber-500 rounded-full" />
-                          <span className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                        </div>
-                        <div className="flex-1 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-855 rounded text-[8.5px] font-mono text-slate-400 dark:text-slate-500 px-3 py-0.5 select-text truncate text-left">
-                          https://codesphere.live/e-commerce-platform
-                        </div>
-                      </div>
-                      <iframe
-                        src={previewUrl}
-                        title="Live sandbox compiler frame"
-                        className="flex-1 border-none bg-slate-950"
-                      />
+                    <div className="flex-1 p-2.5 overflow-y-auto no-scrollbar space-y-2 text-left">
+                      {activities.slice(0, 5).map((act, idx) => {
+                        const user = act.userId || {};
+                        const userName = user.fullName || 'Collaborator';
+                        return (
+                          <div key={idx} className="flex items-start gap-2 text-[11px]">
+                            <img src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${userName}`} className="w-4 h-4 rounded-full bg-slate-800 mt-0.5" alt="" />
+                            <div className="flex flex-col min-w-0">
+                              <span className="font-bold text-slate-800 dark:text-slate-200 truncate">{userName}</span>
+                              <span className="text-[10px] text-slate-400 line-clamp-1">{act.description}</span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
-              </div>
-
-              {/* Bottom split: Tasks + Activity Log */}
-              <div className="h-[220px] bg-white dark:bg-slate-900 flex overflow-hidden select-none shrink-0">
-                
-                {/* Tasks checklist */}
-                <div className="flex-1 border-r border-slate-200 dark:border-slate-800/60 flex flex-col overflow-hidden">
-                  <div className="h-9 border-b border-slate-200 dark:border-slate-850 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-950/20">
-                    <span className="text-[9px] font-bold text-slate-700 dark:text-white tracking-widest uppercase font-mono">Tasks</span>
-                    <button onClick={() => dispatch(setActiveTab('tasks'))} className="text-[8px] text-[#6366f1] hover:underline font-mono uppercase font-bold">View All</button>
-                  </div>
-                  
-                  <div className="flex-1 p-3 overflow-y-auto no-scrollbar space-y-2 text-left">
-                    {tasks.slice(0, 3).map((item, idx) => (
-                      <div key={idx} className="flex items-start gap-2.5 p-2 bg-slate-50/50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-850 rounded-xl hover:border-slate-350 dark:hover:border-slate-800 transition-all animate-fade-in">
-                        <input 
-                          type="checkbox" 
-                          checked={item.status === 'completed'}
-                          onChange={() => handleTaskStatusChange(item, item.status === 'completed' ? 'todo' : 'completed')}
-                          className="mt-0.5 rounded accent-[#6366f1] border-slate-300 dark:border-slate-850 cursor-pointer"
-                        />
-                        <div className="flex flex-col min-w-0 flex-1 gap-0.5">
-                          <span className={`text-[10px] font-bold text-slate-800 dark:text-slate-200 truncate ${item.status === 'completed' ? 'line-through text-slate-400 dark:text-slate-550' : ''}`}>
-                            {item.title}
-                          </span>
-                          <span className="text-[8.5px] text-slate-500 font-mono truncate">{item.assignedTo?.fullName || 'Unassigned'}</span>
-                        </div>
-                        <span className={`text-[7.5px] font-bold font-mono px-1 rounded uppercase shrink-0 ${
-                          item.status === 'completed' 
-                            ? 'bg-indigo-100 dark:bg-indigo-950/30 text-indigo-600 dark:text-emerald-400' 
-                            : item.status === 'in_progress'
-                            ? 'bg-blue-100 dark:bg-blue-950/30 text-blue-600 dark:text-blue-400'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400'
-                        }`}>
-                          {item.status.replace('_', ' ')}
-                        </span>
-                      </div>
-                    ))}
-                    
-                    <button 
-                      onClick={() => { setSelectedTask(null); setIsTaskModalOpen(true); }}
-                      className="w-full py-1.5 border border-dashed border-slate-250 dark:border-slate-850 hover:border-indigo-500/20 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white rounded-xl text-[9px] font-mono font-bold flex items-center justify-center gap-1 transition-all cursor-pointer"
-                    >
-                      <Plus size={11} />
-                      <span>New Task</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* Activity timeline logs */}
-                <div className="w-[180px] flex flex-col overflow-hidden shrink-0">
-                  <div className="h-9 border-b border-slate-200 dark:border-slate-850 flex items-center justify-between px-4 bg-slate-50 dark:bg-slate-950/20">
-                    <span className="text-[9px] font-bold text-slate-700 dark:text-white tracking-widest uppercase font-mono">Activity Log</span>
-                    <button onClick={() => dispatch(setActiveTab('activity'))} className="text-[8px] text-[#6366f1] hover:underline font-mono uppercase font-bold">View All</button>
-                  </div>
-                  
-                  <div className="flex-1 p-3 overflow-y-auto no-scrollbar space-y-2.5 text-left">
-                    {activities.slice(0, 4).map((act, idx) => {
-                      const user = act.userId || {};
-                      const userName = user.fullName || 'Collaborator';
-                      
-                      return (
-                        <div key={idx} className="flex items-start gap-2 text-[10px]">
-                          <img src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${userName}`} className="w-4 h-4 rounded-full bg-slate-200 dark:bg-slate-800" alt="" />
-                          <div className="flex flex-col min-w-0">
-                            <span className="font-bold text-slate-700 dark:text-slate-355 truncate">{userName}</span>
-                            <span className="text-[8.5px] text-slate-450 dark:text-slate-500 line-clamp-2 leading-tight">{act.description}</span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
 
               </div>
-            </div>
+            )}
 
           </div>
         ) : activeTab === 'overview' ? (
           <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900 text-left">
             <h2 className="text-sm font-bold text-slate-800 dark:text-white font-mono uppercase tracking-wider mb-4">Workspace Overview</h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
-              Welcome to the collaborative playground dashboard. Start by navigating to the **Code** tab to open Monaco and term shells, or assign cards inside the **Tasks** checklist.
+              Welcome to the collaborative playground dashboard. Start by navigating to the **Code Editor** tab to open Monaco and term shells, or assign cards inside the **Tasks** checklist.
             </p>
           </div>
         ) : activeTab === 'tasks' ? (
           <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900">
             <div className="flex justify-between items-center mb-6 text-left">
               <div className="flex items-center gap-2">
-                <CheckSquare size={18} className="text-[#6366f1]" />
+                <CheckSquare size={18} className="text-[#04AA6D]" />
                 <span className="text-xs font-bold text-slate-850 dark:text-white tracking-widest uppercase font-mono">Tasks Kanban List</span>
               </div>
-              <Button size="xs" icon={Plus} onClick={() => { setSelectedTask(null); setIsTaskModalOpen(true); }} className="bg-[#6366f1] hover:bg-[#4f46e5]">Add Task</Button>
+              <Button size="xs" icon={Plus} onClick={() => { setSelectedTask(null); setIsTaskModalOpen(true); }} className="bg-[#04AA6D] hover:bg-emerald-600">Add Task</Button>
             </div>
             <KanbanBoard 
               tasks={tasks} 
@@ -1308,36 +1359,21 @@ export const Workspace = () => {
           <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900 max-w-2xl mx-auto w-full">
             <ActivityFeed activities={activities} />
           </div>
-        ) : activeTab === 'files' ? (
-          <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900 max-w-2xl mx-auto w-full">
-            <WorkspaceFiles
-              files={files}
-              activeFile={activeFile}
-              activeCursors={cursors}
-              onSelectFile={handleSelectFile}
-              onCreateFile={handleCreateFile}
-              onCreateFolder={handleCreateFolder}
-              onRename={handleRenameFile}
-              onDelete={handleDeleteFile}
-              onDuplicate={handleDuplicateFile}
-              onUpload={handleFileUpload}
-            />
-          </div>
         ) : activeTab === 'commits' ? (
           <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900 max-w-2xl mx-auto w-full">
             <div className="flex flex-col h-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl text-left select-none p-6">
               <h2 className="text-sm font-bold text-slate-850 dark:text-white font-mono uppercase tracking-wider mb-4 flex items-center gap-2">
-                <GitCommit className="w-4 h-4 text-[#6366f1]" />
+                <GitCommit className="w-4 h-4 text-[#04AA6D]" />
                 Repository Commit History
               </h2>
               <div className="space-y-4">
                 {gitHistory.map((git, idx) => (
-                  <div key={idx} className="flex items-start gap-4 p-3 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-850 rounded-xl hover:border-[#6366f1]/20 transition-all">
+                  <div key={idx} className="flex items-start gap-4 p-3 bg-slate-50/50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-850 rounded-xl hover:border-[#04AA6D]/20 transition-all">
                     <img src={`https://api.dicebear.com/7.x/initials/svg?seed=${git.author}`} className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800 mt-0.5" alt="" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-slate-800 dark:text-slate-200">{git.author}</span>
-                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-[#6366f1] font-mono px-2 py-0.5 rounded">{git.commit}</span>
+                        <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-[#04AA6D] font-mono px-2 py-0.5 rounded">{git.commit}</span>
                       </div>
                       <p className="text-xs text-slate-600 dark:text-slate-350 mt-1 font-sans">{git.message}</p>
                     </div>
@@ -1345,10 +1381,6 @@ export const Workspace = () => {
                 ))}
               </div>
             </div>
-          </div>
-        ) : activeTab === 'analytics' ? (
-          <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900">
-            <WorkspaceAnalytics analytics={analytics} />
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto p-6 bg-white dark:bg-slate-900 max-w-2xl mx-auto w-full">
@@ -1365,33 +1397,6 @@ export const Workspace = () => {
         )}
 
       </div>
-
-      {/* Floating Voice Room call presence indicator bar */}
-      {inVoiceCall && (
-        <div className="absolute right-6 bottom-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-4 py-3 rounded-2xl flex items-center gap-4 shadow-2xl z-30 select-none animate-fade-in">
-          <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-ping" />
-            <span className="text-[10px] font-bold font-mono text-slate-700 dark:text-slate-350 uppercase tracking-widest">Call Room Connected</span>
-          </div>
-
-          <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-850 pl-4">
-            <button 
-              onClick={() => { setMicMuted(!micMuted); toast.success(micMuted ? "Mic Unmuted" : "Mic Muted"); }} 
-              className={`p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer ${
-                micMuted ? 'text-rose-600 bg-rose-500/10' : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
-              }`}
-            >
-              <MicOff size={14} />
-            </button>
-            <button className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer">
-              <Video size={14} />
-            </button>
-            <button className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-550 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white transition-all cursor-pointer">
-              <Monitor size={14} />
-            </button>
-          </div>
-        </div>
-      )}
 
       {/* Kanban Task Creation/Editing Modal Dialog */}
       <TaskModal
@@ -1410,10 +1415,20 @@ export const Workspace = () => {
         mode={sessionModalMode}
         isGitHubImported={isGitHubImported}
         githubRepoUrl={activeRepoUrl}
+        workspaceId={workspaceId}
         onStartSession={handleStartSessionFlow}
         onEndSession={handleEndSessionFlow}
         onClose={() => setIsSessionModalOpen(false)}
       />
+
+      {/* Enhanced Workspace Invite Modal (Direct Link Copying & Email Invites) */}
+      <InviteModal
+        isOpen={isInviteModalOpen}
+        onClose={() => setIsInviteModalOpen(false)}
+        workspace={currentWorkspace}
+        workspaceId={workspaceId}
+      />
     </div>
   );
 };
+export default Workspace;

@@ -149,3 +149,15 @@ export const deleteWorkspaceTaskAPI = async (taskId) => {
   return res.data;
 };
 
+// ─── GitHub Sync API ──────────────────────────────────────────────────────────
+export const importGitHubRepoAPI = async (workspaceId, payload) => {
+  const res = await apiClient.post(`/workspaces/${workspaceId}/github/import`, payload);
+  return res.data;
+};
+
+export const syncGitHubRepoAPI = async (workspaceId, payload) => {
+  const res = await apiClient.post(`/workspaces/${workspaceId}/github/sync`, payload);
+  return res.data;
+};
+
+
