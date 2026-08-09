@@ -23,6 +23,7 @@ const studentNavItems = [
   { name: 'Events',       path: '/events',       icon: Calendar        },
   { name: 'Resources',    path: '/resources',    icon: BookOpen        },
   { name: 'Assessments',  path: '/tests',        icon: Award           },
+  { name: 'Leaderboard',  path: '/leaderboard',  icon: Trophy          },
   { name: 'Profile',      path: '/profile',      icon: User            },
   { name: 'Subscription', path: '/subscription', icon: CreditCard      },
   { name: 'Settings',     path: '/settings',     icon: Settings        },

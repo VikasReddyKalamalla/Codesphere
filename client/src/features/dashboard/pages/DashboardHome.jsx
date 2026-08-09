@@ -582,6 +582,10 @@ export const DashboardHome = () => {
                 <span>Explore 83 Tech Roadmaps</span>
                 <ChevronRight size={14} />
               </Link>
+              <Link to="/leaderboard" className="p-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 border border-amber-500/30 flex items-center justify-between text-xs font-mono font-bold transition-all">
+                <span>View Global Leaderboard 🏆</span>
+                <ChevronRight size={14} />
+              </Link>
               <Link to="/dsa" className="p-3 rounded-xl bg-emerald-50/60 dark:bg-emerald-950/40 hover:bg-emerald-100/80 dark:hover:bg-emerald-900/40 text-[#04AA6D] dark:text-emerald-400 border border-emerald-200/40 dark:border-emerald-800/40 flex items-center justify-between text-xs font-mono font-bold transition-all">
                 <span>DSA Compiler Playpen</span>
                 <ChevronRight size={14} />
