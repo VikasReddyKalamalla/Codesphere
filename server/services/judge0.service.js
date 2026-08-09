@@ -43,6 +43,26 @@ const LANGUAGE_MAP = {
   'c#': 51,
 };
 
+const normalizeLanguage = (rawLang) => {
+  if (!rawLang) return 'js';
+  let l = rawLang.toLowerCase().trim();
+  if (l.includes('/')) l = path.basename(l);
+  if (l.includes('.')) l = l.split('.').pop().trim();
+  
+  if (l.includes('python') || l === 'py' || l === 'py3') return 'python';
+  if (l.includes('typescript') || l === 'ts' || l === 'tsx') return 'typescript';
+  if (l.includes('javascript') || l === 'js' || l === 'jsx' || l === 'node') return 'javascript';
+  if (l === 'cpp' || l === 'c++' || l === 'cc' || l === 'cxx') return 'cpp';
+  if (l === 'c') return 'c';
+  if (l === 'java') return 'java';
+  if (l === 'go' || l === 'golang') return 'go';
+  if (l === 'rust' || l === 'rs') return 'rust';
+  if (l === 'php') return 'php';
+  if (l === 'ruby' || l === 'rb') return 'ruby';
+  if (l === 'bash' || l === 'sh' || l === 'shell' || l === 'zsh') return 'bash';
+  return l;
+};
+
 /**
  * Executes code locally using child_process
  * Supports: Python, JavaScript, TypeScript, C, C++, Java, Go, Rust, PHP, Ruby, Bash/Shell
@@ -57,19 +77,19 @@ const executeCodeLocally = (code, language, input = '') => {
     let cmd = '';
     let filePath = '';
 
-    const lang = (language || '').toLowerCase().trim();
+    const lang = normalizeLanguage(language);
     const isWin = process.platform === 'win32';
 
-    if (lang === 'python' || lang === 'python3' || lang === 'py' || lang === 'py3') {
+    if (lang === 'python') {
       filePath = path.join(tmpDir, 'solution.py');
       fs.writeFileSync(filePath, code);
       const pyBin = isWin ? 'python' : 'python3';
       cmd = `${pyBin} "${filePath}"`;
-    } else if (lang === 'javascript' || lang === 'js' || lang === 'node' || lang === 'jsx') {
+    } else if (lang === 'javascript') {
       filePath = path.join(tmpDir, 'solution.js');
       fs.writeFileSync(filePath, code);
       cmd = `node "${filePath}"`;
-    } else if (lang === 'typescript' || lang === 'ts' || lang === 'tsx') {
+    } else if (lang === 'typescript') {
       filePath = path.join(tmpDir, 'solution.ts');
       fs.writeFileSync(filePath, code);
       cmd = `npx -y ts-node "${filePath}"`;
@@ -78,7 +98,7 @@ const executeCodeLocally = (code, language, input = '') => {
       const binPath = path.join(tmpDir, 'solution');
       fs.writeFileSync(filePath, code);
       cmd = `gcc -O2 "${filePath}" -o "${binPath}" && "${binPath}"`;
-    } else if (lang === 'cpp' || lang === 'c++' || lang === 'cc' || lang === 'cxx') {
+    } else if (lang === 'cpp') {
       filePath = path.join(tmpDir, 'solution.cpp');
       const binPath = path.join(tmpDir, 'solution');
       fs.writeFileSync(filePath, code);
@@ -87,11 +107,11 @@ const executeCodeLocally = (code, language, input = '') => {
       filePath = path.join(tmpDir, 'Solution.java');
       fs.writeFileSync(filePath, code);
       cmd = `javac "${filePath}" && java -cp "${tmpDir}" Solution`;
-    } else if (lang === 'go' || lang === 'golang') {
+    } else if (lang === 'go') {
       filePath = path.join(tmpDir, 'main.go');
       fs.writeFileSync(filePath, code);
       cmd = `go run "${filePath}"`;
-    } else if (lang === 'rust' || lang === 'rs') {
+    } else if (lang === 'rust') {
       filePath = path.join(tmpDir, 'solution.rs');
       const binPath = path.join(tmpDir, 'solution');
       fs.writeFileSync(filePath, code);
@@ -100,11 +120,11 @@ const executeCodeLocally = (code, language, input = '') => {
       filePath = path.join(tmpDir, 'solution.php');
       fs.writeFileSync(filePath, code);
       cmd = `php "${filePath}"`;
-    } else if (lang === 'ruby' || lang === 'rb') {
+    } else if (lang === 'ruby') {
       filePath = path.join(tmpDir, 'solution.rb');
       fs.writeFileSync(filePath, code);
       cmd = `ruby "${filePath}"`;
-    } else if (lang === 'bash' || lang === 'sh' || lang === 'shell' || lang === 'zsh') {
+    } else if (lang === 'bash') {
       filePath = path.join(tmpDir, 'solution.sh');
       fs.writeFileSync(filePath, code);
       cmd = `bash "${filePath}"`;
@@ -169,7 +189,8 @@ const executeCode = async (code, language, input = '', timeLimit = EXECUTION_TIM
 
   if (apiKey && apiKey !== 'test-api-key' && apiKey !== 'demo_key_development') {
     try {
-      const languageId = LANGUAGE_MAP[language.toLowerCase()] || 71;
+      const normalized = normalizeLanguage(language);
+      const languageId = LANGUAGE_MAP[normalized] || 71;
       const response = await axios.post(
         `${JUDGE0_API_BASE}/submissions?base64_encoded=false&wait=true`,
         {
