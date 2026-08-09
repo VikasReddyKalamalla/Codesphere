@@ -194,6 +194,7 @@ export const Workspace = () => {
   const monacoRef = useRef(null);
   const decorRef = useRef([]);
   const terminalLogsRef = useRef(null);
+  const autoSaveTimeoutRef = useRef(null);
 
   // Auto-scroll terminal container when new logs arrive
   useEffect(() => {
@@ -590,17 +591,42 @@ export const Workspace = () => {
     }
   };
 
-  // Editor typing change sync
+  // Editor typing change sync with debounced auto-save for hot reloading
   const handleEditorChange = (value) => {
     if (!activeFile) return;
     dispatch(updateLocalCode({ filePath: activeFile.path, content: value }));
     socket.emit('code_change', { workspaceId, filePath: activeFile.path, content: value });
+
+    if (autoSaveTimeoutRef.current) {
+      clearTimeout(autoSaveTimeoutRef.current);
+    }
+    autoSaveTimeoutRef.current = setTimeout(() => {
+      socket.emit('file_save', {
+        workspaceId,
+        filePath: activeFile.path,
+        content: value
+      });
+    }, 600);
   };
 
-  // Editor cursor movement sync
+  // Editor cursor movement & keybindings sync
   const handleEditorMount = (editor, monaco) => {
     editorRef.current = editor;
     monacoRef.current = monaco;
+
+    // Ctrl+S / Cmd+S save command
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      const val = editor.getValue();
+      if (activeFile) {
+        socket.emit('file_save', {
+          workspaceId,
+          filePath: activeFile.path,
+          content: val
+        });
+        toast.success('Saved to server sandbox!');
+      }
+    });
+
     editor.onDidChangeCursorPosition(e => {
       if (activeFile) {
         socket.emit('cursor_move', {
@@ -1348,7 +1374,7 @@ export const Workspace = () => {
                         <iframe
                           src={activePreviewUrl}
                           title="Live sandbox compiler frame"
-                          className="flex-1 border-none bg-slate-950"
+                          className="flex-1 border-none bg-white"
                         />
                       </div>
                     )}

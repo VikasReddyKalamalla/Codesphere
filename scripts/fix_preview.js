@@ -43,8 +43,8 @@ if (fs.existsSync(diskPath)) {
 body {
   margin: 0;
   padding: 0;
-  background-color: #0b0f19 !important;
-  color: #f8fafc !important;
+  background-color: #0b0f19;
+  color: #f8fafc;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   min-height: 100vh;
   display: flex;
@@ -52,7 +52,7 @@ body {
   justify-content: center;
 }
 h1, h2, h3, h4, h5, h6 {
-  color: #ffffff !important;
+  color: #ffffff;
 }
 p, span, label {
   color: #94a3b8;
