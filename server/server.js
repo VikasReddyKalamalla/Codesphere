@@ -20,15 +20,15 @@ attachWsProxy(server);
 // Initialize automated daily database backup cron job
 initBackupCron();
 
-// Start HTTP server immediately — don't wait for MongoDB
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`Server running on port ${PORT} [Admin MFA & Automated Backups Active]`);
-});
-
 // Connect to MongoDB asynchronously — server stays up either way
 connectDB().then(() => {
   const { createIndexes } = require('./config/indexes');
   createIndexes().catch((err) => console.error('Failed to create database indexes:', err));
 }).catch((err) => {
   console.warn('MongoDB unavailable — server running with limited functionality:', err.message);
+});
+
+// Start HTTP server
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on port ${PORT} [Admin MFA & Automated Backups Active]`);
 });

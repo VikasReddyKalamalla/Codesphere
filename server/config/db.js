@@ -2,10 +2,6 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    // bufferCommands: false makes Mongoose throw immediately on operations
-    // when not connected, instead of buffering for 10s → avoids 500 timeouts.
-    mongoose.set('bufferCommands', false);
-
     const conn = await mongoose.connect(process.env.MONGO_URI, {
       serverSelectionTimeoutMS: 5000,
     });
