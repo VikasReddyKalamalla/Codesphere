@@ -105,10 +105,15 @@ export const Workspace = () => {
 
   // Terminal states
   const [terminalTabs, setTerminalTabs] = useState([
-    { id: 'term-1', name: 'Terminal', logs: ['Compiled successfully!', 'You can now view frontend in the browser.', '  Local:            http://localhost:3000', '  On Your Network:  http://192.168.1.12:3000', '', 'Note that the development build is not optimized.', 'To create a production build, use npm run build.'] },
-    { id: 'term-2', name: 'Problems (2)', logs: ['No critical errors found.', 'Warning: Line 12 in Home.jsx has unused import.'] },
-    { id: 'term-3', name: 'Output', logs: ['Build finished in 819ms.'] },
-    { id: 'term-4', name: 'Git', logs: ['On branch main', 'Your branch is up to date with \'origin/main\'.'] }
+    { id: 'term-1', name: 'Terminal', logs: [
+      'CodeSphere Interactive Sandbox Terminal v2.4',
+      'Environment: Node.js & Shell Compiler Engine',
+      'Type any command e.g. "node main.js", "ls", "python3 main.py", or "clear".',
+      ''
+    ] },
+    { id: 'term-2', name: 'Problems (0)', logs: ['No syntax or compilation errors found.'] },
+    { id: 'term-3', name: 'Output', logs: ['Sandbox engine active. Hot-reloading ready.'] },
+    { id: 'term-4', name: 'Git Logs', logs: ['On branch main. Ready to sync with remote GitHub.'] }
   ]);
   const [activeTermId, setActiveTermId] = useState('term-1');
   const [termInputText, setTermInputText] = useState('');
@@ -186,6 +191,14 @@ export const Workspace = () => {
   const editorRef = useRef(null);
   const monacoRef = useRef(null);
   const decorRef = useRef([]);
+  const terminalLogsRef = useRef(null);
+
+  // Auto-scroll terminal container when new logs arrive
+  useEffect(() => {
+    if (terminalLogsRef.current) {
+      terminalLogsRef.current.scrollTop = terminalLogsRef.current.scrollHeight;
+    }
+  }, [terminalTabs, activeTermId]);
 
 
 
@@ -700,11 +713,22 @@ export const Workspace = () => {
   // Terminal commands running
   const handleTerminalSubmit = (e) => {
     e.preventDefault();
-    if (!termInputText.trim()) return;
+    const rawInput = termInputText.trim();
+    if (!rawInput) return;
+
+    // Handle clear screen command
+    if (rawInput === 'clear' || rawInput === 'cls') {
+      setTerminalTabs(prev => prev.map(t => {
+        if (t.id === activeTermId) return { ...t, logs: [] };
+        return t;
+      }));
+      setTermInputText('');
+      return;
+    }
 
     setTerminalTabs(prev => prev.map(t => {
       if (t.id === activeTermId) {
-        return { ...t, logs: [...t.logs, `\r\n$ ${termInputText}\r\n`] };
+        return { ...t, logs: [...t.logs, `$ ${rawInput}`] };
       }
       return t;
     }));
@@ -712,7 +736,7 @@ export const Workspace = () => {
     socket.emit('terminal_input', {
       workspaceId,
       tabId: activeTermId,
-      input: termInputText.trim() + '\n'
+      input: rawInput + '\n'
     });
 
     setTermInputText('');
@@ -720,7 +744,7 @@ export const Workspace = () => {
     socket.emit('activity_added', {
       workspaceId,
       activityType: 'terminal_used',
-      description: `Executed command in terminal`
+      description: `Executed command "${rawInput}" in terminal`
     });
   };
 
@@ -1144,7 +1168,10 @@ export const Workspace = () => {
                   <span className="text-[10px] font-mono text-slate-500">Node JS Sandbox</span>
                 </div>
                 
-                <div className="flex-1 p-3 font-mono text-[11px] leading-relaxed text-slate-300 overflow-y-auto no-scrollbar flex flex-col gap-0.5">
+                <div 
+                  ref={terminalLogsRef} 
+                  className="flex-1 p-3 font-mono text-[11px] leading-relaxed text-slate-300 overflow-y-auto no-scrollbar flex flex-col gap-0.5"
+                >
                   {terminalTabs.find(t => t.id === activeTermId)?.logs.map((logLine, idx) => (
                     <div key={idx} className="whitespace-pre-wrap">{logLine}</div>
                   ))}
