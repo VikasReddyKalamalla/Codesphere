@@ -3,14 +3,14 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, MapPin, Calendar, Clock, Trophy, Users, Globe, ExternalLink, Bookmark, CheckCircle2,
   FileText, Download, Share2, Award, Sparkles, MessageSquare, ShieldCheck, UserCheck, HelpCircle,
-  QrCode, Send, Plus
+  Send, Plus
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 export const EventDetailModal = ({ event, onClose, isRegistered, isBookmarked, onRegister, onBookmark }) => {
   if (!event) return null;
 
-  const targetRegUrl = event.registrationUrl || event.externalUrl || event.url || event.registrationLink;
+  const targetRegUrl = event?.registrationUrl || event?.externalUrl || event?.url || event?.websiteUrl || event?.registrationLink || event?.link || event?.officialUrl;
 
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'hackathon', 'speakers', 'agenda', 'resources', 'discussion'
   const [commentText, setCommentText] = useState('');
@@ -124,27 +124,17 @@ export const EventDetailModal = ({ event, onClose, isRegistered, isBookmarked, o
                   <Share2 className="w-4 h-4" />
                 </button>
 
-                {targetRegUrl && (
-                  <a
-                    href={targetRegUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 border border-emerald-500/40 text-emerald-400 font-bold text-xs flex items-center gap-1.5 backdrop-blur-md transition-all cursor-pointer"
-                    title="Open Official Website / Unstop Portal"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    <span className="hidden sm:inline font-mono uppercase">Official Site</span>
-                  </a>
-                )}
-
                 <button
                   onClick={() => {
-                    if (onRegister) onRegister(event);
-                    if (targetRegUrl) {
-                      toast.success(`Redirecting to official ${event.registrationSource || event.source || 'registration'} portal...`);
-                      setTimeout(() => {
-                        window.open(targetRegUrl, '_blank', 'noopener,noreferrer');
-                      }, 400);
+                    if (targetRegUrl && typeof targetRegUrl === 'string' && targetRegUrl.trim()) {
+                      const trimmed = targetRegUrl.trim();
+                      const formattedUrl = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+                      const sourceName = (event.registrationSource || event.source || 'official').toUpperCase();
+                      toast.success(`Opening ${sourceName} registration page...`);
+                      window.open(formattedUrl, '_blank', 'noopener,noreferrer');
+                    }
+                    if (onRegister) {
+                      onRegister(event);
                     }
                   }}
                   className={`px-6 py-3 rounded-2xl font-bold text-xs uppercase tracking-wider transition-all cursor-pointer shadow-xl flex items-center gap-2 ${
@@ -274,13 +264,7 @@ export const EventDetailModal = ({ event, onClose, isRegistered, isBookmarked, o
                     </div>
                   </div>
 
-                  {isRegistered && (
-                    <div className="mt-2 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex flex-col gap-2 items-center text-center">
-                      <QrCode className="w-12 h-12 text-[#04AA6D] dark:text-emerald-400" />
-                      <span className="text-xs font-bold text-[#04AA6D] dark:text-emerald-300">Verified Ticket QR Code</span>
-                      <span className="text-[9px] text-slate-500 dark:text-slate-400 font-mono">Present this digital pass at check-in</span>
-                    </div>
-                  )}
+
                 </div>
               </div>
             )}

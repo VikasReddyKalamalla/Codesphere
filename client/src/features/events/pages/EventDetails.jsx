@@ -29,6 +29,12 @@ export const EventDetails = () => {
 
   const handleRegister = () => {
     setIsRegistered(!isRegistered);
+    const targetUrl = event?.registrationUrl || event?.externalUrl || event?.url || event?.websiteUrl || event?.registrationLink || event?.link || event?.officialUrl;
+    if (targetUrl && typeof targetUrl === 'string' && targetUrl.trim()) {
+      const trimmed = targetUrl.trim();
+      const formattedUrl = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
+      window.open(formattedUrl, '_blank', 'noopener,noreferrer');
+    }
     toast.success(isRegistered ? 'Registration cancelled' : 'Successfully registered for event!');
   };
 
