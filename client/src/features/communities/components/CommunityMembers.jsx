@@ -1,5 +1,7 @@
 import React from 'react';
-import { Users, Shield, ShieldCheck, ShieldAlert } from 'lucide-react';
+import { Users, Shield, ShieldCheck, ShieldAlert, UserPlus } from 'lucide-react';
+import { sendFriendRequestAPI } from '../../network/services/networkAPI';
+import toast from 'react-hot-toast';
 
 export const CommunityMembers = ({ members = [], moderators = [], owner = {}, onPromote, onRemove, currentUserId }) => {
   const isOwner = currentUserId === owner?._id || currentUserId === owner;
@@ -8,6 +10,15 @@ export const CommunityMembers = ({ members = [], moderators = [], owner = {}, on
     if (memberId === owner?._id || memberId === owner) return 'Owner';
     if (moderators.some(m => m === memberId || m._id === memberId)) return 'Moderator';
     return 'Member';
+  };
+
+  const handleAddFriend = async (userId) => {
+    try {
+      await sendFriendRequestAPI(userId);
+      toast.success('Friend request sent!');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Error sending request');
+    }
   };
 
   return (
@@ -68,10 +79,20 @@ export const CommunityMembers = ({ members = [], moderators = [], owner = {}, on
                   </div>
                 </div>
 
-                {/* Moderate buttons */}
-                {isOwner && !isSelf && (
-                  <div className="flex items-center gap-2">
-                    {role === 'Member' && (
+                {/* Moderate buttons & Friend Actions */}
+                <div className="flex items-center gap-2">
+                  {!isSelf && (
+                    <button 
+                      onClick={() => handleAddFriend(item._id)}
+                      className="p-1.5 text-slate-400 hover:text-[#04AA6D] hover:bg-[#04AA6D]/10 rounded-lg transition-colors"
+                      title="Add Friend"
+                    >
+                      <UserPlus size={14} />
+                    </button>
+                  )}
+                  {isOwner && !isSelf && (
+                    <>
+                      {role === 'Member' && (
                       <button 
                         onClick={() => onPromote && onPromote(item._id)}
                         className="text-[9px] font-bold font-mono text-indigo-650 dark:text-indigo-400 hover:text-indigo-500 bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-100 dark:border-indigo-500/20 px-2 py-1 rounded"
@@ -87,8 +108,9 @@ export const CommunityMembers = ({ members = [], moderators = [], owner = {}, on
                         Demote
                       </button>
                     )}
-                  </div>
-                )}
+                    </>
+                  )}
+                </div>
               </div>
             );
           })

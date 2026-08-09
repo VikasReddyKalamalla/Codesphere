@@ -11,6 +11,7 @@ import { logoutThunk } from '@features/auth/redux/authThunk.js';
 import toast from 'react-hot-toast';
 import Logo from '../components/Logo.jsx';
 import { ThemeContext } from '../providers/ThemeProvider.jsx';
+import FriendsSidebar from '../features/network/components/FriendsSidebar.jsx';
 
 const studentNavItems = [
   { name: 'Dashboard',    path: '/dashboard',    icon: LayoutDashboard },
@@ -31,6 +32,7 @@ export default function DashboardLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileOpen,  setMobileOpen]  = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [friendsSidebarOpen, setFriendsSidebarOpen] = useState(false);
   const { theme, toggleTheme } = useContext(ThemeContext) || {};
   const { user } = useSelector((s) => s.auth);
   const dispatch = useDispatch();
@@ -239,6 +241,14 @@ export default function DashboardLayout() {
               <span className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-rose-500" />
             </NavLink>
 
+            <button
+              onClick={() => setFriendsSidebarOpen(true)}
+              className="p-2 rounded-xl text-slate-400 hover:text-[#04AA6D] hover:bg-[#04AA6D]/10 transition-colors cursor-pointer"
+              title="Network & Friends"
+            >
+              <User size={16} />
+            </button>
+
             <NavLink to="/community"
               className="p-2 rounded-xl text-slate-400 hover:text-slate-800 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
@@ -300,6 +310,7 @@ export default function DashboardLayout() {
           <Outlet />
         </main>
       </div>
+      <FriendsSidebar isOpen={friendsSidebarOpen} onClose={() => setFriendsSidebarOpen(false)} />
     </div>
   );
 }

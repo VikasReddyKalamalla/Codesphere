@@ -63,8 +63,10 @@ import {
   createWorkspaceTaskAPI,
   updateWorkspaceTaskAPI,
   deleteWorkspaceTaskAPI,
-  runUniversalCodeAPI
+  runUniversalCodeAPI,
+  duplicateWorkspaceAPI
 } from '../services/codexAPI.js';
+import { initWorkspaceAPI } from '../../sandbox/services/sandboxAPI.js';
 
 export const Workspace = () => {
   const { workspaceId } = useParams();
@@ -121,9 +123,46 @@ export const Workspace = () => {
   const [terminalFullscreen, setTerminalFullscreen] = useState(false);
 
   // Preview states
-  const [previewDevice, setPreviewDevice] = useState('desktop'); 
-  const [previewCacheBuster, setPreviewCacheBuster] = useState(Date.now());
   const [customPreviewUrl, setCustomPreviewUrl] = useState('');
+  const [previewCacheBuster, setPreviewCacheBuster] = useState(Date.now());
+
+  const handleExportSandbox = async () => {
+    const toastId = toast.loading('Forking workspace to Sandbox IDE...');
+    try {
+      const res = await duplicateWorkspaceAPI(workspaceId);
+      const data = res?.data || res;
+      const newWsId = data?._id || data?.workspace?._id || data?.id;
+      const newWsName = data?.name || data?.workspace?.name || `${currentWorkspace?.name || 'Fork'}`.replace(/[^A-Za-z0-9-]/g, '-');
+      
+      if (newWsId) {
+        try {
+          // Initialize Sandbox Docker container
+          const initRes = await initWorkspaceAPI('scratch', { workspaceName: newWsName });
+          
+          let userId = 'user_guest';
+          const userRaw = localStorage.getItem('codesphere_user');
+          if (userRaw) {
+             const u = JSON.parse(userRaw);
+             if (u && (u._id || u.id)) userId = `user_${u._id || u.id}`;
+          }
+
+          const targetUrl = initRes?.data?.iframeUrl || initRes?.iframeUrl || `http://localhost:8107/?folder=/home/coder/users/${userId}/workspaces/${newWsName}`;
+          toast.success('Workspace exported to Sandbox Studio! Opening VSCode...', { id: toastId });
+          window.open(targetUrl, '_blank', 'noopener,noreferrer');
+        } catch (initErr) {
+          console.error('Docker initialization failed:', initErr);
+          toast.error('Failed to initialize Docker container', { id: toastId });
+        }
+      } else {
+        toast.error('Failed to export workspace', { id: toastId });
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.response?.data?.message || 'Failed to export workspace', { id: toastId });
+    }
+  };
+
+  const [previewDevice, setPreviewDevice] = useState('desktop'); 
   const [previewTab, setPreviewTab] = useState('preview'); 
 
   // Voice states
@@ -961,6 +1000,16 @@ export const Workspace = () => {
             currentUser={currentUser} 
             onlineUsers={onlineUsers} 
           />
+
+          {/* Export to Sandbox / Fork */}
+          <button
+            onClick={handleExportSandbox}
+            title="Fork code to a new personal workspace"
+            className="px-2.5 py-1 bg-emerald-50 dark:bg-emerald-900/30 hover:bg-emerald-100 dark:hover:bg-emerald-800/40 text-emerald-700 dark:text-emerald-400 text-xs font-mono font-semibold rounded-lg cursor-pointer flex items-center gap-1.5 transition-colors border border-emerald-200 dark:border-emerald-800/60"
+          >
+            <Copy size={13} className="text-emerald-500" />
+            <span>Export to Sandbox</span>
+          </button>
 
           {/* GitHub Sync */}
           <button

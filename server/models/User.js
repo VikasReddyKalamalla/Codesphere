@@ -58,6 +58,7 @@ const userSchema = new mongoose.Schema(
     // ─── Social ───────────────────────────────────────────────────────────────
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+    friends:   [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
 
     // ─── Instructor Information ───────────────────────────────────────────────
     isInstructor:      { type: Boolean, default: false },

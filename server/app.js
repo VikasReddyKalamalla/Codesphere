@@ -64,6 +64,7 @@ const instructorCertificateRoutes = require('./routes/instructorCertificate.rout
 
 const cloudWorkspaceRoutes = require('./routes/cloudWorkspace.routes');
 const dsaRoutes = require('./routes/dsa.routes');
+const networkRoutes = require('./routes/network.routes');
 const cloudWorkspaceProxyHandler = require('./middlewares/cloudWorkspaceProxy.middleware');
 const errorMiddleware = require('./middlewares/error.middleware');
 
@@ -191,9 +192,13 @@ app.use('/api/notification-templates',  templateRoutes);
 app.use('/api/notification-preferences',preferenceRoutes);
 app.use('/api/announcements',           announcementRoutes);
 app.use('/api/notification-logs',       logRoutes);
+app.use('/api/instructor/certificates', instructorCertificateRoutes);
+app.use('/api/cloud-workspaces', cloudWorkspaceRoutes);
+app.use('/api/dsa', dsaRoutes);
+app.use('/api/network', networkRoutes);
 app.use('/api/settings',                settingsRoutes);
 
-// ─── API Documentation ────────────────────────────────────────────────────────
+// ─── Basic Route ───────────────────────────────────────────────────────────────
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
   swaggerOptions: {
     url: '/api/swagger-spec',
