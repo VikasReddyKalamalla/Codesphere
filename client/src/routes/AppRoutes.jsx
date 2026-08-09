@@ -113,6 +113,8 @@ const AdminAnnouncements = lazy(() => import('@features/admin/pages/AdminAnnounc
 const AdminFeatures      = lazy(() => import('@features/admin/pages/AdminFeatures.jsx'));
 const AdminHealth        = lazy(() => import('@features/admin/pages/AdminHealth.jsx'));
 const AdminSessions      = lazy(() => import('@features/admin/pages/AdminSessions.jsx'));
+const AdminTests              = lazy(() => import('@features/admin/pages/AdminTests.jsx'));
+const AdminResources          = lazy(() => import('@features/admin/pages/AdminResources.jsx'));
 const AdminModulePlaceholder = lazy(() => import('@features/admin/pages/AdminModulePlaceholder.jsx'));
 
 // ─── Error pages ──────────────────────────────────────────────────────────────
@@ -297,13 +299,13 @@ const AppRoutes = () => {
         <Route path={ROUTES.ADMIN_INSTRUCTORS}   element={<W><AdminInstructors /></W>} />
         <Route path={ROUTES.ADMIN_CONTENT}       element={<W><AdminContent /></W>} />
         <Route path={ROUTES.ADMIN_LEARNING}      element={<W><AdminLearning /></W>} />
-        <Route path={ROUTES.ADMIN_RESOURCES}     element={<W><AdminModulePlaceholder section="resources" /></W>} />
+        <Route path={ROUTES.ADMIN_RESOURCES}     element={<W><AdminResources /></W>} />
         <Route path={ROUTES.ADMIN_COMMUNITIES}   element={<W><AdminModulePlaceholder section="communities" /></W>} />
         <Route path={ROUTES.ADMIN_SESSIONS}      element={<W><AdminSessions /></W>} />
         <Route path={ROUTES.ADMIN_EVENTS}        element={<W><AdminModulePlaceholder section="events" /></W>} />
         <Route path={ROUTES.ADMIN_SANDBOX}       element={<W><AdminModulePlaceholder section="sandbox" /></W>} />
         <Route path={ROUTES.ADMIN_CODEX}         element={<W><AdminModulePlaceholder section="codex" /></W>} />
-        <Route path={ROUTES.ADMIN_TESTS}         element={<W><AdminModulePlaceholder section="tests" /></W>} />
+        <Route path={ROUTES.ADMIN_TESTS}         element={<W><AdminTests /></W>} />
         <Route path={ROUTES.ADMIN_SUBSCRIPTIONS} element={<W><AdminModulePlaceholder section="subscriptions" /></W>} />
         <Route path={ROUTES.ADMIN_PAYMENTS}      element={<W><AdminModulePlaceholder section="payments" /></W>} />
         <Route path={ROUTES.ADMIN_REPORTS}       element={<W><AdminReports /></W>} />
