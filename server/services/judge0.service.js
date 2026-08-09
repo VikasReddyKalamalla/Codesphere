@@ -114,7 +114,13 @@ const executeCodeLocally = (code, language, input = '') => {
       cmd = `node "${filePath}"`;
     }
 
-    const child = exec(cmd, { timeout: EXECUTION_TIMEOUT * 1000, maxBuffer: 128 * 1024 * 1024 }, (error, stdout, stderr) => {
+    const fullPathEnv = `${process.env.PATH || ''}:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:/usr/local/go/bin:${os.homedir()}/.cargo/bin`;
+
+    const child = exec(cmd, { 
+      timeout: EXECUTION_TIMEOUT * 1000, 
+      maxBuffer: 128 * 1024 * 1024,
+      env: { ...process.env, PATH: fullPathEnv }
+    }, (error, stdout, stderr) => {
       const executionTime = (Date.now() - startTime) / 1000;
       
       // Cleanup temp directory

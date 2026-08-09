@@ -16,11 +16,11 @@ const {
 const { protect } = require('../middlewares/auth.middleware');
 const rateLimit = require('express-rate-limit');
 
-// Rate limiting for code execution (10 requests per minute per user)
+// Rate limiting for code execution (60 requests per minute per user)
 const executionLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
-  max: 10,
-  message: 'Too many code execution requests, please try again later',
+  max: 60,
+  message: 'Too many code execution requests, please wait a moment before trying again',
   standardHeaders: true,
   legacyHeaders: false,
 });
