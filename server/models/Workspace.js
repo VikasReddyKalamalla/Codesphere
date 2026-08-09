@@ -62,7 +62,7 @@ const workspaceSchema = new mongoose.Schema(
 );
 
 // ─── Auto-generate slug before save ──────────────────────────────────────────
-workspaceSchema.pre('save', function () {
+workspaceSchema.pre('save', function (next) {
   if (this.isModified('name') || !this.slug) {
     this.slug = this.name
       .toLowerCase()
@@ -71,6 +71,7 @@ workspaceSchema.pre('save', function () {
       .replace(/\s+/g, '-')
       + '-' + Date.now();
   }
+  next();
 });
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────

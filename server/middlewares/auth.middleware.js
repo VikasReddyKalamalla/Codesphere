@@ -53,8 +53,10 @@ const optionalAuth = async (req, res, next) => {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'codesphere_jwt_secret');
-      const user = await User.findById(decoded.id);
+      const secret = process.env.JWT_SECRET || 'codesphere_secret_key_2025';
+      const decoded = jwt.verify(token, secret);
+      const userId = decoded.id || decoded._id;
+      const user = await User.findById(userId);
       if (user && user.isActive) {
         req.user = user;
       }
