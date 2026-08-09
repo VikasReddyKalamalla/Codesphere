@@ -38,6 +38,17 @@ apiClient.interceptors.response.use(
 
     if (status === 401) {
       console.warn('[ApiClient 401 Unauthorized]:', error.config?.url, message);
+      if (
+        message.includes('no longer exists') || 
+        message.includes('Session expired') || 
+        message.includes('Access denied') ||
+        message.includes('Invalid token')
+      ) {
+        localStorage.removeItem(API_CONFIG.TOKEN_KEY);
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      }
     }
 
     return Promise.reject({ message, status, data: error.response?.data });

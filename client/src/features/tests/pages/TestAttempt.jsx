@@ -119,23 +119,26 @@ export const TestAttempt = () => {
 
   // Request Webcam
   useEffect(() => {
+    let currentStream = null;
     const startCamera = async () => {
       try {
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
         const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+        currentStream = stream;
         setCameraStream(stream);
         if (videoRef.current) {
           videoRef.current.srcObject = stream;
         }
       } catch (err) {
-        console.error('Webcam access denied', err);
-        toast.error('Webcam access is required for proctored assessments');
+        console.warn('Webcam access denied or unavailable', err);
+        toast.error('Webcam access is required for proctored assessments', { id: 'webcam-toast' });
       }
     };
     startCamera();
 
     return () => {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
       }
     };
   }, []);

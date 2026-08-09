@@ -1,4 +1,4 @@
-// CodeSphere Realtime Server v1.0.7 - Automated Backup Cron & MFA Admin Operations
+// CodeSphere Realtime Server v1.0.8 - Automated Backup Cron & MFA Admin Operations
 require('dotenv').config();
 const http = require('http');
 const app = require('./app');
