@@ -656,13 +656,20 @@ export const Workspace = () => {
         input: ''
       });
 
-      if (res.success && res.data) {
-        const { output, error, statusText, executionTime } = res.data;
+      const runResult = res?.data || res;
+      if (res?.success && runResult) {
+        const { output, error, statusText, executionTime } = runResult;
+        
+        let outputBody = '';
+        if (output) outputBody += output;
+        if (error) outputBody += (outputBody ? '\n\n' : '') + `STDERR / ERROR:\n${error}`;
+        if (!outputBody) outputBody = '(Program executed cleanly with no stdout output)';
+
         const resultLog = [
-          `=== Running ${fileName} (${ext.toUpperCase()}) ===`,
-          `Status: ${statusText || 'Success'} | Duration: ${executionTime ? executionTime.toFixed(2) + 's' : '0.01s'}`,
+          `=== Executing ${fileName} (${ext.toUpperCase()}) ===`,
+          `Status: ${statusText || (error && !output ? 'Runtime Error' : 'Accepted')} | Duration: ${executionTime ? executionTime.toFixed(2) + 's' : '0.01s'}`,
           '----------------------------------------',
-          output ? output : (error ? `ERROR:\n${error}` : '(No stdout output)'),
+          outputBody,
           '========================================',
           ''
         ].join('\n');
@@ -675,12 +682,13 @@ export const Workspace = () => {
         }));
 
         if (error && !output) {
-          toast.error(`Execution error in ${fileName}`, { id: toastId });
+          const firstLine = error.split('\n').filter(l => l.trim()).pop() || 'Execution error';
+          toast.error(`${fileName}: ${firstLine}`, { id: toastId, duration: 4000 });
         } else {
-          toast.success(`Executed ${fileName} successfully!`, { id: toastId });
+          toast.success(`Executed ${fileName} cleanly (${executionTime ? executionTime.toFixed(2) + 's' : '0.01s'})`, { id: toastId });
         }
       } else {
-        toast.error(res.message || 'Execution failed', { id: toastId });
+        toast.error(res?.message || 'Execution failed', { id: toastId });
       }
     } catch (err) {
       toast.error(err?.response?.data?.message || err?.message || 'Error executing code', { id: toastId });
