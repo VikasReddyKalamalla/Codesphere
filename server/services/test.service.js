@@ -269,6 +269,29 @@ const submitTestAttempt = async (testId, userId, payload) => {
   };
 };
 
+// ─── GENERATE ASSESSMENT CERTIFICATE ─────────────────────────────────────────
+const generateAssessmentCertificate = async (testId, userId) => {
+  const Certificate = require('../models/Certificate');
+  const crypto = require('crypto');
+
+  const test = await Test.findById(testId);
+  if (!test) throw createError('Test not found', 404);
+
+  const existing = await Certificate.findOne({ userId, title: `${test.title} - Skill Certification` });
+  if (existing) return existing;
+
+  const verificationCode = crypto.randomBytes(8).toString('hex').toUpperCase();
+  const cert = await Certificate.create({
+    userId,
+    course: null,
+    title: `${test.title} - Skill Certification`,
+    issuer: 'CodeSphere Assessment Engine',
+    certificateUrl: `/uploads/certificates/cert-test-${testId}-${userId}.pdf`,
+  });
+
+  return { ...cert.toObject(), verificationCode };
+};
+
 module.exports = {
   getAllTests,
   getTestById,
@@ -283,4 +306,5 @@ module.exports = {
   getLeaderboard,
   getContests,
   submitTestAttempt,
+  generateAssessmentCertificate,
 };

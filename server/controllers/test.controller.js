@@ -42,6 +42,7 @@ const getTestAnalytics = asyncHandler(async (req, res) => successResponse(res, 2
 const getLeaderboard    = asyncHandler(async (req, res) => successResponse(res, 200, 'Leaderboard fetched successfully', await testService.getLeaderboard()));
 const getContests       = asyncHandler(async (req, res) => successResponse(res, 200, 'Contests fetched successfully', await testService.getContests()));
 const submitTestAttempt = asyncHandler(async (req, res) => successResponse(res, 200, 'Test submitted successfully', await testService.submitTestAttempt(req.params.id, req.user._id, req.body)));
+const generateAssessmentCertificate = asyncHandler(async (req, res) => successResponse(res, 200, 'Assessment certificate generated', await testService.generateAssessmentCertificate(req.params.id, req.user._id)));
 
 module.exports = {
   getAllTests,
@@ -57,4 +58,5 @@ module.exports = {
   getLeaderboard,
   getContests,
   submitTestAttempt,
+  generateAssessmentCertificate,
 };

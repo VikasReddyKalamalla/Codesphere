@@ -22,6 +22,7 @@ export const ROUTES = {
 
   // ─── Student Dashboard ───────────────────────────────────────────────────────
   DASHBOARD:       '/dashboard',
+  LEADERBOARD:     '/leaderboard',
 
   // ─── Learning ───────────────────────────────────────────────────────────────
   LEARNING:           '/learning',

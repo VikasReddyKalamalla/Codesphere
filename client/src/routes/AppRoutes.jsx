@@ -38,6 +38,7 @@ const CookiesPage   = lazy(() => import('@features/legal/pages/CookiesPage.jsx')
 
 // ─── Student dashboard pages (Statically imported for 100% stability) ─────────
 import DashboardPage from '@features/dashboard/pages/DashboardPage.jsx';
+import LeaderboardPage from '@features/leaderboard/pages/LeaderboardPage.jsx';
 import LearningPage from '@features/learning/pages/LearningPage.jsx';
 import LearningPathPage from '@features/learning/pages/LearningPathPage.jsx';
 import LessonPage from '@features/learning/pages/LessonPage.jsx';
@@ -186,6 +187,7 @@ const AppRoutes = () => {
         }
       >
         <Route path={ROUTES.DASHBOARD}         element={<W><DashboardPage /></W>} />
+        <Route path={ROUTES.LEADERBOARD}       element={<W><LeaderboardPage /></W>} />
 
         {/* Learning */}
         <Route path={ROUTES.LEARNING}          element={<W><LearningPage /></W>} />

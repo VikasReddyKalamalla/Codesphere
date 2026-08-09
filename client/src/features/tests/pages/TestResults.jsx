@@ -44,8 +44,19 @@ export const TestResults = () => {
     fetchResults();
   }, [testId, attemptId]);
 
-  const handleDownloadCertificate = () => {
-    toast.success('Generating CodeSphere Skill Certification PDF...');
+  const handleDownloadCertificate = async () => {
+    const toastId = toast.loading('Generating CodeSphere Skill Certification...');
+    try {
+      const res = await apiClient.post(`/tests/${testId}/certificate`);
+      const certData = res.data?.data || res.data || res;
+      toast.success(`Skill Certificate Generated! Code: ${certData.verificationCode || 'VERIFIED'}`, { id: toastId, duration: 5000 });
+      if (certData.certificateUrl) {
+        window.open(certData.certificateUrl, '_blank');
+      }
+    } catch (err) {
+      console.error('Failed to generate certificate:', err);
+      toast.error('Failed to generate certificate', { id: toastId });
+    }
   };
 
   if (loading) {

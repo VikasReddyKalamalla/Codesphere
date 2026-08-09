@@ -4,7 +4,7 @@ const router  = express.Router();
 const {
   getAllTests, getMyTests, getTestById, getTestBySlug,
   createTest, updateTest, deleteTest, publishTest, archiveTest, getTestAnalytics,
-  getLeaderboard: getGlobalLeaderboard, getContests, submitTestAttempt
+  getLeaderboard: getGlobalLeaderboard, getContests, submitTestAttempt, generateAssessmentCertificate
 } = require('../controllers/test.controller');
 
 const { getTestQuestions }                        = require('../controllers/question.controller');
@@ -26,6 +26,7 @@ router.get   ('/my/attempts',   protect, require('../controllers/testAttempt.con
 router.get   ('/slug/:slug',    getTestBySlug);
 router.get   ('/:id',           getTestById);
 router.post  ('/:id/submit',    protect, submitTestAttempt);
+router.post  ('/:id/certificate', protect, generateAssessmentCertificate);
 router.post  ('/',              protect, restrictTo('instructor', 'admin'), createTest);
 router.put   ('/:id',           protect, updateTest);
 router.delete('/:id',           protect, deleteTest);
