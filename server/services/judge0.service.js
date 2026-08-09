@@ -19,14 +19,33 @@ const MEMORY_LIMIT_KB = 128000; // max 128MB memory limit
 
 const LANGUAGE_MAP = {
   'javascript': 63,
+  'js': 63,
+  'typescript': 74,
+  'ts': 74,
   'python': 71,
+  'python3': 71,
+  'py': 71,
   'java': 62,
   'cpp': 54,
+  'c++': 54,
   'c': 50,
+  'go': 60,
+  'golang': 60,
+  'rust': 73,
+  'rs': 73,
+  'php': 68,
+  'ruby': 72,
+  'rb': 72,
+  'bash': 46,
+  'shell': 46,
+  'sh': 46,
+  'csharp': 51,
+  'c#': 51,
 };
 
 /**
- * Executes code locally using child_process (Python, JS, C++, Java)
+ * Executes code locally using child_process
+ * Supports: Python, JavaScript, TypeScript, C, C++, Java, Go, Rust, PHP, Ruby, Bash/Shell
  * Returns real stdout, stderr, execution time, and exit status.
  */
 const executeCodeLocally = (code, language, input = '') => {
@@ -38,16 +57,25 @@ const executeCodeLocally = (code, language, input = '') => {
     let cmd = '';
     let filePath = '';
 
-    const lang = (language || '').toLowerCase();
+    const lang = (language || '').toLowerCase().trim();
 
-    if (lang === 'python' || lang === 'python3') {
+    if (lang === 'python' || lang === 'python3' || lang === 'py') {
       filePath = path.join(tmpDir, 'solution.py');
       fs.writeFileSync(filePath, code);
-      cmd = `python3 "${filePath}"`;
+      cmd = `python3 "${filePath}" || python "${filePath}"`;
     } else if (lang === 'javascript' || lang === 'js' || lang === 'node') {
       filePath = path.join(tmpDir, 'solution.js');
       fs.writeFileSync(filePath, code);
       cmd = `node "${filePath}"`;
+    } else if (lang === 'typescript' || lang === 'ts') {
+      filePath = path.join(tmpDir, 'solution.ts');
+      fs.writeFileSync(filePath, code);
+      cmd = `npx -y ts-node "${filePath}" || node "${filePath}"`;
+    } else if (lang === 'c') {
+      filePath = path.join(tmpDir, 'solution.c');
+      const binPath = path.join(tmpDir, 'solution');
+      fs.writeFileSync(filePath, code);
+      cmd = `gcc -O2 "${filePath}" -o "${binPath}" && "${binPath}"`;
     } else if (lang === 'cpp' || lang === 'c++') {
       filePath = path.join(tmpDir, 'solution.cpp');
       const binPath = path.join(tmpDir, 'solution');
@@ -57,6 +85,27 @@ const executeCodeLocally = (code, language, input = '') => {
       filePath = path.join(tmpDir, 'Solution.java');
       fs.writeFileSync(filePath, code);
       cmd = `javac "${filePath}" && java -cp "${tmpDir}" Solution`;
+    } else if (lang === 'go' || lang === 'golang') {
+      filePath = path.join(tmpDir, 'main.go');
+      fs.writeFileSync(filePath, code);
+      cmd = `go run "${filePath}"`;
+    } else if (lang === 'rust' || lang === 'rs') {
+      filePath = path.join(tmpDir, 'solution.rs');
+      const binPath = path.join(tmpDir, 'solution');
+      fs.writeFileSync(filePath, code);
+      cmd = `rustc "${filePath}" -o "${binPath}" && "${binPath}"`;
+    } else if (lang === 'php') {
+      filePath = path.join(tmpDir, 'solution.php');
+      fs.writeFileSync(filePath, code);
+      cmd = `php "${filePath}"`;
+    } else if (lang === 'ruby' || lang === 'rb') {
+      filePath = path.join(tmpDir, 'solution.rb');
+      fs.writeFileSync(filePath, code);
+      cmd = `ruby "${filePath}"`;
+    } else if (lang === 'bash' || lang === 'sh' || lang === 'shell') {
+      filePath = path.join(tmpDir, 'solution.sh');
+      fs.writeFileSync(filePath, code);
+      cmd = `bash "${filePath}"`;
     } else {
       filePath = path.join(tmpDir, 'solution.js');
       fs.writeFileSync(filePath, code);
