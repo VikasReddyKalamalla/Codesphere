@@ -43,8 +43,8 @@ const seedDefaultFiles = async (workspaceId) => {
   <link rel="stylesheet" href="styles.css">
 </head>
 <body class="bg-slate-950 text-slate-100 flex items-center justify-center min-h-screen p-6 font-sans">
-  <div class="max-w-sm w-full bg-slate-900/90 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl text-center space-y-5 backdrop-blur-xl">
-    <div class="w-12 h-12 bg-emerald-500/20 text-[#04AA6D] border border-emerald-500/30 rounded-xl flex items-center justify-center mx-auto shadow-inner font-mono font-bold text-lg">
+  <div id="preview-card" class="max-w-sm w-full bg-slate-900 border border-emerald-500/30 rounded-2xl p-6 shadow-2xl text-center space-y-5 backdrop-blur-xl transition-all duration-300">
+    <div id="avatar-badge" class="w-12 h-12 bg-emerald-500/20 text-[#04AA6D] border border-emerald-500/30 rounded-xl flex items-center justify-center mx-auto shadow-inner font-mono font-bold text-lg">
       CS
     </div>
     
@@ -53,13 +53,13 @@ const seedDefaultFiles = async (workspaceId) => {
       <p class="text-slate-400 text-xs mt-1.5 leading-relaxed">Real-time collaborative sandbox environment with instant hot-reloading.</p>
     </div>
 
-    <div class="p-3 bg-slate-950/70 rounded-xl border border-slate-800 flex items-center justify-between">
-      <span class="text-[10px] font-mono text-slate-500 uppercase font-semibold">Compiler Status</span>
+    <div class="p-3 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-between">
+      <span class="text-[10px] font-mono text-slate-400 uppercase font-semibold">Compiler Status</span>
       <span id="time-message" class="text-emerald-400 font-mono text-[11px] font-bold">Initializing...</span>
     </div>
 
     <button onclick="changeColor()" class="w-full py-2.5 bg-[#04AA6D] hover:bg-emerald-600 active:scale-95 transition-all rounded-xl text-xs font-mono font-bold text-white shadow-lg shadow-emerald-500/20 cursor-pointer">
-      Test Interactive Script
+      Test Interactive Accent
     </button>
   </div>
   <script src="main.js"></script>
@@ -70,11 +70,26 @@ const seedDefaultFiles = async (workspaceId) => {
       name: 'styles.css',
       path: 'styles.css',
       type: 'file',
-      content: `/* Clean modern reset styling */
+      content: `/* High-Contrast Modern Theme Reset */
+* {
+  box-sizing: border-box;
+}
 body {
   margin: 0;
   padding: 0;
-  transition: background-color 0.3s ease;
+  background-color: #0b0f19 !important;
+  color: #f8fafc !important;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+h1, h2, h3, h4, h5, h6 {
+  color: #ffffff !important;
+}
+p, span, label {
+  color: #94a3b8;
 }
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
@@ -88,7 +103,7 @@ body {
       name: 'main.js',
       path: 'main.js',
       type: 'file',
-      content: `console.log("Welcome to CodeSphere Collaborative App execution!");
+      content: `console.log("Welcome to CodeSphere Collaborative Sandbox Execution!");
 
 const timeEl = document.getElementById("time-message");
 if (timeEl) {
@@ -96,9 +111,33 @@ if (timeEl) {
 }
 
 function changeColor() {
-  const randomColor = "#" + Math.floor(Math.random()*16777215).toString(16);
-  document.body.style.backgroundColor = randomColor;
-  console.log("Changed background color to: " + randomColor);
+  const card = document.getElementById("preview-card");
+  const badge = document.getElementById("avatar-badge");
+  const timeEl = document.getElementById("time-message");
+  
+  const accents = [
+    { border: "#04AA6D", bg: "rgba(4, 170, 109, 0.2)", text: "#04AA6D" },
+    { border: "#3b82f6", bg: "rgba(59, 130, 246, 0.2)", text: "#60a5fa" },
+    { border: "#8b5cf6", bg: "rgba(139, 92, 246, 0.2)", text: "#c084fc" },
+    { border: "#ec4899", bg: "rgba(236, 72, 153, 0.2)", text: "#f472b6" },
+    { border: "#f59e0b", bg: "rgba(245, 158, 11, 0.2)", text: "#fbbf24" }
+  ];
+  
+  const selected = accents[Math.floor(Math.random() * accents.length)];
+
+  if (card) {
+    card.style.borderColor = selected.border;
+    card.style.boxShadow = \`0 10px 30px -5px \${selected.border}40\`;
+  }
+  if (badge) {
+    badge.style.borderColor = selected.border;
+    badge.style.backgroundColor = selected.bg;
+    badge.style.color = selected.text;
+  }
+  if (timeEl) {
+    timeEl.style.color = selected.text;
+    timeEl.innerText = "Accent updated at " + new Date().toLocaleTimeString();
+  }
 }`
     }
   ];
