@@ -37,11 +37,31 @@ export const CreateResourceModal = ({ onClose, onSubmit }) => {
       return toast.error('Resource title is required');
     }
 
-    const payload = {
-      ...formData,
-      resourceType,
-      tags: formData.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean),
-    };
+    if (['pdf', 'notes', 'other'].includes(resourceType) && !selectedFile && !formData.externalUrl) {
+      return toast.error('Please upload a file or provide an external URL for this resource');
+    }
+
+    const payload = new FormData();
+    payload.append('title', formData.title.trim());
+    payload.append('description', formData.description.trim());
+    payload.append('category', formData.category);
+    payload.append('difficulty', formData.difficulty);
+    payload.append('resourceType', resourceType);
+    payload.append('language', formData.language);
+    payload.append('isPremium', formData.isPremium);
+    
+    if (formData.tags) {
+      const tagsArray = formData.tags.split(',').map(t => t.trim().toLowerCase()).filter(Boolean);
+      tagsArray.forEach(t => payload.append('tags[]', t));
+    }
+    if (formData.externalUrl) payload.append('externalUrl', formData.externalUrl);
+    if (formData.codeContent) payload.append('codeContent', formData.codeContent);
+    if (formData.codeLanguage) payload.append('codeLanguage', formData.codeLanguage);
+    if (formData.markdownContent) payload.append('markdownContent', formData.markdownContent);
+
+    if (selectedFile) {
+      payload.append('file', selectedFile);
+    }
 
     onSubmit && onSubmit(payload);
     toast.success('Programming resource published to CodeSphere Library!');
@@ -199,11 +219,19 @@ export const CreateResourceModal = ({ onClose, onSubmit }) => {
               </div>
             )}
 
-            {resourceType === 'pdf' && (
-              <div className="p-6 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-2xl flex flex-col items-center gap-2 text-center bg-slate-50/50 dark:bg-slate-900/30">
-                <UploadCloud className="w-8 h-8 text-[#04AA6D]" />
-                <span className="font-bold text-slate-700 dark:text-slate-300">Drag & drop PDF notes or click to upload</span>
-                <span className="text-[10px] text-slate-400 font-mono">Supports PDF, DOCX, ZIP files up to 50MB</span>
+            {['pdf', 'notes', 'video', 'other'].includes(resourceType) && (
+              <div className="p-6 border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-2xl flex flex-col items-center gap-2 text-center bg-slate-50/50 dark:bg-slate-900/30 relative overflow-hidden group">
+                <input
+                  type="file"
+                  accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.zip,.mp4"
+                  onChange={(e) => setSelectedFile(e.target.files[0])}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                />
+                <UploadCloud className="w-8 h-8 text-[#04AA6D] group-hover:scale-110 transition-transform" />
+                <span className="font-bold text-slate-700 dark:text-slate-300">
+                  {selectedFile ? selectedFile.name : 'Drag & drop file or click to upload'}
+                </span>
+                <span className="text-[10px] text-slate-400 font-mono">Supports PDF, DOCX, XLSX, ZIP, MP4 up to 100MB</span>
               </div>
             )}
 

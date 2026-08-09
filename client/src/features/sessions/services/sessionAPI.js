@@ -5,6 +5,11 @@ export const fetchSessionsAPI = async (query = {}) => {
   return res.data.data;
 };
 
+export const createSessionRequestAPI = async (data) => {
+  const res = await apiClient.post('/sessions/requests', data);
+  return res.data.data;
+};
+
 export const fetchMySessionsAPI = async () => {
   const res = await apiClient.get('/sessions/my-sessions');
   return res.data.data;

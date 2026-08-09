@@ -22,6 +22,12 @@ const { submitFeedback, getFeedback }       = require('../controllers/feedback.c
 const { createReminder, getReminders }      = require('../controllers/reminder.controller');
 const { addRecording, getRecordings }       = require('../controllers/recording.controller');
 
+const {
+  createSessionRequest,
+  getSessionRequests,
+  updateSessionRequestStatus
+} = require('../controllers/sessionRequest.controller');
+
 const { getQuestions, askQuestion, postAnswer, voteQuestion, pinQuestion, markAnswered } = require('../controllers/sessionQuestion.controller');
 const { getPolls, createPoll, votePoll, closePoll } = require('../controllers/sessionPoll.controller');
 const { getQuizzes, createQuiz, startQuiz, submitQuizAttempt } = require('../controllers/sessionQuiz.controller');
@@ -41,6 +47,11 @@ router.get   ('/:id', protect, getSessionById);
 router.post  ('/',    protect, restrictTo('instructor', 'admin'), createSession);
 router.put   ('/:id', protect, updateSession);
 router.delete('/:id', protect, deleteSession);
+
+// ─── Session Requests ─────────────────────────────────────────────────────────
+router.post  ('/requests', protect, createSessionRequest);
+router.get   ('/requests', protect, restrictTo('admin'), getSessionRequests);
+router.put   ('/requests/:id', protect, restrictTo('admin'), updateSessionRequestStatus);
 
 // ─── Lifecycle ────────────────────────────────────────────────────────────────
 router.patch('/:id/publish',  protect, publishSession);

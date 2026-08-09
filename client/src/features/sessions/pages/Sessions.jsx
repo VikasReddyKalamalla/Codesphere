@@ -1,15 +1,17 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Video, Search, SlidersHorizontal, Calendar, Award, BookOpen, Clock, Users, Flame, Plus,
-  FileCode, Layers, ShieldCheck, Sparkles, RefreshCcw
+  FileCode, Layers, ShieldCheck, Sparkles, RefreshCcw, Download, Play, CheckCircle2
 } from 'lucide-react';
 import { fetchSessionsThunk, fetchMySessionsThunk, fetchCertificatesThunk } from '../redux/sessionThunk.js';
 import { selectSessionItems, selectRegisteredSessions, selectCertificates, selectSessionsLoading } from '../redux/sessionSelectors.js';
 import { selectCurrentUser } from '@features/auth/redux/authSelectors.js';
 import toast from 'react-hot-toast';
 import { duplicateSessionAPI, archiveSessionAPI } from '../services/sessionAPI.js';
+import { SessionRequestModal } from '../components/SessionRequestModal.jsx';
+import { uploadCertificateAPI } from '../../profile/services/profileAPI.js';
 
 export const Sessions = () => {
   const navigate = useNavigate();
@@ -25,6 +27,11 @@ export const Sessions = () => {
   const [statusFilter, setStatusFilter] = useState('all'); // all, live, upcoming, completed
   const [difficultyFilter, setDifficultyFilter] = useState('all');
   const [priceFilter, setPriceFilter] = useState('all'); // all, free, premium
+  const [showRequestModal, setShowRequestModal] = useState(false);
+
+  const [certForm, setCertForm] = useState({ title: '', issuer: '' });
+  const certFileRef = useRef(null);
+  const [uploadingCert, setUploadingCert] = useState(false);
 
   useEffect(() => {
     dispatch(fetchSessionsThunk());
@@ -75,7 +82,33 @@ export const Sessions = () => {
   };
 
   // Filter logic
+  const handleUploadCertificate = async (e) => {
+    e.preventDefault();
+    const file = certFileRef.current?.files?.[0];
+    if (!file) return toast.error('Please select a file');
+
+    setUploadingCert(true);
+    const loadingToast = toast.loading('Uploading certificate...');
+    try {
+      await uploadCertificateAPI(certForm, file);
+      dispatch(fetchCertificatesThunk()); // Refresh certificates list
+      setCertForm({ title: '', issuer: '' });
+      certFileRef.current.value = '';
+      toast.success('Certificate uploaded!', { id: loadingToast });
+    } catch (err) {
+      toast.error('Failed to upload', { id: loadingToast });
+    } finally {
+      setUploadingCert(false);
+    }
+  };
+
   const filteredSessions = (activeTab === 'browse' ? sessions : registeredSessions).filter((s) => {
+    // If recordings tab, only show sessions that are completed/archived and have a recording link
+    if (activeTab === 'recordings') {
+      const isRecorded = (s.status === 'completed' || s.status === 'archived') && s.recordingLink;
+      if (!isRecorded) return false;
+    }
+
     const matchesSearch = s.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       s.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -151,15 +184,24 @@ export const Sessions = () => {
           </p>
         </div>
 
-        {canManage && (
+        <div className="flex gap-2">
           <button
-            onClick={() => navigate('/sessions/create')}
-            className="flex items-center gap-2.5 px-5 py-3 rounded-2xl font-bold text-sm bg-gradient-to-r from-[#04AA6D] to-teal-600 hover:from-[#03935e] hover:to-teal-500 active:scale-95 transition-all text-white shadow-xl shadow-emerald-500/20 border border-emerald-500/30 cursor-pointer"
+            onClick={() => setShowRequestModal(true)}
+            className="flex items-center gap-2.5 px-5 py-3 rounded-2xl font-bold text-sm bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-95 transition-all text-slate-800 dark:text-slate-200 shadow-sm border border-slate-200 dark:border-slate-800 cursor-pointer"
           >
-            <Plus className="w-4 h-4" />
-            Create Session
+            <Calendar className="w-4 h-4" />
+            Request Session
           </button>
-        )}
+          {canManage && (
+            <button
+              onClick={() => navigate('/sessions/create')}
+              className="flex items-center gap-2.5 px-5 py-3 rounded-2xl font-bold text-sm bg-gradient-to-r from-[#04AA6D] to-teal-600 hover:from-[#03935e] hover:to-teal-500 active:scale-95 transition-all text-white shadow-xl shadow-emerald-500/20 border border-emerald-500/30 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              Create Session
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Navigation tabs & Search bar */}
@@ -302,16 +344,66 @@ export const Sessions = () => {
               <p className="text-xs text-slate-500 dark:text-slate-500 font-mono">Querying database...</p>
             </div>
           ) : activeTab === 'certificates' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="flex flex-col gap-6">
+              
+              <div className="bg-white dark:bg-slate-900/60 p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+                <h3 className="text-lg font-black mb-4 text-slate-900 dark:text-white">Upload External Certificate</h3>
+                <form onSubmit={handleUploadCertificate} className="flex flex-col gap-4 max-w-md">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Certificate Title</label>
+                    <input
+                      value={certForm.title}
+                      onChange={(e) => setCertForm({ ...certForm, title: e.target.value })}
+                      placeholder="e.g. Advanced React Patterns"
+                      className="w-full px-3 py-2 rounded-xl text-sm focus:outline-none bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Issuer / Organization</label>
+                    <input
+                      value={certForm.issuer}
+                      onChange={(e) => setCertForm({ ...certForm, issuer: e.target.value })}
+                      placeholder="e.g. FreeCodeCamp, Coursera"
+                      className="w-full px-3 py-2 rounded-xl text-sm focus:outline-none bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Certificate File (PDF or Image)</label>
+                    <input
+                      type="file"
+                      ref={certFileRef}
+                      accept=".pdf,image/*"
+                      className="w-full px-3 py-2 rounded-xl text-sm focus:outline-none bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-slate-100"
+                      required
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={uploadingCert}
+                    className="px-4 py-2 mt-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-sm transition-all"
+                  >
+                    {uploadingCert ? 'Uploading...' : 'Upload Certificate'}
+                  </button>
+                </form>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {certificates.length > 0 ? (
                 certificates.map((cert) => (
                   <div key={cert._id} className="relative overflow-hidden bg-white dark:bg-slate-950/30 border border-slate-200 dark:border-slate-900 p-6 rounded-2xl flex flex-col gap-4 hover:border-emerald-500/30 transition-all shadow-sm dark:shadow-md group">
                     <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-bl from-emerald-500/10 to-transparent pointer-events-none" />
                     <div className="flex justify-between items-start gap-4">
                       <div className="flex flex-col gap-1">
-                        <span className="text-[10px] font-black text-[#04AA6D] dark:text-emerald-400 tracking-wider font-mono">VERIFIED CERTIFICATE</span>
-                        <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 mt-1">{cert.sessionId?.title}</h3>
-                        <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-1">Verification Code: {cert.verificationCode}</p>
+                        <span className="text-[10px] font-black text-[#04AA6D] dark:text-emerald-400 tracking-wider font-mono">
+                          {cert.issuer ? 'EXTERNAL CERTIFICATE' : 'VERIFIED CERTIFICATE'}
+                        </span>
+                        <h3 className="font-extrabold text-sm text-slate-800 dark:text-slate-200 mt-1">
+                          {cert.title || cert.sessionId?.title || cert.course?.title || 'Certificate'}
+                        </h3>
+                        {cert.verificationCode && <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-1">Verification Code: {cert.verificationCode}</p>}
+                        {cert.issuer && <p className="text-[10px] text-slate-500 dark:text-slate-500 mt-1">Issuer: {cert.issuer}</p>}
                       </div>
                       <Award className="w-10 h-10 text-[#04AA6D] dark:text-emerald-400 group-hover:scale-110 transition-transform shrink-0" />
                     </div>
@@ -337,6 +429,7 @@ export const Sessions = () => {
                   </p>
                 </div>
               )}
+            </div>
             </div>
           ) : filteredSessions.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -388,26 +481,41 @@ export const Sessions = () => {
                         <span className="text-[10px] font-bold text-slate-700 dark:text-slate-300">{session.host?.fullName}</span>
                       </div>
 
-                      {canManage && (
-                        <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2">
+                        {session.recordingLink && (session.status === 'completed' || session.status === 'archived') && (
                           <button
-                            onClick={(e) => handleDuplicate(e, session._id)}
-                            title="Duplicate Session"
-                            className="p-1.5 bg-slate-100 dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/30 rounded-lg text-slate-500 dark:text-slate-400 hover:text-[#04AA6D] dark:hover:text-emerald-400 transition-all cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              window.open(session.recordingLink, '_blank');
+                            }}
+                            title="Watch Recording"
+                            className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#04AA6D]/10 hover:bg-[#04AA6D]/20 border border-[#04AA6D]/30 rounded-lg text-[#04AA6D] dark:text-emerald-400 text-[10px] font-bold transition-all cursor-pointer"
                           >
-                            <Layers className="w-3.5 h-3.5" />
+                            <Play className="w-3.5 h-3.5" />
+                            <span>Play</span>
                           </button>
-                          {session.status !== 'archived' && (
+                        )}
+                        {canManage && (
+                          <>
                             <button
-                              onClick={(e) => handleArchive(e, session._id)}
-                              title="Archive Session"
+                              onClick={(e) => handleDuplicate(e, session._id)}
+                              title="Duplicate Session"
                               className="p-1.5 bg-slate-100 dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/30 rounded-lg text-slate-500 dark:text-slate-400 hover:text-[#04AA6D] dark:hover:text-emerald-400 transition-all cursor-pointer"
                             >
-                              <ShieldCheck className="w-3.5 h-3.5" />
+                              <Layers className="w-3.5 h-3.5" />
                             </button>
-                          )}
-                        </div>
-                      )}
+                            {session.status !== 'archived' && (
+                              <button
+                                onClick={(e) => handleArchive(e, session._id)}
+                                title="Archive Session"
+                                className="p-1.5 bg-slate-100 dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border border-slate-200 dark:border-slate-800 hover:border-emerald-500/30 rounded-lg text-slate-500 dark:text-slate-400 hover:text-[#04AA6D] dark:hover:text-emerald-400 transition-all cursor-pointer"
+                              >
+                                <ShieldCheck className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -424,6 +532,11 @@ export const Sessions = () => {
           )}
         </div>
       </div>
+      
+      <SessionRequestModal 
+        isOpen={showRequestModal} 
+        onClose={() => setShowRequestModal(false)} 
+      />
     </div>
   );
 };

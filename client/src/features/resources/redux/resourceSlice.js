@@ -8,11 +8,7 @@ const initialState = {
   selectedResource: null,
   userBookmarks: [],
   userHistory: [],
-  collections: [
-    { id: 'c1', title: 'React 19 & Next.js Architecture', count: 8, icon: 'Layout' },
-    { id: 'c2', title: 'System Design Interview Cheatsheets', count: 12, icon: 'Layers' },
-    { id: 'c3', title: 'Generative AI & LLM Boilerplates', count: 6, icon: 'Sparkles' }
-  ],
+  collections: [],
   activeTab: 'explore', // explore, trending, categories, collections, bookmarks, downloads, history
   activeCategory: 'all',
   activeResourceType: 'all',

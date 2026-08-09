@@ -1,14 +1,14 @@
 const multer = require('multer');
-const path = require('path');
-const { generateUniqueFilename, getUploadPath } = require('../utils/fileUpload');
+const { CloudinaryStorage } = require('multer-storage-cloudinary');
+const cloudinary = require('../config/cloudinary');
 
-const storage = (type) =>
-  multer.diskStorage({
-    destination: (req, file, cb) => {
-      cb(null, getUploadPath(type));
-    },
-    filename: (req, file, cb) => {
-      cb(null, generateUniqueFilename(file));
+const storage = (folderName) =>
+  new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+      folder: `codesphere/${folderName}`,
+      resource_type: 'auto', // Important for PDFs/Videos to be handled properly
+      allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'pdf', 'mp4', 'zip', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'],
     },
   });
 

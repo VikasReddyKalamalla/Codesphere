@@ -1,3 +1,4 @@
+const mongoose = require('mongoose');
 const Resource = require('../models/Resource');
 const Bookmark = require('../models/Bookmark');
 const { getPagination } = require('../utils/pagination');
@@ -36,6 +37,19 @@ const getAllResources = async (query) => {
     sortBy = 'createdAt',
     order = 'desc',
   } = query;
+
+  // Fallback to mock data if MongoDB is not connected (readyState !== 1)
+  if (mongoose.connection.readyState !== 1) {
+    const { seedMockResources } = require('./mockResources');
+    const mockData = seedMockResources();
+    return {
+      total: mockData.length,
+      page: 1,
+      limit: 12,
+      totalPages: 1,
+      resources: mockData
+    };
+  }
 
   const filter = {};
   if (all !== 'true') {
@@ -77,6 +91,14 @@ const getAllResources = async (query) => {
 
 // ─── GET BY ID (with view count increment) ────────────────────────────────────
 const getResourceById = async (id) => {
+  if (mongoose.connection.readyState !== 1) {
+    const { seedMockResources } = require('./mockResources');
+    const mockData = seedMockResources();
+    const resource = mockData.find((r) => r._id === id || r.id === id);
+    if (!resource) throw createError('Resource not found', 404);
+    return resource;
+  }
+
   const resource = await Resource.findById(id)
     .populate('category', 'name slug icon')
     .populate('uploadedBy', 'fullName avatar bio');
@@ -112,7 +134,7 @@ const createResource = async (body, file, userId) => {
   };
 
   if (file) {
-    data.fileUrl = `/${file.path.replace(/\\/g, '/')}`;
+    data.fileUrl = file.path;
   }
 
   return Resource.create(data);
@@ -143,7 +165,7 @@ const updateResource = async (id, body, file, userId, userRole) => {
     if (!body.markdownContent) updateData.markdownContent = body.content;
   }
   if (file) {
-    updateData.fileUrl = `/${file.path.replace(/\\/g, '/')}`;
+    updateData.fileUrl = file.path;
   }
 
   return Resource.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
@@ -202,6 +224,10 @@ const rateResource = async (resourceId, userId, value) => {
 
 // ─── FEATURED RESOURCES ───────────────────────────────────────────────────────
 const getFeaturedResources = async () => {
+  if (mongoose.connection.readyState !== 1) {
+    const { seedMockResources } = require('./mockResources');
+    return seedMockResources().slice(0, 6);
+  }
   return Resource.find({ status: 'published', isFeatured: true })
     .populate('uploadedBy', 'fullName avatar')
     .limit(6)
@@ -210,6 +236,10 @@ const getFeaturedResources = async () => {
 
 // ─── TRENDING RESOURCES ────────────────────────────────────────────────────────
 const getTrendingResources = async () => {
+  if (mongoose.connection.readyState !== 1) {
+    const { seedMockResources } = require('./mockResources');
+    return seedMockResources().slice(0, 6);
+  }
   return Resource.find({ status: 'published' })
     .populate('uploadedBy', 'fullName avatar')
     .sort({ views: -1, downloadsCount: -1 })
@@ -218,6 +248,10 @@ const getTrendingResources = async () => {
 
 // ─── RECOMMENDED RESOURCES ─────────────────────────────────────────────────────
 const getRecommendedResources = async () => {
+  if (mongoose.connection.readyState !== 1) {
+    const { seedMockResources } = require('./mockResources');
+    return seedMockResources().slice(0, 6);
+  }
   return Resource.find({ status: 'published' })
     .populate('uploadedBy', 'fullName avatar')
     .sort({ averageRating: -1, createdAt: -1 })

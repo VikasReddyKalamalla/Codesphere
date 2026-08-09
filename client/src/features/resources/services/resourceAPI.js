@@ -26,7 +26,9 @@ export const fetchRecommendedResourcesAPI = async () => {
 };
 
 export const createResourceAPI = async (payload) => {
-  const res = await apiClient.post('/resources', payload);
+  const isFormData = payload instanceof FormData;
+  const config = isFormData ? { headers: { 'Content-Type': 'multipart/form-data' } } : {};
+  const res = await apiClient.post('/resources', payload, config);
   return res.data;
 };
 

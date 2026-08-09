@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import {
   Calendar, Clock, Users, ShieldAlert, BadgeInfo, Code, Download, Link as LinkIcon,
-  Video, ArrowLeft, Star, Send, Bell, Plus, CheckCircle2, Lock, Sparkles, Trophy
+  Video, ArrowLeft, Star, Send, Bell, Plus, CheckCircle2, Lock, Sparkles, Trophy, Play
 } from 'lucide-react';
 import {
   getSessionByIdThunk,
@@ -427,6 +427,17 @@ export const SessionDetails = () => {
                   >
                     <Trophy className="w-4 h-4 text-amber-400" />
                     Claim Certificate
+                  </button>
+                )}
+
+                {/* Watch Recording */}
+                {session.recordingLink && (session.status === 'completed' || session.status === 'archived') && (
+                  <button
+                    onClick={() => window.open(session.recordingLink, '_blank')}
+                    className="w-full py-3 rounded-xl font-bold text-xs bg-white dark:bg-slate-900 border border-[#04AA6D]/50 text-[#04AA6D] dark:text-emerald-400 hover:bg-[#04AA6D]/10 transition-all uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Play className="w-4 h-4" />
+                    Watch Recording
                   </button>
                 )}
               </div>

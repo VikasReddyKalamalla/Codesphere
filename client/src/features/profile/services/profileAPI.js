@@ -18,3 +18,20 @@ export const uploadAvatarAPI = async (file) => {
   });
   return res.data;
 };
+
+export const fetchPublicProfileAPI = async (username) => {
+  const res = await apiClient.get(`/profile/public/${username}`);
+  return res.data;
+};
+
+export const uploadCertificateAPI = async (data, file) => {
+  const form = new FormData();
+  form.append('certificate', file);
+  if (data.title) form.append('title', data.title);
+  if (data.issuer) form.append('issuer', data.issuer);
+  
+  const res = await apiClient.post('/profile/certificates', form, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return res.data;
+};

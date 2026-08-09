@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Certificate = require('../models/Certificate');
 
 const getProfile = async (userId) => User.findById(userId).select('-password').populate('learningPaths', 'title');
 
@@ -14,4 +15,28 @@ const uploadAvatar = async (userId, file) => {
   return User.findByIdAndUpdate(userId, { avatar: avatarUrl }, { new: true }).select('-password');
 };
 
-module.exports = { getProfile, updateProfile, uploadAvatar };
+const getPublicProfile = async (username) => {
+  const user = await User.findOne({ username }).select('-password -email -phone -twoFactorSecret -passwordResetToken -passwordResetExpires -emailVerificationToken').populate('learningPaths', 'title');
+  if (!user) throw Object.assign(new Error('User not found'), { statusCode: 404 });
+  
+  const certificates = await Certificate.find({ userId: user._id }).populate('course', 'title');
+  
+  return { ...user.toObject(), certificates };
+};
+
+const uploadCertificate = async (userId, data, file) => {
+  if (!file) throw Object.assign(new Error('No certificate file uploaded'), { statusCode: 400 });
+  
+  const certificateUrl = `/${file.path.replace(/\\/g, '/')}`;
+  
+  const cert = await Certificate.create({
+    userId,
+    title: data.title || 'Custom Certificate',
+    issuer: data.issuer || 'Unknown',
+    certificateUrl
+  });
+  
+  return cert;
+};
+
+module.exports = { getProfile, updateProfile, uploadAvatar, getPublicProfile, uploadCertificate };

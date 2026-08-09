@@ -610,34 +610,63 @@ export const LiveSession = () => {
             
             {/* 1. Video WebRTC streaming viewport */}
             {activeCenterTab === 'stream' && (
-              <div className="w-full h-full grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                
-                {/* Local Video Card */}
-                <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center">
-                  {isVideoOff ? (
-                    <div className="flex flex-col items-center gap-2 text-slate-500">
-                      <VideoOff className="w-10 h-10" />
-                      <span className="text-xs">Camera Feed Disabled</span>
-                    </div>
-                  ) : (
-                    <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover transform scale-x-[-1]" />
-                  )}
-                  <span className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded text-[10px] font-bold text-slate-300">
-                    {currentUser?.fullName} (You)
-                  </span>
-                </div>
-
-                {/* Remote Video Spotlight */}
-                <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center">
-                  <div className="flex flex-col items-center gap-2 text-slate-500 p-6 text-center">
-                    <Sparkles className="w-10 h-10 text-[#04AA6D] dark:text-emerald-400 animate-pulse" />
-                    <span className="text-xs font-bold text-slate-400 mt-1">Spotlight Video Stream</span>
-                    <span className="text-[10px] text-slate-600 max-w-xs leading-relaxed">Instructor feed active. Signal relayed through ICE tunnels.</span>
+              <div className="w-full h-full p-4">
+                {session?.recordingLink ? (
+                  <div className="w-full h-full rounded-xl overflow-hidden bg-black border border-slate-800">
+                    {session.recordingLink.includes('youtube.com') || session.recordingLink.includes('youtu.be') ? (
+                      <iframe
+                        src={session.recordingLink.replace('watch?v=', 'embed/')}
+                        className="w-full h-full"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video src={session.recordingLink} controls className="w-full h-full object-cover" />
+                    )}
                   </div>
-                  <span className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded text-[10px] font-bold text-slate-300">
-                    Webcast Stream Spot
-                  </span>
-                </div>
+                ) : session?.meetingLink ? (
+                  <div className="w-full h-full rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex flex-col items-center justify-center p-6 text-center">
+                    <Video className="w-16 h-16 text-[#04AA6D] dark:text-emerald-400 mb-4" />
+                    <h3 className="text-xl font-bold text-white mb-2">External Meeting Session</h3>
+                    <p className="text-sm text-slate-400 mb-6">This session is being hosted externally on Google Meet or Zoom.</p>
+                    <a
+                      href={session.meetingLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-6 py-3 bg-[#04AA6D] hover:bg-emerald-600 text-white font-bold rounded-xl transition-all shadow-lg shadow-emerald-500/20"
+                    >
+                      Join Meeting
+                    </a>
+                  </div>
+                ) : (
+                  <div className="w-full h-full grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Local Video Card */}
+                    <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center">
+                      {isVideoOff ? (
+                        <div className="flex flex-col items-center gap-2 text-slate-500">
+                          <VideoOff className="w-10 h-10" />
+                          <span className="text-xs">Camera Feed Disabled</span>
+                        </div>
+                      ) : (
+                        <video ref={localVideoRef} autoPlay playsInline muted className="w-full h-full object-cover transform scale-x-[-1]" />
+                      )}
+                      <span className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded text-[10px] font-bold text-slate-300">
+                        {currentUser?.fullName} (You)
+                      </span>
+                    </div>
+
+                    {/* Remote Video Spotlight */}
+                    <div className="relative rounded-xl overflow-hidden bg-slate-900 border border-slate-800 flex items-center justify-center">
+                      <div className="flex flex-col items-center gap-2 text-slate-500 p-6 text-center">
+                        <Sparkles className="w-10 h-10 text-[#04AA6D] dark:text-emerald-400 animate-pulse" />
+                        <span className="text-xs font-bold text-slate-400 mt-1">Spotlight Video Stream</span>
+                        <span className="text-[10px] text-slate-600 max-w-xs leading-relaxed">Instructor feed active. Signal relayed through ICE tunnels.</span>
+                      </div>
+                      <span className="absolute bottom-3 left-3 bg-black/60 backdrop-blur-sm px-2.5 py-1 rounded text-[10px] font-bold text-slate-300">
+                        Webcast Stream Spot
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 

@@ -111,6 +111,7 @@ const AdminAuditLogs     = lazy(() => import('@features/admin/pages/AdminAuditLo
 const AdminAnnouncements = lazy(() => import('@features/admin/pages/AdminAnnouncements.jsx'));
 const AdminFeatures      = lazy(() => import('@features/admin/pages/AdminFeatures.jsx'));
 const AdminHealth        = lazy(() => import('@features/admin/pages/AdminHealth.jsx'));
+const AdminSessions      = lazy(() => import('@features/admin/pages/AdminSessions.jsx'));
 const AdminModulePlaceholder = lazy(() => import('@features/admin/pages/AdminModulePlaceholder.jsx'));
 
 // ─── Error pages ──────────────────────────────────────────────────────────────
@@ -159,7 +160,6 @@ const AppRoutes = () => {
         <Route path={ROUTES.PRIVACY}        element={<W><PrivacyPage /></W>} />
         <Route path={ROUTES.TERMS}          element={<W><TermsPage /></W>} />
         <Route path={ROUTES.COOKIE_POLICY}  element={<W><CookiesPage /></W>} />
-        <Route path={ROUTES.PROFILE_PUBLIC} element={<W><PublicProfilePage /></W>} />
       </Route>
 
       {/* ── Auth (guest only) ─────────────────────────────────────────────── */}
@@ -248,6 +248,7 @@ const AppRoutes = () => {
 
         {/* Settings */}
         <Route path={ROUTES.SETTINGS}          element={<W><SettingsPage /></W>} />
+        <Route path={ROUTES.PROFILE_PUBLIC}    element={<W><PublicProfilePage /></W>} />
 
         {/* Instructor application (any auth user) */}
         <Route path={ROUTES.INSTRUCTOR_APPLY}  element={<W><InstructorApplyPage /></W>} />
@@ -296,7 +297,7 @@ const AppRoutes = () => {
         <Route path={ROUTES.ADMIN_LEARNING}      element={<W><AdminLearning /></W>} />
         <Route path={ROUTES.ADMIN_RESOURCES}     element={<W><AdminModulePlaceholder section="resources" /></W>} />
         <Route path={ROUTES.ADMIN_COMMUNITIES}   element={<W><AdminModulePlaceholder section="communities" /></W>} />
-        <Route path={ROUTES.ADMIN_SESSIONS}      element={<W><AdminModulePlaceholder section="sessions" /></W>} />
+        <Route path={ROUTES.ADMIN_SESSIONS}      element={<W><AdminSessions /></W>} />
         <Route path={ROUTES.ADMIN_EVENTS}        element={<W><AdminModulePlaceholder section="events" /></W>} />
         <Route path={ROUTES.ADMIN_SANDBOX}       element={<W><AdminModulePlaceholder section="sandbox" /></W>} />
         <Route path={ROUTES.ADMIN_CODEX}         element={<W><AdminModulePlaceholder section="codex" /></W>} />

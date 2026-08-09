@@ -109,9 +109,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ─── Static Uploads ──────────────────────────────────────────────────────────
+// ─── Static Uploads ──────────────────────────────────────────────────────────// Static folders
 app.use('/uploads', express.static('uploads'));
 app.use('/preview', express.static(require('path').join(__dirname, 'uploads/workspaces')));
+app.use('/mock-resources-proxy', express.static(require('path').join(__dirname, '../notes(resources)')));
 
 // ─── API Routes ──────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRoutes);
