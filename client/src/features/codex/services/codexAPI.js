@@ -160,4 +160,11 @@ export const syncGitHubRepoAPI = async (workspaceId, payload) => {
   return res.data;
 };
 
+// ─── Code Runner Execution API ───────────────────────────────────────────────
+export const runUniversalCodeAPI = async (payload) => {
+  const res = await apiClient.post('/execute/run', payload);
+  return res.data;
+};
+
+
 

@@ -62,7 +62,8 @@ import {
   inviteWorkspaceMemberAPI,
   createWorkspaceTaskAPI,
   updateWorkspaceTaskAPI,
-  deleteWorkspaceTaskAPI
+  deleteWorkspaceTaskAPI,
+  runUniversalCodeAPI
 } from '../services/codexAPI.js';
 
 export const Workspace = () => {
@@ -620,6 +621,69 @@ export const Workspace = () => {
     toast.success('Saved to server sandbox!');
   };
 
+  const [isRunningCode, setIsRunningCode] = useState(false);
+
+  const handleRunUniversalCode = async () => {
+    if (!activeFile) {
+      toast.error('Please select or create a file to run');
+      return;
+    }
+
+    handleSaveFile();
+    const fileName = activeFile.name || 'main.js';
+    const ext = fileName.split('.').pop().toLowerCase();
+
+    // If Web file, auto reload live preview
+    if (ext === 'html' || ext === 'css') {
+      setPreviewCacheBuster(Date.now());
+      toast.success('Web live preview reloaded!');
+      return;
+    }
+
+    setIsRunningCode(true);
+    setActiveTermId('term-3'); // Switch to Output terminal tab
+    const toastId = toast.loading(`Compiling & executing ${fileName}...`);
+
+    try {
+      const res = await runUniversalCodeAPI({
+        code: activeFile.content || '',
+        language: ext,
+        input: ''
+      });
+
+      if (res.success && res.data) {
+        const { output, error, statusText, executionTime } = res.data;
+        const resultLog = [
+          `=== Running ${fileName} (${ext.toUpperCase()}) ===`,
+          `Status: ${statusText || 'Success'} | Duration: ${executionTime ? executionTime.toFixed(2) + 's' : '0.01s'}`,
+          '----------------------------------------',
+          output ? output : (error ? `ERROR:\n${error}` : '(No stdout output)'),
+          '========================================',
+          ''
+        ].join('\n');
+
+        setTerminalTabs(prev => prev.map(t => {
+          if (t.id === 'term-3') {
+            return { ...t, logs: [...t.logs, resultLog] };
+          }
+          return t;
+        }));
+
+        if (error && !output) {
+          toast.error(`Execution warning: ${error.split('\n')[0]}`, { id: toastId });
+        } else {
+          toast.success(`Executed ${fileName} successfully!`, { id: toastId });
+        }
+      } else {
+        toast.error(res.message || 'Execution failed', { id: toastId });
+      }
+    } catch (err) {
+      toast.error(err?.response?.data?.message || err?.message || 'Error executing code', { id: toastId });
+    } finally {
+      setIsRunningCode(false);
+    }
+  };
+
   // Chat wrappers
   const handleSendMessage = (text) => {
     socket.emit('chat_message', { workspaceId, content: text });
@@ -1082,6 +1146,16 @@ export const Workspace = () => {
                 </div>
 
                 <div className="flex items-center gap-2">
+                  <button 
+                    onClick={handleRunUniversalCode}
+                    disabled={isRunningCode}
+                    title="Run Active File (Python, JS, TS, C, C++, Java, Go, Rust, PHP, Ruby, Bash, etc.)"
+                    className="px-3 py-1 bg-[#04AA6D] hover:bg-emerald-600 active:scale-95 disabled:opacity-50 text-white text-[11px] font-mono font-bold rounded-md transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                  >
+                    {isRunningCode ? <RefreshCw size={12} className="animate-spin" /> : <Play size={12} fill="currentColor" />}
+                    <span>{isRunningCode ? 'Running...' : 'Run Code'}</span>
+                  </button>
+
                   <button 
                     onClick={handleSaveFile}
                     className="px-2.5 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-[#04AA6D] text-[11px] font-mono font-bold rounded-md hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors cursor-pointer flex items-center gap-1 shadow-xs"

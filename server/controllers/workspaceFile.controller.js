@@ -190,6 +190,49 @@ const getWorkspaceFiles = asyncHandler(async (req, res) => {
   return successResponse(res, 200, 'Files fetched successfully', { files });
 });
 
+const getDefaultLanguageTemplate = (fileName) => {
+  if (!fileName) return '';
+  const ext = fileName.split('.').pop().toLowerCase();
+  
+  switch (ext) {
+    case 'py':
+      return `# Python 3 Solution\ndef main():\n    print("Hello from CodeSphere Python Sandbox!")\n\nif __name__ == "__main__":\n    main()\n`;
+    case 'cpp':
+    case 'cc':
+    case 'cxx':
+      return `#include <iostream>\nusing namespace std;\n\nint main() {\n    cout << "Hello from CodeSphere C++ Sandbox!" << endl;\n    return 0;\n}\n`;
+    case 'c':
+      return `#include <stdio.h>\n\nint main() {\n    printf("Hello from CodeSphere C Sandbox!\\n");\n    return 0;\n}\n`;
+    case 'java':
+      return `public class Solution {\n    public static void main(String[] args) {\n        System.out.println("Hello from CodeSphere Java Sandbox!");\n    }\n}\n`;
+    case 'go':
+      return `package main\n\nimport "fmt"\n\nfunc main() {\n    fmt.Println("Hello from CodeSphere Go Sandbox!")\n}\n`;
+    case 'rs':
+      return `fn main() {\n    println!("Hello from CodeSphere Rust Sandbox!");\n}\n`;
+    case 'ts':
+    case 'tsx':
+      return `// TypeScript Sandbox\ninterface Solution {\n  language: string;\n  status: string;\n}\n\nconst app: Solution = { language: "TypeScript", status: "Active" };\nconsole.log(\`Hello from CodeSphere \${app.language} Sandbox!\`);\n`;
+    case 'js':
+    case 'jsx':
+      return `// JavaScript Node.js Script\nconsole.log("Hello from CodeSphere JavaScript Sandbox!");\n`;
+    case 'php':
+      return `<?php\necho "Hello from CodeSphere PHP Sandbox!\\n";\n?>\n`;
+    case 'rb':
+      return `puts "Hello from CodeSphere Ruby Sandbox!"\n`;
+    case 'sh':
+    case 'bash':
+      return `#!/bin/bash\necho "Hello from CodeSphere Shell Sandbox!"\n`;
+    case 'html':
+      return `<!DOCTYPE html>\n<html lang="en">\n<head>\n  <meta charset="UTF-8">\n  <title>Document</title>\n</head>\n<body>\n  <h1>Hello from CodeSphere Web Preview!</h1>\n</body>\n</html>\n`;
+    case 'css':
+      return `/* Custom Workspace CSS */\nbody {\n  font-family: sans-serif;\n}\n`;
+    case 'json':
+      return `{\n  "name": "codesphere-sandbox",\n  "version": "1.0.0"\n}\n`;
+    default:
+      return `// New ${fileName} file in CodeSphere Workspace\n`;
+  }
+};
+
 // POST /api/workspaces/:id/files
 const createFileOrFolder = asyncHandler(async (req, res) => {
   const { id: workspaceId } = req.params;
@@ -206,12 +249,14 @@ const createFileOrFolder = asyncHandler(async (req, res) => {
     throw createError('A file or folder already exists at this path', 409);
   }
 
+  const finalContent = type === 'file' ? (content || getDefaultLanguageTemplate(name)) : '';
+
   const newFile = await WorkspaceFile.create({
     workspaceId,
     name,
     path: filePath,
     type,
-    content: type === 'file' ? content : '',
+    content: finalContent,
     parentId: parentId || null
   });
 
@@ -223,7 +268,7 @@ const createFileOrFolder = asyncHandler(async (req, res) => {
   } else {
     // Ensure parent dir exists physically
     fs.mkdirSync(path.dirname(targetDiskPath), { recursive: true });
-    fs.writeFileSync(targetDiskPath, content, 'utf8');
+    fs.writeFileSync(targetDiskPath, finalContent, 'utf8');
   }
 
   await activityService.log(workspaceId, req.user._id, 'file_created', `File/Folder "${name}" was created`, 'file', newFile._id);

@@ -232,22 +232,80 @@ export const WorkspaceFiles = ({
 
   const tree = buildTree();
 
+  const [showPresetMenu, setShowPresetMenu] = useState(false);
+
+  const presets = [
+    { name: 'main.py', label: 'Python 3 (.py)', icon: '🐍' },
+    { name: 'script.js', label: 'JavaScript (.js)', icon: '⚡' },
+    { name: 'app.ts', label: 'TypeScript (.ts)', icon: '📘' },
+    { name: 'main.cpp', label: 'C++ (.cpp)', icon: '⚙️' },
+    { name: 'main.c', label: 'C (.c)', icon: '⚙️' },
+    { name: 'Solution.java', label: 'Java (.java)', icon: '☕' },
+    { name: 'main.go', label: 'Go (.go)', icon: '🐹' },
+    { name: 'main.rs', label: 'Rust (.rs)', icon: '🦀' },
+    { name: 'page.html', label: 'HTML Web (.html)', icon: '🌐' },
+    { name: 'style.css', label: 'Stylesheet (.css)', icon: '🎨' },
+    { name: 'index.php', label: 'PHP (.php)', icon: '🐘' },
+    { name: 'script.sh', label: 'Shell Script (.sh)', icon: '🐚' }
+  ];
+
+  const handleQuickCreate = (presetName) => {
+    onCreateFile(presetName, presetName);
+    setShowPresetMenu(false);
+    toast.success(`Created ${presetName} file with starter template!`);
+  };
+
   return (
     <div className="flex flex-col h-full bg-transparent text-left select-none overflow-hidden">
       {/* Top action bar */}
-      <div className="pb-3 border-b border-slate-200 dark:border-slate-800/70 flex items-center justify-between">
+      <div className="pb-3 border-b border-slate-200 dark:border-slate-800/70 flex items-center justify-between relative">
         <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 tracking-wider uppercase font-mono flex items-center gap-2">
           <Folder size={14} className="text-[#04AA6D]" />
           Files
         </span>
         <div className="flex items-center gap-1">
-          <button 
-            title="Create File at Root"
-            onClick={() => handleStartCreate('file', '')} 
-            className="p-1 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
-          >
-            <Plus size={14} />
-          </button>
+          {/* Quick Preset Dropdown Trigger */}
+          <div className="relative">
+            <button
+              title="Add Language File Preset"
+              onClick={() => setShowPresetMenu(!showPresetMenu)}
+              className="px-2 py-0.5 bg-[#04AA6D]/10 hover:bg-[#04AA6D]/20 border border-emerald-500/30 text-[#04AA6D] rounded text-[10px] font-mono font-bold flex items-center gap-1 cursor-pointer transition-colors"
+            >
+              <Plus size={11} />
+              <span>New File</span>
+            </button>
+
+            {showPresetMenu && (
+              <div className="absolute right-0 top-7 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl py-1 z-30 font-mono text-[11px] animate-fade-in max-h-60 overflow-y-auto no-scrollbar">
+                <div className="px-3 py-1 text-[9px] font-bold text-slate-400 uppercase tracking-widest border-b border-slate-100 dark:border-slate-800">
+                  Select Language Preset
+                </div>
+                {presets.map((p, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => handleQuickCreate(p.name)}
+                    className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-between text-slate-700 dark:text-slate-200 transition-colors cursor-pointer text-left"
+                  >
+                    <span className="flex items-center gap-1.5">
+                      <span>{p.icon}</span>
+                      <span>{p.name}</span>
+                    </span>
+                    <span className="text-[9px] text-slate-400 font-sans">{p.label.split(' ')[0]}</span>
+                  </button>
+                ))}
+                <div className="border-t border-slate-100 dark:border-slate-800 mt-1 pt-1">
+                  <button
+                    onClick={() => { setShowPresetMenu(false); handleStartCreate('file', ''); }}
+                    className="w-full px-3 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 text-[#04AA6D] font-bold flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus size={12} />
+                    <span>Custom Name...</span>
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
           <label 
             title="Upload File"
             className="p-1 hover:bg-slate-200/60 dark:hover:bg-slate-800 rounded-md text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
