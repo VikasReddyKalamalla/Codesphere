@@ -6,7 +6,7 @@ import {
   Code2, Award, Star, Users,
   ClipboardList, BookOpen, Download, Video, MessageSquare,
   ExternalLink, Camera, Save, X,
-  Zap, Trophy, BookMarked,
+  Zap, Trophy, BookMarked, Flame,
 } from 'lucide-react';
 import { FiGithub as Github, FiLinkedin as Linkedin, FiTwitter as Twitter } from 'react-icons/fi';
 import toast from 'react-hot-toast';
