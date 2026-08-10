@@ -349,6 +349,30 @@ export const ResourceDetails = () => {
                 </div>
               )}
 
+              {/* Image Resource Preview */}
+              {isImage && rawUrl && (
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="flex justify-between items-center px-5 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200">
+                    <span className="flex items-center gap-2 text-[#04AA6D] dark:text-emerald-400 font-bold">
+                      <Eye className="w-4 h-4" />
+                      Image Asset Preview
+                    </span>
+                    <a
+                      href={fullFileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                      View High-Res
+                    </a>
+                  </div>
+                  <div className="w-full rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-slate-900 flex items-center justify-center p-4">
+                    <img src={fullFileUrl} alt={resource.title} className="max-h-[600px] w-auto object-contain rounded-2xl" />
+                  </div>
+                </div>
+              )}
+
               {/* External Web URL Preview (non-PDF, non-video, non-image) */}
               {!isPdf && !isVideo && !isImage && isWebUrl && rawUrl && !rawUrl.includes('example.com') && (
                 <div className="flex flex-col gap-3 w-full">
@@ -441,31 +465,6 @@ export const ResourceDetails = () => {
                     </pre>
                   </div>
                 ) : null}
-
-                {/* Explicit Download Action Box */}
-                <div className="flex flex-col sm:flex-row justify-between items-center gap-4 p-4 rounded-2xl bg-gradient-to-r from-emerald-500/10 via-teal-500/5 to-emerald-500/10 border border-[#04AA6D]/30 mt-2">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2.5 rounded-xl bg-[#04AA6D] text-white">
-                      <FileText className="w-5 h-5" />
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="font-extrabold text-xs text-slate-900 dark:text-white">
-                        {rawUrl ? `Knowledge File (${ext.toUpperCase() || 'DOCUMENT'}) Ready` : 'Complete Knowledge Package'}
-                      </span>
-                      <span className="text-[10px] text-slate-500 dark:text-slate-400">
-                        Preview verified. Click the button to download the full asset to your device.
-                      </span>
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleDownload}
-                    className="px-5 py-2.5 bg-[#04AA6D] hover:bg-emerald-600 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center gap-2 shrink-0 cursor-pointer"
-                  >
-                    <Download className="w-4 h-4" />
-                    Download Asset
-                  </button>
-                </div>
               </div>
             </div>
           )}
