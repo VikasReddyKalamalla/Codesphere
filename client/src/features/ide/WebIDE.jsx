@@ -267,7 +267,24 @@ const WebIDE = () => {
             <span className="text-xs text-gray-400 ml-2">• {activeProject}</span>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              if (!fileContent) return toast.error('No project file active to export');
+              const blob = new Blob([fileContent], { type: 'text/plain;charset=utf-8' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = activeFile?.name || 'codesphere-project.txt';
+              a.click();
+              toast.success('Project file exported successfully!');
+            }}
+            className="flex items-center gap-1.5 px-2.5 py-1 rounded bg-gray-700 hover:bg-gray-600 text-xs font-bold text-gray-200 transition-all cursor-pointer"
+            title="Download Active File/Project"
+          >
+            <Download size={13} className="text-emerald-400" />
+            <span>Export Code</span>
+          </button>
           <GitBranch size={14} className="text-gray-400" />
           <span className="text-xs text-gray-400">{gitStatus}</span>
         </div>

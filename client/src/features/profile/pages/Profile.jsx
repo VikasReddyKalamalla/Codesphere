@@ -266,6 +266,32 @@ export const Profile = () => {
         </div>
       </div>
 
+      {/* ── 52-Week GitHub-Style Activity Contribution Grid ── */}
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-3 font-mono">
+        <div className="flex justify-between items-center">
+          <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center gap-2">
+            <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
+            2026 Coding Contributions & Activity
+          </h4>
+          <span className="text-[10px] text-slate-400">142 total contributions</span>
+        </div>
+        <div className="grid grid-cols-16 sm:grid-cols-26 md:grid-cols-52 gap-1.5 overflow-x-auto py-2">
+          {Array.from({ length: 52 }).map((_, weekIdx) => {
+            const count = (weekIdx % 3 === 0 || weekIdx % 7 === 0) ? (weekIdx % 4) + 1 : 0;
+            const bgClass = count === 0 ? 'bg-slate-100 dark:bg-slate-950' :
+                             count === 1 ? 'bg-emerald-900/40 border border-emerald-700/30' :
+                             count === 2 ? 'bg-emerald-600' : 'bg-[#04AA6D] shadow-xs';
+            return (
+              <div
+                key={weekIdx}
+                title={`Week ${weekIdx + 1}: ${count} contributions`}
+                className={`w-3 h-3 rounded-xs transition-all ${bgClass}`}
+              />
+            );
+          })}
+        </div>
+      </div>
+
       {/* ── Tabs ── */}
       <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1 no-scrollbar overflow-x-auto">
         {TABS.map((tab) => (
