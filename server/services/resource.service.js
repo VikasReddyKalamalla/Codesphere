@@ -91,23 +91,34 @@ const getAllResources = async (query) => {
 
 // ─── GET BY ID (with view count increment) ────────────────────────────────────
 const getResourceById = async (id) => {
+  if (!id) throw createError('Resource ID is required', 400);
+
   if (mongoose.connection.readyState !== 1) {
     const { seedMockResources } = require('./mockResources');
     const mockData = seedMockResources();
-    const resource = mockData.find((r) => r._id === id || r.id === id);
+    const resource = mockData.find((r) => String(r._id) === String(id) || String(r.id) === String(id));
     if (!resource) throw createError('Resource not found', 404);
     return resource;
   }
 
-  const resource = await Resource.findById(id)
-    .populate('category', 'name slug icon')
-    .populate('uploadedBy', 'fullName avatar bio');
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw createError('Invalid resource ID format', 400);
+  }
+
+  let resource;
+  try {
+    resource = await Resource.findById(id)
+      .populate('category', 'name slug icon')
+      .populate('uploadedBy', 'fullName avatar bio');
+  } catch (err) {
+    resource = await Resource.findById(id).populate('uploadedBy', 'fullName avatar bio');
+  }
 
   if (!resource) throw createError('Resource not found', 404);
 
-  // Increment views
-  resource.views += 1;
-  await resource.save();
+  // Increment views safely
+  resource.views = (resource.views || 0) + 1;
+  await resource.save().catch(() => null);
 
   return resource;
 };

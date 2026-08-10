@@ -31,9 +31,15 @@ export const ResourceDetails = () => {
   const rawResource = useSelector(selectSelectedResource);
   const userBookmarks = useSelector(selectUserBookmarks);
 
-  // Normalize target resource object only if it matches current route param `id`
-  const rawUnwrapped = rawResource?.data?.resource || rawResource?.data?.data || (rawResource?._id ? rawResource : rawResource?.data) || rawResource;
-  const resource = (rawUnwrapped && (String(rawUnwrapped._id) === String(id) || String(rawUnwrapped.id) === String(id))) ? rawUnwrapped : null;
+  // Recursively unwrap target resource object
+  const unwrap = (obj) => {
+    if (!obj) return null;
+    if (obj._id || obj.id) return obj;
+    if (obj.resource) return unwrap(obj.resource);
+    if (obj.data) return unwrap(obj.data);
+    return obj;
+  };
+  const resource = unwrap(rawResource);
 
   const [activeTab, setActiveTab] = useState('preview'); // preview, description, discussion
   const [commentText, setCommentText] = useState('');
