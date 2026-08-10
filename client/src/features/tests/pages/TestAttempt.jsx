@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
+import { motion } from 'framer-motion';
 import { QuestionCard } from '../components/QuestionCard.jsx';
 import { Timer } from '../components/Timer.jsx';
 import { TestProgress } from '../components/TestProgress.jsx';
@@ -228,8 +229,12 @@ export const TestAttempt = () => {
     <div className="flex flex-col gap-6 w-full animate-fade-in max-w-xl mx-auto py-8 relative select-none">
       
       {/* Proctoring PIP */}
-      <div className="fixed top-6 right-6 w-48 rounded-2xl overflow-hidden bg-slate-900 border-2 border-emerald-500 shadow-2xl z-50 hidden md:block group">
-        <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 z-10">
+      <motion.div
+        drag
+        dragMomentum={false}
+        className="fixed top-28 right-6 w-44 rounded-2xl overflow-hidden bg-slate-900 border-2 border-emerald-500 shadow-2xl z-50 hidden md:block group cursor-grab active:cursor-grabbing select-none"
+      >
+        <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 z-10 pointer-events-none">
           <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
           <span className="text-[9px] font-bold text-white tracking-widest uppercase">Recording</span>
         </div>
@@ -239,15 +244,15 @@ export const TestAttempt = () => {
             autoPlay 
             playsInline 
             muted 
-            className="w-full aspect-video object-cover scale-x-[-1]" 
+            className="w-full aspect-video object-cover scale-x-[-1] pointer-events-none" 
           />
         ) : (
-          <div className="w-full aspect-video flex flex-col items-center justify-center bg-slate-900 text-slate-500">
+          <div className="w-full aspect-video flex flex-col items-center justify-center bg-slate-900 text-slate-500 pointer-events-none">
             <VideoOff className="w-6 h-6 mb-1" />
             <span className="text-[10px] font-medium">Camera Disabled</span>
           </div>
         )}
-      </div>
+      </motion.div>
 
       <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3 shrink-0">
         <div>
