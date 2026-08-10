@@ -296,8 +296,8 @@ export const ResourceDetails = () => {
           {/* TAB 1: INTERACTIVE PREVIEW CONTAINER */}
           {activeTab === 'preview' && (
             <div className="flex flex-col gap-5">
-              {/* PDF Document Preview (Only for native PDFs) */}
-              {isPdf && rawUrl && (
+              {/* PDF Document Preview (Only for valid PDF URLs that are not example.com placeholders) */}
+              {isPdf && rawUrl && !rawUrl.includes('example.com') && (
                 <div className="flex flex-col gap-3 w-full">
                   <div className="flex justify-between items-center px-5 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200">
                     <span className="flex items-center gap-2 text-[#04AA6D] dark:text-emerald-400 font-bold">
