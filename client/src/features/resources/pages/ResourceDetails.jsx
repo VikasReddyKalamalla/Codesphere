@@ -307,40 +307,66 @@ export const ResourceDetails = () => {
           {activeTab === 'preview' && (
             <div className="flex flex-col gap-5">
               {/* PDF & Live Embedded Document / Web Viewer */}
-              {(isPdf || (isWebUrl && !isVideo && !isImage)) && rawUrl && !rawUrl.includes('example.com') && (
-                <div className="flex flex-col gap-3 w-full">
-                  <div className="flex justify-between items-center px-5 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200">
-                    <span className="flex items-center gap-2 text-[#04AA6D] dark:text-emerald-400 font-bold">
-                      <FileText className="w-4 h-4" />
-                      Live Embedded {isPdf ? 'PDF' : 'Knowledge'} Viewer
-                    </span>
-                    <div className="flex items-center gap-2">
-                      <a
-                        href={fullFileUrl}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                        Open Full Page
-                      </a>
-                      {isPdf && (
-                        <button
-                          onClick={handleDownload}
-                          className="px-3 py-1.5 bg-[#04AA6D] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+              {isPdf && rawUrl && !rawUrl.includes('example.com') && (() => {
+                // For remote PDFs, use Google Docs Viewer to avoid Content-Disposition:attachment auto-downloads
+                const isRemotePdf = fullFileUrl.startsWith('http');
+                const viewerSrc = isRemotePdf
+                  ? `https://docs.google.com/gview?url=${encodeURIComponent(fullFileUrl)}&embedded=true`
+                  : fullFileUrl;
+
+                return (
+                  <div className="flex flex-col gap-3 w-full">
+                    <div className="flex justify-between items-center px-5 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200">
+                      <span className="flex items-center gap-2 text-[#04AA6D] dark:text-emerald-400 font-bold">
+                        <FileText className="w-4 h-4" />
+                        Live Embedded PDF Viewer
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <a
+                          href={fullFileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
                         >
-                          <Download className="w-3.5 h-3.5" />
-                          Download PDF
-                        </button>
-                      )}
+                          <ExternalLink className="w-3.5 h-3.5" />
+                          Open Full Page
+                        </a>
+                      </div>
+                    </div>
+                    <div className="w-full h-[550px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-slate-900">
+                      <iframe
+                        src={viewerSrc}
+                        title="Live PDF Viewer"
+                        className="w-full h-full border-0"
+                        sandbox="allow-scripts allow-same-origin allow-popups"
+                      />
                     </div>
                   </div>
-                  <div className="w-full h-[550px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-slate-900">
-                    <iframe
-                      src={fullFileUrl}
-                      title="Live Document Viewer"
-                      className="w-full h-full border-0"
-                    />
+                );
+              })()}
+
+              {/* External Web URL Preview (non-PDF, non-video, non-image) */}
+              {!isPdf && !isVideo && !isImage && isWebUrl && rawUrl && !rawUrl.includes('example.com') && (
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="p-6 rounded-3xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex flex-col gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-2xl bg-[#04AA6D]/10 border border-[#04AA6D]/30 flex items-center justify-center">
+                        <ExternalLink className="w-6 h-6 text-[#04AA6D]" />
+                      </div>
+                      <div>
+                        <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">External Resource Link</h3>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono truncate max-w-md">{rawUrl}</p>
+                      </div>
+                    </div>
+                    <a
+                      href={fullFileUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#04AA6D] hover:bg-emerald-600 text-white font-extrabold text-xs uppercase tracking-wider shadow-lg shadow-emerald-500/20 transition-all w-fit cursor-pointer"
+                    >
+                      <ExternalLink className="w-4 h-4" />
+                      Open Resource in New Tab
+                    </a>
                   </div>
                 </div>
               )}

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import apiClient from '@services/axios.js';
 import toast from 'react-hot-toast';
-import { BookOpen, Plus, Trash2, Video, Youtube, ExternalLink } from 'lucide-react';
+import { BookOpen, Plus, Trash2, Video, ExternalLink } from 'lucide-react';
 import { BackButton } from '@components/common/BackButton.jsx';
 import CreateResourceModal from '@features/resources/components/CreateResourceModal.jsx';
 
@@ -109,7 +109,7 @@ export const AdminResources = () => {
                     rel="noreferrer"
                     className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline pt-2 border-t border-slate-100 dark:border-slate-800"
                   >
-                    <Youtube className="w-4 h-4 text-rose-500" />
+                    <Video className="w-4 h-4 text-rose-500" />
                     <span>Watch Resource Video</span>
                     <ExternalLink className="w-3 h-3 ml-auto" />
                   </a>

@@ -1,16 +1,7 @@
 import { createSelector } from '@reduxjs/toolkit';
 
 export const selectResourcesState = (state) => state.resources;
-export const selectResourceItems = (state) => {
-  const raw = state.resources?.items || [];
-  const seen = new Set();
-  return raw.filter((item) => {
-    const id = String(item._id || item.id || item.title);
-    if (!id || seen.has(id)) return false;
-    seen.add(id);
-    return true;
-  });
-};
+export const selectResourceItems = (state) => state.resources?.items || [];
 export const selectFeaturedResources = (state) => state.resources?.featuredItems || [];
 export const selectTrendingResources = (state) => state.resources?.trendingItems || [];
 export const selectRecommendedResources = (state) => state.resources?.recommendedItems || [];
