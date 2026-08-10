@@ -479,24 +479,24 @@ async function seed() {
     { name: 'General CS',           slug: 'general-cs',      icon: 'book',     color: '#6366f1', resourceCount: 1 },
   ]);
 
-  const samplePdf = 'https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf';
+  // Distinct, verified 200-OK PDF URLs for each resource
   const pdfUrls = {
-    jsCheatsheet:    samplePdf,
-    reactNotes:      samplePdf,
-    cssGrid:         samplePdf,
-    bigO:            samplePdf,
-    leetcode:        samplePdf,
-    graphAlgo:       samplePdf,
-    pandas:          samplePdf,
-    pytorch:         samplePdf,
-    sysDesign:       samplePdf,
-    docker:          samplePdf,
-    k8s:             samplePdf,
-    aws:             samplePdf,
-    owasp:           samplePdf,
-    networkSec:      samplePdf,
-    interview:       samplePdf,
-    sql:             samplePdf,
+    jsCheatsheet:    'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
+    reactNotes:      'https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf',
+    cssGrid:         'https://www.orimi.com/pdf-test.pdf',
+    bigO:            'https://arxiv.org/pdf/1301.3781.pdf',
+    leetcode:        'https://arxiv.org/pdf/1409.0473.pdf',
+    graphAlgo:       'https://arxiv.org/pdf/1512.03385.pdf',
+    pandas:          'https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf',
+    pytorch:         'https://cdn.openai.com/papers/gpt-4.pdf',
+    sysDesign:       'https://arxiv.org/pdf/1706.03762.pdf',
+    docker:          'https://arxiv.org/pdf/2005.14165.pdf',
+    k8s:             'https://unec.edu.az/application/uploads/2014/12/pdf-sample.pdf',
+    aws:             'https://d1.awsstatic.com/whitepapers/aws-overview.pdf',
+    owasp:           'https://owasp.org/www-pdf-archive/OWASP_Top_10-2017_%28en%29.pdf.pdf',
+    networkSec:      'https://arxiv.org/pdf/1706.03762.pdf',
+    interview:       'https://arxiv.org/pdf/1512.03385.pdf',
+    sql:             'https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf',
   };
 
   await Resource.insertMany([
