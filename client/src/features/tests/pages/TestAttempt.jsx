@@ -228,7 +228,7 @@ export const TestAttempt = () => {
     <div className="flex flex-col gap-6 w-full animate-fade-in max-w-xl mx-auto py-8 relative select-none">
       
       {/* Proctoring PIP */}
-      <div className="fixed bottom-6 right-6 w-48 rounded-2xl overflow-hidden bg-slate-900 border-2 border-emerald-500 shadow-2xl z-40 hidden md:block group">
+      <div className="fixed top-6 right-6 w-48 rounded-2xl overflow-hidden bg-slate-900 border-2 border-emerald-500 shadow-2xl z-50 hidden md:block group">
         <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/10 z-10">
           <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
           <span className="text-[9px] font-bold text-white tracking-widest uppercase">Recording</span>
