@@ -158,12 +158,12 @@ export const ResourceCard = ({
         <button
           onClick={(e) => {
             e.stopPropagation();
-            onDownload && onDownload(resource);
+            onSelect && onSelect(resource);
           }}
           className="px-3 py-1.5 rounded-xl font-bold text-xs bg-[#04AA6D] hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
         >
-          <Download className="w-3.5 h-3.5" />
-          Download
+          <Eye className="w-3.5 h-3.5" />
+          View Resource
         </button>
       </div>
     </motion.div>

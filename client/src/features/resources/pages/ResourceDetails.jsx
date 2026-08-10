@@ -190,11 +190,13 @@ export const ResourceDetails = () => {
     ? rawUrl
     : `http://localhost:5000${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
 
-  const ext = rawUrl.toLowerCase().split('.').pop()?.split('?')[0] || '';
-  const isPdf = ext === 'pdf';
-  const isVideo = resource.resourceType === 'video' || ['mp4', 'webm', 'ogg'].includes(ext) || rawUrl.includes('youtube.com') || rawUrl.includes('youtu.be');
+  const lowerUrl = rawUrl.toLowerCase();
+  const ext = lowerUrl.split('.').pop()?.split('?')[0] || '';
+  const isPdf = resource.resourceType === 'pdf' || ext === 'pdf' || lowerUrl.includes('.pdf') || lowerUrl.includes('/pdf');
+  const isVideo = resource.resourceType === 'video' || ['mp4', 'webm', 'ogg'].includes(ext) || lowerUrl.includes('youtube.com') || lowerUrl.includes('youtu.be');
   const isImage = ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp'].includes(ext);
   const isCode = resource.codeContent || resource.resourceType === 'source_code' || ['js', 'py', 'java', 'cpp', 'c', 'html', 'css', 'json'].includes(ext);
+  const isWebUrl = lowerUrl.startsWith('http://') || lowerUrl.startsWith('https://');
 
   const commentsCount = (resource.comments && resource.comments.length) || 0;
 
@@ -304,13 +306,13 @@ export const ResourceDetails = () => {
           {/* TAB 1: INTERACTIVE PREVIEW CONTAINER */}
           {activeTab === 'preview' && (
             <div className="flex flex-col gap-5">
-              {/* PDF Document Preview (Only for valid PDF URLs that are not example.com placeholders) */}
-              {isPdf && rawUrl && !rawUrl.includes('example.com') && (
+              {/* PDF & Live Embedded Document / Web Viewer */}
+              {(isPdf || (isWebUrl && !isVideo && !isImage)) && rawUrl && !rawUrl.includes('example.com') && (
                 <div className="flex flex-col gap-3 w-full">
                   <div className="flex justify-between items-center px-5 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200">
                     <span className="flex items-center gap-2 text-[#04AA6D] dark:text-emerald-400 font-bold">
                       <FileText className="w-4 h-4" />
-                      Live Embedded PDF Viewer
+                      Live Embedded {isPdf ? 'PDF' : 'Knowledge'} Viewer
                     </span>
                     <div className="flex items-center gap-2">
                       <a
@@ -320,21 +322,23 @@ export const ResourceDetails = () => {
                         className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
                       >
                         <ExternalLink className="w-3.5 h-3.5" />
-                        Full Window
+                        Open Full Page
                       </a>
-                      <button
-                        onClick={handleDownload}
-                        className="px-3 py-1.5 bg-[#04AA6D] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
-                      >
-                        <Download className="w-3.5 h-3.5" />
-                        Download PDF Asset
-                      </button>
+                      {isPdf && (
+                        <button
+                          onClick={handleDownload}
+                          className="px-3 py-1.5 bg-[#04AA6D] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs"
+                        >
+                          <Download className="w-3.5 h-3.5" />
+                          Download PDF
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div className="w-full h-[550px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-slate-900">
                     <iframe
                       src={fullFileUrl}
-                      title="Live PDF Viewer"
+                      title="Live Document Viewer"
                       className="w-full h-full border-0"
                     />
                   </div>
