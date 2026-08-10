@@ -423,49 +423,27 @@ export const ResourceDetails = () => {
                 </div>
               )}
 
-              {/* Live Interactive Document Reader & Preview Card */}
-              <div className="p-6 md:p-8 rounded-3xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 shadow-sm flex flex-col gap-5">
-                <div className="flex justify-between items-center pb-3 border-b border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-500">
-                  <span className="text-[#04AA6D] font-bold uppercase tracking-wider flex items-center gap-2">
-                    <BookOpen className="w-4 h-4" />
-                    Interactive Resource Reader & Overview
-                  </span>
-                  <span className="bg-[#04AA6D]/10 text-[#04AA6D] px-3 py-1 rounded-full font-extrabold uppercase text-[10px]">
-                    {resource.category || 'Documentation'}
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-2">
-                  <h2 className="text-xl font-extrabold text-slate-900 dark:text-white leading-tight">
-                    {resource.title}
-                  </h2>
-                  <p className="text-xs md:text-sm text-slate-600 dark:text-slate-300 leading-relaxed font-sans">
-                    {resource.description}
-                  </p>
-                </div>
-
-                {/* Code / Markdown Content Snippet Container */}
-                {resource.markdownContent || resource.codeContent ? (
-                  <div className="rounded-2xl border border-slate-800 bg-slate-950 overflow-hidden shadow-xl mt-1">
-                    <div className="flex justify-between items-center px-4 py-2.5 bg-slate-900 border-b border-slate-800 font-mono text-xs text-slate-300">
-                      <span className="flex items-center gap-2 text-emerald-400 font-bold">
-                        <Code className="w-4 h-4" />
-                        Source Code & Reference Snippets
-                      </span>
-                      <button
-                        onClick={() => handleCopyCode(resource.markdownContent || resource.codeContent)}
-                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg flex items-center gap-1.5 cursor-pointer text-[11px]"
-                      >
-                        <Copy className="w-3.5 h-3.5" />
-                        Copy
-                      </button>
-                    </div>
-                    <pre className="p-4 text-xs text-emerald-300 font-mono overflow-x-auto leading-relaxed select-text max-h-[350px]">
-                      {resource.markdownContent || resource.codeContent}
-                    </pre>
+              {/* Code / Markdown Content Snippet Container */}
+              {(resource.markdownContent || resource.codeContent) ? (
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-slate-950 overflow-hidden shadow-xl">
+                  <div className="flex justify-between items-center px-5 py-3 bg-slate-900 border-b border-slate-800 font-mono text-xs text-slate-300">
+                    <span className="flex items-center gap-2 text-emerald-400 font-bold">
+                      <Code className="w-4 h-4" />
+                      Source Code & Reference Snippets
+                    </span>
+                    <button
+                      onClick={() => handleCopyCode(resource.markdownContent || resource.codeContent)}
+                      className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg flex items-center gap-1.5 cursor-pointer text-xs font-mono transition-all"
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                      Copy Code
+                    </button>
                   </div>
-                ) : null}
-              </div>
+                  <pre className="p-5 text-xs text-emerald-300 font-mono overflow-x-auto leading-relaxed select-text max-h-[450px]">
+                    {resource.markdownContent || resource.codeContent}
+                  </pre>
+                </div>
+              ) : null}
             </div>
           )}
 
