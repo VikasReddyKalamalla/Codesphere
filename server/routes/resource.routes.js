@@ -14,6 +14,7 @@ const {
   addComment,
   trackDownload: trackResourceDownload,
   getAnalyticsSummary,
+  proxyPdf,
 } = require('../controllers/resource.controller');
 const {
   addBookmark,
@@ -30,6 +31,7 @@ const { restrictTo }     = require('../middlewares/role.middleware');
 const { uploadResource } = require('../middlewares/upload.middleware');
 
 // ─── Special & Public Routes ──────────────────────────────────────────────────
+router.get('/proxy-pdf',   proxyPdf);
 router.get('/',            optionalAuth, getAllResources);
 router.get('/featured',    optionalAuth, getFeaturedResources);
 router.get('/trending',    optionalAuth, getTrendingResources);

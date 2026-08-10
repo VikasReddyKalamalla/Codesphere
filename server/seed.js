@@ -479,24 +479,24 @@ async function seed() {
     { name: 'General CS',           slug: 'general-cs',      icon: 'book',     color: '#6366f1', resourceCount: 1 },
   ]);
 
-  // Each resource uses a unique, topic-relevant public PDF so the preview matches the title
+  const samplePdf = 'https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf';
   const pdfUrls = {
-    jsCheatsheet:    'https://exploringjs.com/impatient-js/downloads/impatient-js-preview-book.pdf',
-    reactNotes:      'https://raw.githubusercontent.com/nicedoc/react-pdf/master/assets/sample.pdf',
-    cssGrid:         'https://cssauthor.com/wp-content/uploads/2019/08/CSS-Grid-Layout-Cheat-Sheet.pdf',
-    bigO:            'https://raw.githubusercontent.com/cooervo/Algorithms-DataStructures-BigONotation/master/BigONotation.pdf',
-    leetcode:        'https://raw.githubusercontent.com/hxu296/leetcode-company-wise-problems/main/README.pdf',
-    graphAlgo:       'https://jeffe.cs.illinois.edu/teaching/algorithms/book/05-graphs.pdf',
-    pandas:          'https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf',
-    pytorch:         'https://pytorch.org/assets/deep-learning/Deep-Learning-with-PyTorch.pdf',
-    sysDesign:       'https://raw.githubusercontent.com/donnemartin/system-design-primer/master/README-en.pdf',
-    docker:          'https://raw.githubusercontent.com/wsargent/docker-cheat-sheet/master/docker-cheat-sheet.pdf',
-    k8s:             'https://raw.githubusercontent.com/dennyzhang/cheatsheet-kubernetes-A4/master/cheatsheet-kubernetes-A4.pdf',
-    aws:             'https://d1.awsstatic.com/whitepapers/aws-overview.pdf',
-    owasp:           'https://owasp.org/www-pdf-archive/OWASP_Top_10-2017_%28en%29.pdf.pdf',
-    networkSec:      'https://nvlpubs.nist.gov/nistpubs/Legacy/SP/nistspecialpublication800-12r1.pdf',
-    interview:       'https://raw.githubusercontent.com/yangshun/tech-interview-handbook/main/assets/tech-interview-handbook.pdf',
-    sql:             'https://cstack.github.io/db_tutorial/assets/arch2.pdf',
+    jsCheatsheet:    samplePdf,
+    reactNotes:      samplePdf,
+    cssGrid:         samplePdf,
+    bigO:            samplePdf,
+    leetcode:        samplePdf,
+    graphAlgo:       samplePdf,
+    pandas:          samplePdf,
+    pytorch:         samplePdf,
+    sysDesign:       samplePdf,
+    docker:          samplePdf,
+    k8s:             samplePdf,
+    aws:             samplePdf,
+    owasp:           samplePdf,
+    networkSec:      samplePdf,
+    interview:       samplePdf,
+    sql:             samplePdf,
   };
 
   await Resource.insertMany([

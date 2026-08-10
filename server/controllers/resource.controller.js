@@ -86,6 +86,41 @@ const getAnalyticsSummary = asyncHandler(async (req, res) => {
   return successResponse(res, 200, 'Analytics summary fetched successfully', data);
 });
 
+// GET /api/resources/proxy-pdf?url=...
+const proxyPdf = asyncHandler(async (req, res) => {
+  const targetUrl = req.query.url;
+  if (!targetUrl) {
+    return res.status(400).send('URL query parameter is required');
+  }
+
+  try {
+    const axios = require('axios');
+    const response = await axios.get(targetUrl, {
+      responseType: 'arraybuffer',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/pdf,application/octet-stream,*/*',
+      },
+      timeout: 12000,
+    });
+
+    if (response.status !== 200) {
+      return res.status(404).send('PDF Resource not found');
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', 'inline; filename="document.pdf"');
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.removeHeader('X-Frame-Options');
+    res.removeHeader('Content-Security-Policy');
+
+    return res.send(Buffer.from(response.data));
+  } catch (err) {
+    console.error('[PDF Proxy Error]:', err.message);
+    return res.status(404).send('Unable to render PDF preview inline');
+  }
+});
+
 module.exports = {
   getAllResources,
   getResourceById,
@@ -100,4 +135,5 @@ module.exports = {
   addComment,
   trackDownload,
   getAnalyticsSummary,
+  proxyPdf,
 };
