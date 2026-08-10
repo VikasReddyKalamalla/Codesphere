@@ -93,10 +93,13 @@ const seedRoadmapsOnly = async () => {
   }
 };
 
+let isSeeding = false;
+
 /**
  * Auto-seed database if core collections are empty or missing roadmaps.
  */
 const autoSeedIfEmpty = async () => {
+  if (isSeeding) return;
   try {
     if (!mongoose.connection || mongoose.connection.readyState !== 1) {
       console.log('[AutoSeed] MongoDB not connected, skipping seed.');
@@ -108,10 +111,12 @@ const autoSeedIfEmpty = async () => {
     const commCount = await Community.countDocuments().catch(() => 0);
 
     if (pathCount === 0 || sandboxCount === 0 || commCount === 0) {
+      isSeeding = true;
       console.log('[AutoSeed] Database missing core content. Running automatic database seed...');
       await seed();
       console.log('[AutoSeed] Automatic database seeding complete! ✅');
     } else if (pathCount < 80) {
+      isSeeding = true;
       console.log(`[AutoSeed] Database contains ${pathCount} learning paths. Syncing 83 native roadmaps...`);
       await seedRoadmapsOnly();
     } else {
@@ -119,6 +124,8 @@ const autoSeedIfEmpty = async () => {
     }
   } catch (err) {
     console.error('[AutoSeed] Error during auto-seeding:', err.message);
+  } finally {
+    isSeeding = false;
   }
 };
 
