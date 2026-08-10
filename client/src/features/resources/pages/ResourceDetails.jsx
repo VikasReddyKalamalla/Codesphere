@@ -306,44 +306,48 @@ export const ResourceDetails = () => {
           {/* TAB 1: INTERACTIVE PREVIEW CONTAINER */}
           {activeTab === 'preview' && (
             <div className="flex flex-col gap-5">
-              {/* PDF & Live Embedded Document / Web Viewer */}
-              {isPdf && rawUrl && !rawUrl.includes('example.com') && (() => {
-                // For remote PDFs, use Google Docs Viewer to avoid Content-Disposition:attachment auto-downloads
-                const isRemotePdf = fullFileUrl.startsWith('http');
-                const viewerSrc = isRemotePdf
-                  ? `https://docs.google.com/gview?url=${encodeURIComponent(fullFileUrl)}&embedded=true`
-                  : fullFileUrl;
-
-                return (
-                  <div className="flex flex-col gap-3 w-full">
-                    <div className="flex justify-between items-center px-5 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200">
-                      <span className="flex items-center gap-2 text-[#04AA6D] dark:text-emerald-400 font-bold">
-                        <FileText className="w-4 h-4" />
-                        Live Embedded PDF Viewer
-                      </span>
-                      <div className="flex items-center gap-2">
-                        <a
-                          href={fullFileUrl}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <ExternalLink className="w-3.5 h-3.5" />
-                          Open Full Page
-                        </a>
-                      </div>
-                    </div>
-                    <div className="w-full h-[550px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-slate-900">
-                      <iframe
-                        src={viewerSrc}
-                        title="Live PDF Viewer"
-                        className="w-full h-full border-0"
-                        sandbox="allow-scripts allow-same-origin allow-popups"
-                      />
+              {/* PDF & Live Embedded Document Viewer */}
+              {isPdf && rawUrl && !rawUrl.includes('example.com') && (
+                <div className="flex flex-col gap-3 w-full">
+                  <div className="flex flex-wrap justify-between items-center px-5 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200 gap-3">
+                    <span className="flex items-center gap-2 text-[#04AA6D] dark:text-emerald-400 font-bold">
+                      <FileText className="w-4 h-4" />
+                      Live PDF Viewer
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <a
+                        href={fullFileUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-3 py-1.5 bg-slate-200 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer transition-all"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5" />
+                        Open PDF in New Tab
+                      </a>
+                      <button
+                        onClick={handleDownload}
+                        className="px-3 py-1.5 bg-[#04AA6D] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        Download
+                      </button>
                     </div>
                   </div>
-                );
-              })()}
+                  <div className="w-full h-[600px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-slate-900 relative">
+                    <object
+                      data={fullFileUrl}
+                      type="application/pdf"
+                      className="w-full h-full"
+                    >
+                      <iframe
+                        src={fullFileUrl}
+                        title="Live PDF Viewer"
+                        className="w-full h-full border-0"
+                      />
+                    </object>
+                  </div>
+                </div>
+              )}
 
               {/* External Web URL Preview (non-PDF, non-video, non-image) */}
               {!isPdf && !isVideo && !isImage && isWebUrl && rawUrl && !rawUrl.includes('example.com') && (
