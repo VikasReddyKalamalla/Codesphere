@@ -123,6 +123,25 @@ const getResourceById = async (id) => {
   return resource;
 };
 
+const path = require('path');
+
+const getFileUrl = (file) => {
+  if (!file) return '';
+  if (file.path && (file.path.startsWith('http://') || file.path.startsWith('https://'))) {
+    return file.path;
+  }
+  if (file.filename) {
+    const folder = file.destination ? path.basename(file.destination) : 'resource';
+    return `/uploads/${folder}/${file.filename}`;
+  }
+  if (file.path) {
+    const normalized = file.path.replace(/\\/g, '/');
+    const idx = normalized.indexOf('/uploads/');
+    return idx !== -1 ? normalized.slice(idx) : `/${normalized}`;
+  }
+  return '';
+};
+
 // ─── CREATE ───────────────────────────────────────────────────────────────────
 const createResource = async (body, file, userId) => {
   const { title, category, resourceType, type, url, content } = body;
@@ -145,7 +164,7 @@ const createResource = async (body, file, userId) => {
   };
 
   if (file) {
-    data.fileUrl = file.path;
+    data.fileUrl = getFileUrl(file);
   }
 
   return Resource.create(data);
@@ -176,7 +195,7 @@ const updateResource = async (id, body, file, userId, userRole) => {
     if (!body.markdownContent) updateData.markdownContent = body.content;
   }
   if (file) {
-    updateData.fileUrl = file.path;
+    updateData.fileUrl = getFileUrl(file);
   }
 
   return Resource.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
