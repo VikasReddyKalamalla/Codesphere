@@ -111,26 +111,35 @@ export const Resources = () => {
       return;
     }
 
-    const loader = toast.loading(`Downloading ${res.title}...`);
     try {
       await apiClient.post(`/resources/${res._id || res.id}/download`);
       dispatch(fetchResourcesThunk());
     } catch (err) {
-      // Continue download even if analytics call fails
+      // Analytics tracking fallback
     }
 
     const fullUrl = targetUrl.startsWith('http') || targetUrl.startsWith('data:')
       ? targetUrl
       : `http://localhost:5000${targetUrl.startsWith('/') ? '' : '/'}${targetUrl}`;
 
+    const lower = fullUrl.toLowerCase();
+    const isDirectFile = lower.endsWith('.pdf') || lower.endsWith('.zip') || lower.endsWith('.docx') || lower.endsWith('.doc') || lower.endsWith('.png') || lower.endsWith('.jpg');
+
+    if (!isDirectFile && (lower.startsWith('http://') || lower.startsWith('https://'))) {
+      window.open(fullUrl, '_blank', 'noopener,noreferrer');
+      toast.success(`Opened ${res.title} in new tab`);
+      return;
+    }
+
+    const loader = toast.loading(`Downloading ${res.title}...`);
     try {
       const response = await fetch(fullUrl);
       if (!response.ok) throw new Error('File download failed');
       const blob = await response.blob();
       const blobUrl = window.URL.createObjectURL(blob);
 
-      const extName = targetUrl.split('.').pop()?.split('?')[0] || '';
-      const filename = targetUrl.split('/').pop() || `${res.title}.${extName || 'file'}`;
+      const extName = targetUrl.split('.').pop()?.split('?')[0] || 'pdf';
+      const filename = targetUrl.split('/').pop() || `${res.title}.${extName}`;
 
       const link = document.createElement('a');
       link.href = blobUrl;
@@ -142,15 +151,8 @@ export const Resources = () => {
 
       toast.success(`Successfully downloaded ${res.title}!`, { id: loader });
     } catch (err) {
-      const link = document.createElement('a');
-      link.href = fullUrl;
-      link.target = '_blank';
-      link.download = res.title || 'resource-file';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-
-      toast.success(`Download started for ${res.title}!`, { id: loader });
+      window.open(fullUrl, '_blank', 'noopener,noreferrer');
+      toast.success(`Opened ${res.title}`, { id: loader });
     }
   };
 
