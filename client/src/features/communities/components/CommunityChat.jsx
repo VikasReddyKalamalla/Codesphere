@@ -31,42 +31,78 @@ export const CommunityChat = ({ communityId }) => {
     sendTyping();
   };
 
+  const [chatEngine, setChatEngine] = useState('native'); // 'native' or 'rocketchat'
+
   return (
     <div className="bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-2xl flex flex-col h-[500px] overflow-hidden shadow-sm dark:shadow-2xl text-left select-none">
       
       {/* Header */}
       <div className="px-5 py-3 border-b border-slate-150 dark:border-slate-850 flex items-center justify-between bg-slate-50 dark:bg-slate-950/20">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <MessageSquare className="w-4 h-4 text-indigo-650 dark:text-indigo-400" />
-          <span className="text-xs font-black text-slate-800 dark:text-slate-100 uppercase tracking-wider font-mono">Community Lobby Chat</span>
+          <div className="flex bg-slate-200/60 dark:bg-slate-800 p-0.5 rounded-lg text-[10px] font-bold font-mono">
+            <button
+              onClick={() => setChatEngine('native')}
+              className={`px-2.5 py-1 rounded-md transition-all ${chatEngine === 'native' ? 'bg-indigo-600 text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
+            >
+              Lobby Chat
+            </button>
+            <button
+              onClick={() => setChatEngine('rocketchat')}
+              className={`px-2.5 py-1 rounded-md transition-all ${chatEngine === 'rocketchat' ? 'bg-[#04AA6D] text-white shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
+            >
+              Rocket.Chat (Docker)
+            </button>
+          </div>
         </div>
         
         <div className="flex items-center gap-4">
-          {/* Online count */}
-          <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
-            <Users size={11} className="text-slate-400 dark:text-slate-500" />
-            <span>{onlineUsers.length} Online</span>
-          </div>
+          {chatEngine === 'native' && (
+            <>
+              {/* Online count */}
+              <div className="flex items-center gap-1.5 text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                <Users size={11} className="text-slate-400 dark:text-slate-500" />
+                <span>{onlineUsers.length} Online</span>
+              </div>
 
-          {/* Connection status */}
-          <div className="flex items-center gap-1">
-            {isConnected ? (
-              <>
-                <Wifi size={11} className="text-emerald-600 dark:text-emerald-500" />
-                <span className="text-[9px] text-emerald-600 dark:text-emerald-500 font-mono font-bold uppercase">Connected</span>
-              </>
-            ) : (
-              <>
-                <WifiOff size={11} className="text-red-500" />
-                <span className="text-[9px] text-red-500 font-mono font-bold uppercase">Reconnecting</span>
-              </>
-            )}
-          </div>
+              {/* Connection status */}
+              <div className="flex items-center gap-1">
+                {isConnected ? (
+                  <>
+                    <Wifi size={11} className="text-emerald-600 dark:text-emerald-500" />
+                    <span className="text-[9px] text-emerald-600 dark:text-emerald-500 font-mono font-bold uppercase">Connected</span>
+                  </>
+                ) : (
+                  <>
+                    <WifiOff size={11} className="text-red-500" />
+                    <span className="text-[9px] text-red-500 font-mono font-bold uppercase">Reconnecting</span>
+                  </>
+                )}
+              </div>
+            </>
+          )}
+
+          {chatEngine === 'rocketchat' && (
+            <a
+              href="http://localhost:3000"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[10px] font-bold text-[#04AA6D] hover:underline font-mono"
+            >
+              Open Fullscreen ↗
+            </a>
+          )}
         </div>
       </div>
 
-      {/* Main chat layout */}
-      <div className="flex-1 flex overflow-hidden">
+      {chatEngine === 'rocketchat' ? (
+        <iframe
+          src="http://localhost:3000"
+          title="Rocket.Chat Engine"
+          className="w-full h-full border-none bg-slate-950"
+        />
+      ) : (
+        <>
         
         {/* Messages list */}
         <div className="flex-1 flex flex-col justify-end bg-slate-50/30 dark:bg-slate-950/10 p-4 overflow-y-auto no-scrollbar select-text min-w-0">
@@ -130,24 +166,24 @@ export const CommunityChat = ({ communityId }) => {
           </div>
         </div>
 
-      </div>
-
-      {/* Input form */}
-      <form onSubmit={handleSend} className="p-3 border-t border-slate-150 dark:border-slate-900 bg-slate-50 dark:bg-slate-950/40 flex gap-2">
-        <input 
-          type="text" 
-          placeholder="Send a chat message..." 
-          value={text} 
-          onChange={handleInputChange} 
-          className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 text-xs px-3.5 py-2 rounded-xl outline-none text-slate-805 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-indigo-500"
-        />
-        <button 
-          type="submit" 
-          className="bg-indigo-650 hover:bg-indigo-600 text-white p-2.5 rounded-xl transition-colors cursor-pointer shrink-0"
-        >
-          <Send size={13} />
-        </button>
-      </form>
+        {/* Input form */}
+        <form onSubmit={handleSend} className="p-3 border-t border-slate-150 dark:border-slate-900 bg-slate-50 dark:bg-slate-950/40 flex gap-2">
+          <input 
+            type="text" 
+            placeholder="Send a chat message..." 
+            value={text} 
+            onChange={handleInputChange} 
+            className="flex-1 bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 text-xs px-3.5 py-2 rounded-xl outline-none text-slate-805 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-600 focus:border-indigo-500"
+          />
+          <button 
+            type="submit" 
+            className="bg-indigo-650 hover:bg-indigo-600 text-white p-2.5 rounded-xl transition-colors cursor-pointer shrink-0"
+          >
+            <Send size={13} />
+          </button>
+        </form>
+      </>
+      )}
     </div>
   );
 };

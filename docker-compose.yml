@@ -120,6 +120,44 @@ services:
     profiles:
       - production  # Only start with: docker-compose --profile production up
 
+  # Rocket.Chat Engine
+  rocketchat:
+    image: registry.rocket.chat/rocketchat/rocket.chat:latest
+    container_name: codesphere-rocketchat
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - ROOT_URL=${ROCKETCHAT_URL:-http://localhost:3000}
+      - PORT=3000
+      - MONGO_URL=mongodb://rocketchat-db:27017/rocketchat?replicaSet=rs0
+      - MONGO_OPLOG_URL=mongodb://rocketchat-db:27017/local?replicaSet=rs0
+    depends_on:
+      rocketchat-db:
+        condition: service_healthy
+    networks:
+      - codesphere-network
+
+  # MongoDB Replica Set Primary for Rocket.Chat
+  rocketchat-db:
+    image: docker.io/bitnami/mongodb:6.0
+    container_name: codesphere-rocketchat-db
+    restart: unless-stopped
+    volumes:
+      - rocketchat_mongodb_data:/bitnami/mongodb
+    environment:
+      - MONGODB_REPLICA_SET_MODE=primary
+      - MONGODB_REPLICA_SET_NAME=rs0
+      - MONGODB_PORT_NUMBER=27017
+      - ALLOW_EMPTY_PASSWORD=yes
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "rs.status().ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - codesphere-network
+
 volumes:
   mongodb_data:
     driver: local
@@ -128,6 +166,8 @@ volumes:
   redis_data:
     driver: local
   server_uploads:
+    driver: local
+  rocketchat_mongodb_data:
     driver: local
 
 networks:
