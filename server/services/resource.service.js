@@ -49,15 +49,6 @@ const getAllResources = async (query) => {
       totalPages: 1,
       resources: mockData
     };
-  }
-
-  // Ensure DB resources are seeded if collection is empty
-  const totalInDb = await Resource.countDocuments().catch(() => 0);
-  if (totalInDb === 0) {
-    const { autoSeedResources } = require('../utils/resourceSeeder');
-    await autoSeedResources();
-  }
-
   const filter = {};
   if (all !== 'true') {
     filter.status = 'published';
@@ -213,7 +204,10 @@ const deleteResource = async (id, userId, userRole) => {
   const resource = await Resource.findById(id);
   if (!resource) throw createError('Resource not found', 404);
 
-  if (userRole !== 'admin' && resource.uploadedBy.toString() !== userId.toString()) {
+  const roleLower = String(userRole || '').toLowerCase();
+  const isUploader = resource.uploadedBy && resource.uploadedBy.toString() === userId?.toString();
+
+  if (roleLower !== 'admin' && roleLower !== 'instructor' && !isUploader) {
     throw createError('You are not authorized to delete this resource', 403);
   }
 

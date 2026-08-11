@@ -126,10 +126,6 @@ const autoSeedIfEmpty = async () => {
     } else {
       console.log(`[AutoSeed] Database contains ${pathCount} learning paths, ${sandboxCount} sandbox projects, ${commCount} community spaces, ${resourceCount} resources.`);
     }
-
-    if (resourceCount === 0) {
-      await autoSeedResources();
-    }
   } catch (err) {
     console.error('[AutoSeed] Error during auto-seeding:', err.message);
   } finally {
