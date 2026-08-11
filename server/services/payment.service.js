@@ -1,6 +1,16 @@
-const crypto           = require('crypto');
-const Stripe           = require('stripe');
-const Razorpay         = require('razorpay');
+const crypto = require('crypto');
+let Stripe;
+try {
+  Stripe = require('stripe');
+} catch (err) {
+  console.warn('[PaymentService] stripe package not loaded:', err.message);
+}
+let Razorpay;
+try {
+  Razorpay = require('razorpay');
+} catch (err) {
+  console.warn('[PaymentService] razorpay package not loaded:', err.message);
+}
 const Payment          = require('../models/Payment');
 const Invoice          = require('../models/Invoice');
 const SubscriptionPlan = require('../models/SubscriptionPlan');
@@ -15,9 +25,9 @@ const createError = (message, statusCode) => {
   return err;
 };
 
-// Initialize SDKs when keys are available
-const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
-const razorpay = (process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET)
+// Initialize SDKs when keys and modules are available
+const stripe = (Stripe && process.env.STRIPE_SECRET_KEY) ? new Stripe(process.env.STRIPE_SECRET_KEY) : null;
+const razorpay = (Razorpay && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET)
   ? new Razorpay({ key_id: process.env.RAZORPAY_KEY_ID, key_secret: process.env.RAZORPAY_KEY_SECRET })
   : null;
 
