@@ -93,6 +93,9 @@ const seedRoadmapsOnly = async () => {
   }
 };
 
+const Resource = require('../models/Resource');
+const { autoSeedResources } = require('./resourceSeeder');
+
 let isSeeding = false;
 
 /**
@@ -109,6 +112,7 @@ const autoSeedIfEmpty = async () => {
     const pathCount = await LearningPath.countDocuments().catch(() => 0);
     const sandboxCount = await SandboxProject.countDocuments().catch(() => 0);
     const commCount = await Community.countDocuments().catch(() => 0);
+    const resourceCount = await Resource.countDocuments().catch(() => 0);
 
     if (pathCount === 0 || sandboxCount === 0 || commCount === 0) {
       isSeeding = true;
@@ -120,7 +124,11 @@ const autoSeedIfEmpty = async () => {
       console.log(`[AutoSeed] Database contains ${pathCount} learning paths. Syncing 83 native roadmaps...`);
       await seedRoadmapsOnly();
     } else {
-      console.log(`[AutoSeed] Database contains ${pathCount} learning paths, ${sandboxCount} sandbox projects, ${commCount} community spaces.`);
+      console.log(`[AutoSeed] Database contains ${pathCount} learning paths, ${sandboxCount} sandbox projects, ${commCount} community spaces, ${resourceCount} resources.`);
+    }
+
+    if (resourceCount === 0) {
+      await autoSeedResources();
     }
   } catch (err) {
     console.error('[AutoSeed] Error during auto-seeding:', err.message);

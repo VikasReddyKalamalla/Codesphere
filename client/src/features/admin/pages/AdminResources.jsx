@@ -11,7 +11,7 @@ export const AdminResources = () => {
 
   const fetchResources = async () => {
     try {
-      const res = await apiClient.get('/resources');
+      const res = await apiClient.get('/resources', { params: { all: 'true', limit: 100 } });
       const data = res.data?.data?.resources || res.data?.resources || res.data || [];
       setResources(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -77,42 +77,47 @@ export const AdminResources = () => {
           {resources.length === 0 ? (
             <p className="text-sm text-slate-500 italic p-6">No resources found.</p>
           ) : (
-            resources.map((res) => (
-              <div
-                key={res._id}
-                className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex flex-col justify-between gap-4 shadow-sm"
-              >
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-mono">
-                      {res.category?.name || res.type || 'Video'}
-                    </span>
-                    <button
-                      onClick={() => handleDeleteResource(res._id)}
-                      className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors"
-                      title="Delete Resource"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                  <h3 className="text-sm font-extrabold text-slate-900 dark:text-white line-clamp-1">{res.title}</h3>
-                  <p className="text-xs text-slate-500 line-clamp-2">{res.description}</p>
-                </div>
+            resources.map((res) => {
+              const targetUrl = res.fileUrl || res.externalUrl || res.url;
+              const isVideo = res.resourceType === 'video' || (targetUrl && (targetUrl.includes('youtube') || targetUrl.includes('vimeo') || targetUrl.endsWith('.mp4')));
 
-                {res.url && (
-                  <a
-                    href={res.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline pt-2 border-t border-slate-100 dark:border-slate-800"
-                  >
-                    <Video className="w-4 h-4 text-rose-500" />
-                    <span>Watch Resource Video</span>
-                    <ExternalLink className="w-3 h-3 ml-auto" />
-                  </a>
-                )}
-              </div>
-            ))
+              return (
+                <div
+                  key={res._id}
+                  className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-5 flex flex-col justify-between gap-4 shadow-sm"
+                >
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 font-mono">
+                        {res.category?.name || (typeof res.category === 'string' ? res.category : null) || res.resourceType || res.type || 'Resource'}
+                      </span>
+                      <button
+                        onClick={() => handleDeleteResource(res._id)}
+                        className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg transition-colors cursor-pointer"
+                        title="Delete Resource"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <h3 className="text-sm font-extrabold text-slate-900 dark:text-white line-clamp-1">{res.title}</h3>
+                    <p className="text-xs text-slate-500 line-clamp-2">{res.description}</p>
+                  </div>
+
+                  {targetUrl && (
+                    <a
+                      href={targetUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-2 text-xs font-bold text-emerald-600 dark:text-emerald-400 hover:underline pt-2 border-t border-slate-100 dark:border-slate-800"
+                    >
+                      {isVideo ? <Video className="w-4 h-4 text-rose-500" /> : <BookOpen className="w-4 h-4 text-emerald-500" />}
+                      <span>{isVideo ? 'Watch Resource Video' : 'Open Resource File / Link'}</span>
+                      <ExternalLink className="w-3 h-3 ml-auto" />
+                    </a>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       )}

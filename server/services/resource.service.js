@@ -17,8 +17,8 @@ const normalizeResourceType = (typeStr) => {
   if (VALID_TYPES.includes(lower)) return lower;
   if (lower === 'article' || lower === 'article & docs') return 'documentation';
   if (lower === 'cheatsheet' || lower === 'cheat sheet') return 'notes';
-  if (lower.includes('powerpoint') || lower.includes('presentation') || lower === 'ppt' || lower === 'pptx') return 'ppt';
-  if (lower.includes('word') || lower === 'doc' || lower === 'docx') return 'word';
+  if (lower.includes('powerpoint') || lower.includes('presentation') || lower === 'ppt' || lower === 'pptx') return 'presentation';
+  if (lower.includes('word') || lower === 'doc' || lower === 'docx') return 'documentation';
   return 'other';
 };
 
@@ -49,6 +49,13 @@ const getAllResources = async (query) => {
       totalPages: 1,
       resources: mockData
     };
+  }
+
+  // Ensure DB resources are seeded if collection is empty
+  const totalInDb = await Resource.countDocuments().catch(() => 0);
+  if (totalInDb === 0) {
+    const { autoSeedResources } = require('../utils/resourceSeeder');
+    await autoSeedResources();
   }
 
   const filter = {};
@@ -258,10 +265,19 @@ const getFeaturedResources = async () => {
     const { seedMockResources } = require('./mockResources');
     return seedMockResources().slice(0, 6);
   }
-  return Resource.find({ status: 'published', isFeatured: true })
+  let featured = await Resource.find({ status: 'published', isFeatured: true })
     .populate('uploadedBy', 'fullName avatar')
     .limit(6)
     .sort({ views: -1 });
+
+  if (!featured || featured.length === 0) {
+    featured = await Resource.find({ status: 'published' })
+      .populate('uploadedBy', 'fullName avatar')
+      .limit(6)
+      .sort({ views: -1 });
+  }
+
+  return featured;
 };
 
 // ─── TRENDING RESOURCES ────────────────────────────────────────────────────────
