@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import apiClient from '@services/axios.js';
 import toast from 'react-hot-toast';
 import { MessageSquare, Star, Trash2, Users, Shield, Lock, Unlock } from 'lucide-react';
-import { BackButton } from '@components/common/BackButton.jsx';
 
 export const AdminCommunities = () => {
   const [communities, setCommunities] = useState([]);
@@ -47,8 +46,6 @@ export const AdminCommunities = () => {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-5xl text-slate-800 dark:text-slate-100 font-sans">
-      <BackButton fallbackPath="/admin" />
-
       <div>
         <h1 className="text-2xl font-black flex items-center gap-2">
           <MessageSquare className="w-6 h-6 text-emerald-500" />

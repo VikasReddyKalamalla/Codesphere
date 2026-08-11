@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import apiClient from '@services/axios.js';
 import toast from 'react-hot-toast';
 import { BookOpen, Plus, Trash2, Video, ExternalLink } from 'lucide-react';
-import { BackButton } from '@components/common/BackButton.jsx';
 import CreateResourceModal from '@features/resources/components/CreateResourceModal.jsx';
 
 export const AdminResources = () => {
@@ -49,8 +48,6 @@ export const AdminResources = () => {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-5xl text-slate-800 dark:text-slate-100 font-sans">
-      <BackButton fallbackPath="/admin" />
-
       <div className="flex justify-between items-start md:items-center flex-col md:flex-row gap-4">
         <div>
           <h1 className="text-2xl font-black flex items-center gap-2">

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trophy, Flame, Star, Crown, Medal, Sparkles, User, Zap } from 'lucide-react';
 import apiClient from '@services/axios.js';
-import { BackButton } from '@components/common/BackButton.jsx';
 
 export const LeaderboardPage = () => {
   const [leaders, setLeaders] = useState([]);
@@ -38,8 +37,6 @@ export const LeaderboardPage = () => {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-5xl mx-auto p-4 md:p-6 text-slate-900 dark:text-slate-100 font-sans animate-fade-in">
-      <BackButton fallbackPath="/dashboard" />
-
       {/* ── CodeSphere Premium Hero Header ── */}
       <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-700 p-6 md:p-8 text-white shadow-xl border border-emerald-500/30">
         {/* Glow Effects */}

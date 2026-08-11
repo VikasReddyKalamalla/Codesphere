@@ -1,6 +1,7 @@
 import React from 'react';
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import clsx from 'clsx';
 import { Button } from './Button.jsx';
 
 export const BackButton = ({
@@ -24,7 +25,7 @@ export const BackButton = ({
       size="sm"
       icon={ArrowLeft}
       onClick={handleBack}
-      className={className}
+      className={clsx('self-start', className)}
       {...props}
     >
       Back

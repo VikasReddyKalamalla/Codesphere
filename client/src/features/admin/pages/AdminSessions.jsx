@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import apiClient from '@services/axios.js';
 import toast from 'react-hot-toast';
 import { Calendar, Video, CheckCircle2, XCircle } from 'lucide-react';
-import { BackButton } from '@components/common/BackButton.jsx';
 
 export const AdminSessions = () => {
   const [requests, setRequests] = useState([]);
@@ -46,7 +45,6 @@ export const AdminSessions = () => {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-5xl text-slate-800 dark:text-slate-100">
-      <BackButton fallbackPath="/admin" />
       <div>
         <h1 className="text-2xl font-black mb-2">Session Requests</h1>
         <p className="text-sm text-slate-500">Approve user requests for hosting Google Meet sessions.</p>

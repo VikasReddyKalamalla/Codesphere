@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { FiGithub as Github, FiLinkedin as Linkedin, FiTwitter as Twitter } from 'react-icons/fi';
 import { fetchPublicProfileAPI } from '../services/profileAPI';
-import { BackButton } from '@components/common/BackButton.jsx';
 
 export const PublicProfilePage = () => {
   const { username } = useParams();
@@ -65,7 +64,6 @@ export const PublicProfilePage = () => {
 
   return (
     <div className="flex flex-col gap-6 w-full max-w-6xl mx-auto text-slate-900 dark:text-slate-100 font-sans animate-fade-in p-4 md:p-6">
-      <BackButton fallbackPath="/" />
       
       {/* ── Top hero card ── */}
       <div className="rounded-3xl relative overflow-hidden shadow-sm dark:shadow-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 backdrop-blur-md">
