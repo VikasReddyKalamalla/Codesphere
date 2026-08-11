@@ -27,7 +27,7 @@ const createStorage = (folderName) => {
     },
   });
 
-  if (folderName !== 'resource' && isCloudinaryConfigured()) {
+  if (isCloudinaryConfigured()) {
     try {
       const { CloudinaryStorage } = require('multer-storage-cloudinary');
       const cloudinary = require('../config/cloudinary');
