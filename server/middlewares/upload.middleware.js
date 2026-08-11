@@ -33,10 +33,15 @@ const createStorage = (folderName) => {
       const cloudinary = require('../config/cloudinary');
       return new CloudinaryStorage({
         cloudinary: cloudinary,
-        params: {
-          folder: `codesphere/${folderName}`,
-          resource_type: 'auto',
-          allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'pdf', 'mp4', 'zip', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'],
+        params: async (req, file) => {
+          const ext = path.extname(file.originalname || '').toLowerCase().replace('.', '');
+          const isPdf = ext === 'pdf' || file.mimetype === 'application/pdf';
+          return {
+            folder: `codesphere/${folderName}`,
+            resource_type: isPdf ? 'raw' : 'auto',
+            type: 'upload',
+            access_mode: 'public',
+          };
         },
       });
     } catch (err) {
