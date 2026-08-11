@@ -49,6 +49,8 @@ const getAllResources = async (query) => {
       totalPages: 1,
       resources: mockData
     };
+  }
+
   const filter = {};
   if (all !== 'true') {
     filter.status = 'published';
