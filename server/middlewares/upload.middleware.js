@@ -10,30 +10,12 @@ const isCloudinaryConfigured = () => {
 };
 
 const createStorage = (folderName) => {
-  if (isCloudinaryConfigured()) {
-    try {
-      const { CloudinaryStorage } = require('multer-storage-cloudinary');
-      const cloudinary = require('../config/cloudinary');
-      return new CloudinaryStorage({
-        cloudinary: cloudinary,
-        params: {
-          folder: `codesphere/${folderName}`,
-          resource_type: 'auto', // Important for PDFs/Videos to be handled properly
-          allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'pdf', 'mp4', 'zip', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'],
-        },
-      });
-    } catch (err) {
-      console.warn(`[UploadMiddleware] Cloudinary storage init failed: ${err.message}. Using local disk storage fallback.`);
-    }
-  }
-
-  // Fallback to local disk storage
   const uploadDir = path.join(__dirname, '../uploads', folderName);
   if (!fs.existsSync(uploadDir)) {
     fs.mkdirSync(uploadDir, { recursive: true });
   }
 
-  return multer.diskStorage({
+  const diskStorage = multer.diskStorage({
     destination: (req, file, cb) => {
       cb(null, uploadDir);
     },
@@ -44,6 +26,25 @@ const createStorage = (folderName) => {
       cb(null, `${basename}-${uniqueSuffix}${ext}`);
     },
   });
+
+  if (folderName !== 'resource' && isCloudinaryConfigured()) {
+    try {
+      const { CloudinaryStorage } = require('multer-storage-cloudinary');
+      const cloudinary = require('../config/cloudinary');
+      return new CloudinaryStorage({
+        cloudinary: cloudinary,
+        params: {
+          folder: `codesphere/${folderName}`,
+          resource_type: 'auto',
+          allowed_formats: ['jpg', 'png', 'jpeg', 'webp', 'pdf', 'mp4', 'zip', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx'],
+        },
+      });
+    } catch (err) {
+      console.warn(`[UploadMiddleware] Cloudinary storage init failed: ${err.message}. Using local disk storage fallback.`);
+    }
+  }
+
+  return diskStorage;
 };
 
 const fileFilter = (req, file, cb) => {

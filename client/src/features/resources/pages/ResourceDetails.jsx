@@ -308,7 +308,9 @@ export const ResourceDetails = () => {
             <div className="flex flex-col gap-5">
               {/* PDF & Live Embedded Document Viewer */}
               {isPdf && rawUrl && !rawUrl.includes('example.com') && (() => {
-                const proxyPdfUrl = fullFileUrl.startsWith('http')
+                const pdfDirectUrl = fullFileUrl.includes('/mock-resources-proxy/')
+                  ? fullFileUrl
+                  : fullFileUrl.startsWith('http')
                   ? `http://localhost:5000/api/resources/proxy-pdf?url=${encodeURIComponent(fullFileUrl)}`
                   : fullFileUrl;
 
@@ -317,7 +319,7 @@ export const ResourceDetails = () => {
                     <div className="flex flex-wrap justify-between items-center px-5 py-3 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-mono text-slate-800 dark:text-slate-200 gap-3">
                       <span className="flex items-center gap-2 text-[#04AA6D] dark:text-emerald-400 font-bold">
                         <FileText className="w-4 h-4" />
-                        Live PDF Viewer
+                        Live PDF Document Viewer
                       </span>
                       <div className="flex items-center gap-2">
                         <a
@@ -334,16 +336,22 @@ export const ResourceDetails = () => {
                           className="px-3 py-1.5 bg-[#04AA6D] hover:bg-emerald-600 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-all"
                         >
                           <Download className="w-3.5 h-3.5" />
-                          Download
+                          Download PDF
                         </button>
                       </div>
                     </div>
-                    <div className="w-full h-[600px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-slate-900 relative">
-                      <iframe
-                        src={proxyPdfUrl}
-                        title="Live PDF Viewer"
+                    <div className="w-full h-[650px] rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-xl bg-slate-900 relative">
+                      <object
+                        data={pdfDirectUrl}
+                        type="application/pdf"
                         className="w-full h-full border-0 bg-slate-900"
-                      />
+                      >
+                        <iframe
+                          src={pdfDirectUrl}
+                          title="Live PDF Viewer"
+                          className="w-full h-full border-0 bg-slate-900"
+                        />
+                      </object>
                     </div>
                   </div>
                 );

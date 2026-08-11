@@ -93,6 +93,27 @@ const proxyPdf = asyncHandler(async (req, res) => {
     return res.status(400).send('URL query parameter is required');
   }
 
+  // Try resolving filename directly from local uploads or notes(resources) directory
+  const decodedUrl = decodeURIComponent(targetUrl);
+  const possibleFilename = decodeURIComponent(decodedUrl.split('/').pop().split('?')[0]);
+  
+  if (possibleFilename && possibleFilename.endsWith('.pdf')) {
+    const candidatePaths = [
+      require('path').join(__dirname, '../uploads/resource', possibleFilename),
+      require('path').join(__dirname, '../uploads', possibleFilename),
+      require('path').join(__dirname, '../../notes(resources)', possibleFilename),
+    ];
+
+    for (const localPath of candidatePaths) {
+      if (require('fs').existsSync(localPath)) {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${possibleFilename}"`);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        return res.sendFile(localPath);
+      }
+    }
+  }
+
   try {
     const axios = require('axios');
     const response = await axios.get(targetUrl, {
@@ -101,7 +122,7 @@ const proxyPdf = asyncHandler(async (req, res) => {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/pdf,application/octet-stream,*/*',
       },
-      timeout: 12000,
+      timeout: 30000,
     });
 
     if (response.status !== 200) {

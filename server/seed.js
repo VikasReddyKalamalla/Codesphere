@@ -479,23 +479,23 @@ async function seed() {
     { name: 'General CS',           slug: 'general-cs',      icon: 'book',     color: '#6366f1', resourceCount: 1 },
   ]);
 
-  // Distinct, verified 200-OK PDF URLs for each resource
+  // Distinct, verified local PDF URLs for each resource handbook
   const pdfUrls = {
-    jsCheatsheet:    'https://raw.githubusercontent.com/mozilla/pdf.js/master/examples/learning/helloworld.pdf',
-    reactNotes:      'https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf',
-    cssGrid:         'https://www.orimi.com/pdf-test.pdf',
-    bigO:            'https://arxiv.org/pdf/1301.3781.pdf',
-    leetcode:        'https://arxiv.org/pdf/1409.0473.pdf',
-    graphAlgo:       'https://arxiv.org/pdf/1512.03385.pdf',
+    jsCheatsheet:    '/mock-resources-proxy/JS_Chapterwise_Notes.pdf',
+    reactNotes:      '/mock-resources-proxy/JS_Chapterwise_Notes.pdf',
+    cssGrid:         '/mock-resources-proxy/CSS_Complete_Notes.pdf',
+    bigO:            '/mock-resources-proxy/DSA_CompleteNotes.pdf',
+    leetcode:        '/mock-resources-proxy/DSA_CompleteNotes.pdf',
+    graphAlgo:       '/mock-resources-proxy/DSA_CompleteNotes.pdf',
     pandas:          'https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf',
     pytorch:         'https://cdn.openai.com/papers/gpt-4.pdf',
-    sysDesign:       'https://arxiv.org/pdf/1706.03762.pdf',
-    docker:          'https://arxiv.org/pdf/2005.14165.pdf',
-    k8s:             'https://unec.edu.az/application/uploads/2014/12/pdf-sample.pdf',
-    aws:             'https://d1.awsstatic.com/whitepapers/aws-overview.pdf',
-    owasp:           'https://owasp.org/www-pdf-archive/OWASP_Top_10-2017_%28en%29.pdf.pdf',
-    networkSec:      'https://arxiv.org/pdf/1706.03762.pdf',
-    interview:       'https://arxiv.org/pdf/1512.03385.pdf',
+    sysDesign:       '/mock-resources-proxy/DSA_CompleteNotes.pdf',
+    docker:          '/mock-resources-proxy/HTML_Complete_Notes.pdf',
+    k8s:             '/mock-resources-proxy/Java_Complete_Notes.pdf',
+    aws:             '/mock-resources-proxy/Java_Complete_Notes.pdf',
+    owasp:           '/mock-resources-proxy/HTML_Complete_Notes.pdf',
+    networkSec:      '/mock-resources-proxy/Php%20Cheatsheet.pdf',
+    interview:       '/mock-resources-proxy/Flask%20Cheatsheet.pdf',
     sql:             'https://pandas.pydata.org/Pandas_Cheat_Sheet.pdf',
   };
 
