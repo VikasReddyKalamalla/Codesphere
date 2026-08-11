@@ -1,53 +1,47 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import {
   MapPin, Link2, Calendar, Edit2, CheckCircle, Copy,
-  Globe,
-  Code2, Award, Star, Users,
+  Globe, Code2, Award, Star, Users,
   ClipboardList, BookOpen, Download, Video, MessageSquare,
   ExternalLink, Camera, Save, X,
-  Zap, Trophy, BookMarked, Flame,
+  Zap, Trophy, BookMarked, Flame, ShieldCheck, Plus, Layers,
 } from 'lucide-react';
 import { FiGithub as Github, FiLinkedin as Linkedin, FiTwitter as Twitter } from 'react-icons/fi';
 import toast from 'react-hot-toast';
-import { fetchProfileThunk, updateProfileThunk } from '../redux/profileThunk.js';
 import { fetchProfileAPI, updateProfileAPI, uploadAvatarAPI, uploadCertificateAPI } from '../services/profileAPI.js';
 import { updateUser } from '@features/auth/redux/authSlice.js';
 
-/* ─────────────────────────────── helpers ─────────────────────────────── */
 const TABS = ['Overview', 'Activity', 'Achievements', 'Bookmarks', 'Collections', 'Settings'];
 
-const SKILLS = [
-  { name: 'JavaScript', color: '#F7DF1E', text: '#000' },
-  { name: 'React',      color: '#61DAFB', text: '#000' },
-  { name: 'Node.js',    color: '#339933', text: '#fff' },
-  { name: 'Python',     color: '#3776AB', text: '#fff' },
-  { name: 'MongoDB',    color: '#47A248', text: '#fff' },
-  { name: 'Tailwind CSS', color: '#06B6D4', text: '#fff' },
-];
-
-/* ─────────────────────────────── main component ─────────────────────── */
 export const Profile = () => {
-  const dispatch   = useDispatch();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { user: authUser } = useSelector((s) => s.auth);
 
-  const [profile,    setProfile]    = useState(null);
-  const [loading,    setLoading]    = useState(true);
-  const [activeTab,  setActiveTab]  = useState('Overview');
-  const [editing,    setEditing]    = useState(false);
-  const [saving,     setSaving]     = useState(false);
-  const [copied,     setCopied]     = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState('Overview');
+  const [saving, setSaving] = useState(false);
+  const [copied, setCopied] = useState(false);
   const fileRef = useRef(null);
 
   const [form, setForm] = useState({
-    fullName: '', username: '', bio: '', website: '', location: '', avatar: '', skills: '',
+    fullName: '',
+    username: '',
+    bio: '',
+    website: '',
+    location: '',
+    avatar: '',
+    skills: '',
   });
 
   const [certForm, setCertForm] = useState({ title: '', issuer: '' });
   const certFileRef = useRef(null);
   const [uploadingCert, setUploadingCert] = useState(false);
 
-  /* load profile */
+  /* Load user profile */
   useEffect(() => {
     fetchProfileAPI()
       .then((r) => {
@@ -56,25 +50,24 @@ export const Profile = () => {
         setForm({
           fullName: p.fullName || '',
           username: p.username || '',
-          bio:      p.bio      || '',
-          website:  p.website  || '',
+          bio: p.bio || '',
+          website: p.website || '',
           location: p.location || '',
-          avatar:   p.avatar   || '',
-          skills:   p.skills ? p.skills.join(', ') : '',
+          avatar: p.avatar || '',
+          skills: p.skills ? p.skills.join(', ') : '',
         });
       })
       .catch(() => {
-        // fallback to auth user
         const p = authUser || {};
         setProfile(p);
         setForm({
           fullName: p.fullName || '',
           username: p.username || '',
-          bio:      p.bio      || '',
-          website:  p.website  || '',
+          bio: p.bio || '',
+          website: p.website || '',
           location: p.location || '',
-          avatar:   p.avatar   || '',
-          skills:   p.skills ? p.skills.join(', ') : '',
+          avatar: p.avatar || '',
+          skills: p.skills ? p.skills.join(', ') : '',
         });
       })
       .finally(() => setLoading(false));
@@ -105,7 +98,7 @@ export const Profile = () => {
     const loadingToast = toast.loading('Uploading certificate...');
     try {
       const res = await uploadCertificateAPI(certForm, file);
-      setProfile(prev => ({ ...prev, certificates: [...(prev.certificates || []), res.data || res] }));
+      setProfile((prev) => ({ ...prev, certificates: [...(prev.certificates || []), res.data || res] }));
       setCertForm({ title: '', issuer: '' });
       certFileRef.current.value = '';
       toast.success('Certificate uploaded!', { id: loadingToast });
@@ -122,92 +115,99 @@ export const Profile = () => {
     try {
       const payload = {
         ...form,
-        skills: form.skills ? form.skills.split(',').map(s => s.trim()).filter(Boolean) : []
+        skills: form.skills ? form.skills.split(',').map((s) => s.trim()).filter(Boolean) : [],
       };
       await updateProfileAPI(payload);
       setProfile((prev) => ({ ...prev, ...payload }));
-      toast.success('Profile updated!');
-      setEditing(false);
+      dispatch(updateUser(payload));
+      toast.success('Profile updated successfully!');
+      setActiveTab('Overview');
     } catch {
-      toast.error('Failed to save');
-    } finally { setSaving(false); }
+      toast.error('Failed to save profile');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const copyProfileLink = () => {
     navigator.clipboard.writeText(`https://codesphere.dev/u/${profile?.username || 'user'}`);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
-    toast.success('Link copied!');
+    toast.success('Profile link copied to clipboard!');
   };
 
-  const cardClass = "bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 p-5 rounded-3xl text-slate-900 dark:text-slate-100 shadow-sm backdrop-blur-md";
-  const inputClass = "w-full px-3.5 py-2.5 rounded-xl text-sm focus:outline-none bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-[#04AA6D]/50 focus:border-[#04AA6D] text-slate-900 dark:text-slate-100 placeholder-slate-400 transition-all font-sans";
+  const cardClass = 'bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800/80 p-6 rounded-3xl text-slate-900 dark:text-slate-100 shadow-sm backdrop-blur-md';
+  const inputClass = 'w-full px-4 py-2.5 rounded-xl text-xs focus:outline-none bg-white dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 hover:border-[#04AA6D]/50 focus:border-[#04AA6D] text-slate-900 dark:text-slate-100 placeholder-slate-400 transition-all font-sans';
 
-  const displayName   = profile?.fullName   || authUser?.fullName   || 'User';
-  const displayUser   = profile?.username   || authUser?.username   || 'username';
-  const displayBio    = profile?.bio        || 'No bio provided yet.';
-  const displayLoc    = profile?.location   || 'No location set';
-  const displaySite   = profile?.website    || '';
-  const displayRole   = profile?.role       || authUser?.role       || 'Student';
-  const displayAvatar = profile?.avatar     || authUser?.avatar     || '';
-  const joinedDate    = profile?.createdAt  ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently';
-  const xp            = profile?.achievementPoints ?? authUser?.achievementPoints ?? 0;
-  const level         = Math.floor(xp / 100) + 1;
-  const followers     = profile?.followers?.length ?? authUser?.followers?.length ?? 0;
+  const displayName = profile?.fullName || authUser?.fullName || 'User';
+  const displayUser = profile?.username || authUser?.username || 'username';
+  const displayBio = profile?.bio || 'No bio provided yet.';
+  const displayLoc = profile?.location || 'No location set';
+  const displaySite = profile?.website || '';
+  const displayRole = profile?.role || authUser?.role || 'Student';
+  const displayAvatar = profile?.avatar || authUser?.avatar || '';
+  const joinedDate = profile?.createdAt ? new Date(profile.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently';
+  const xp = profile?.achievementPoints ?? authUser?.achievementPoints ?? 0;
+  const level = Math.floor(xp / 100) + 1;
+  const followers = profile?.followers?.length ?? authUser?.followers?.length ?? 0;
 
   const enrolledPathsCount = profile?.learningPaths?.length || 0;
-  const userBadges = [];
-  if (xp >= 100)  userBadges.push({ name: 'Rising Star',    icon: '⭐', desc: 'Earned 100 XP points', date: 'Unlocked' });
-  if (xp >= 500)  userBadges.push({ name: 'Dedicated',      icon: '🔥', desc: 'Earned 500 XP points', date: 'Unlocked' });
-  if (xp >= 1000) userBadges.push({ name: 'Expert',         icon: '🏆', desc: 'Earned 1000 XP points', date: 'Unlocked' });
+  const userBadges = [
+    { name: 'Rising Star', icon: '⭐', desc: 'Earned 100 XP points', unlocked: xp >= 100 },
+    { name: 'Dedicated Learner', icon: '🔥', desc: 'Earned 500 XP points', unlocked: xp >= 500 },
+    { name: 'Full-Stack Expert', icon: '🏆', desc: 'Earned 1000 XP points', unlocked: xp >= 1000 },
+    { name: 'Code Master', icon: '👑', desc: 'Earned 2500 XP points', unlocked: xp >= 2500 },
+  ];
 
   const stats = [
-    { icon: Code2,  color: '#3b82f6', value: enrolledPathsCount,      label: 'Projects'  },
-    { icon: Award,  color: '#f59e0b', value: userBadges.length,       label: 'Badges'    },
-    { icon: Star,   color: '#10b981', value: xp,                      label: 'Points' },
-    { icon: Users,  color: '#8b5cf6', value: followers,               label: 'Followers' },
+    { icon: Code2, color: '#3b82f6', value: enrolledPathsCount, label: 'Projects' },
+    { icon: Award, color: '#f59e0b', value: userBadges.filter((b) => b.unlocked).length, label: 'Badges' },
+    { icon: Star, color: '#10b981', value: xp, label: 'Points' },
+    { icon: Users, color: '#8b5cf6', value: followers, label: 'Followers' },
   ];
 
   const activitySummary = [
-    { icon: Code2,        label: 'Code Submissions',    count: 0 },
-    { icon: ClipboardList,label: 'Tests Completed',     count: 0 },
-    { icon: Download,     label: 'Resources Downloaded',count: 0 },
-    { icon: Video,        label: 'Sessions Attended',   count: 0 },
-    { icon: MessageSquare,label: 'Communities Joined',  count: 0 },
+    { icon: Code2, label: 'Code Submissions', count: profile?.submissionsCount || 0 },
+    { icon: ClipboardList, label: 'Tests Completed', count: profile?.testsCount || 0 },
+    { icon: Download, label: 'Resources Downloaded', count: profile?.downloadsCount || 0 },
+    { icon: Video, label: 'Sessions Attended', count: profile?.sessionsCount || 0 },
+    { icon: MessageSquare, label: 'Communities Joined', count: profile?.communitiesCount || 0 },
   ];
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
+      <div className="flex items-center justify-center min-h-[60vh]">
         <div className="w-8 h-8 rounded-full border-4 border-[#04AA6D] border-t-transparent animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-6 w-full text-slate-900 dark:text-slate-100 font-sans animate-fade-in">
-
-      {/* ── Top hero card ── */}
-      <div className="rounded-3xl relative overflow-hidden shadow-sm dark:shadow-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 text-slate-900 dark:text-slate-100 backdrop-blur-md">
-        {/* Banner header gradient */}
-        <div className="h-32 sm:h-44 w-full relative bg-gradient-to-r from-[#04AA6D] via-teal-600 to-emerald-700 overflow-hidden">
+    <div className="flex flex-col gap-6 w-full text-slate-900 dark:text-slate-100 font-sans animate-fade-in pb-12">
+      
+      {/* ── 1. HERO HEADER CARD ── */}
+      <div className="rounded-3xl relative overflow-hidden shadow-sm dark:shadow-xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800/80 backdrop-blur-md">
+        {/* Banner */}
+        <div className="h-36 sm:h-48 w-full relative bg-gradient-to-r from-[#04AA6D] via-teal-600 to-emerald-700 overflow-hidden">
           <div className="absolute -top-12 -right-12 w-56 h-56 bg-white/10 rounded-full blur-2xl pointer-events-none" />
           <div className="absolute bottom-0 left-1/3 w-48 h-48 bg-emerald-400/20 rounded-full blur-xl pointer-events-none" />
         </div>
 
-        {/* Content area below banner */}
+        {/* Content area */}
         <div className="p-6 md:p-8 pt-0 z-10 relative">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             
-            {/* Left side: Avatar (overlapping banner) + User Info */}
+            {/* Left: Avatar + Identity */}
             <div className="flex flex-col sm:flex-row items-start sm:items-end gap-5 flex-1 min-w-0">
-              {/* Avatar overlapping banner */}
-              <div className="relative shrink-0 -mt-12 sm:-mt-16">
+              <div className="relative shrink-0 -mt-14 sm:-mt-18">
                 <div className="w-24 h-24 sm:w-28 sm:h-28 rounded-full overflow-hidden border-4 border-white dark:border-slate-900 bg-slate-100 dark:bg-slate-800 flex items-center justify-center shadow-xl">
-                  {displayAvatar
-                    ? <img src={displayAvatar} alt={displayName} className="w-full h-full object-cover" />
-                    : <span className="text-2xl sm:text-3xl font-extrabold text-slate-800 dark:text-white">{displayName.slice(0, 2).toUpperCase()}</span>
-                  }
+                  {displayAvatar ? (
+                    <img src={displayAvatar} alt={displayName} className="w-full h-full object-cover" />
+                  ) : (
+                    <span className="text-2xl sm:text-3xl font-black text-slate-800 dark:text-white">
+                      {displayName.slice(0, 2).toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <button
                   onClick={() => fileRef.current?.click()}
@@ -219,45 +219,79 @@ export const Profile = () => {
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
               </div>
 
-              {/* Name & Title info sitting BELOW banner line */}
               <div className="pt-2 sm:pt-0 flex-1 min-w-0">
                 <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">{displayName}</h1>
-                  {(profile?.isVerified || authUser?.isVerified) && <CheckCircle className="w-5 h-5 text-[#04AA6D] dark:text-emerald-400" />}
+                  <h1 className="text-2xl sm:text-3xl font-black text-slate-900 dark:text-white tracking-tight">
+                    {displayName}
+                  </h1>
+                  {(profile?.isVerified || authUser?.isVerified) && (
+                    <CheckCircle className="w-5 h-5 text-[#04AA6D] dark:text-emerald-400" />
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold text-white font-mono bg-[#04AA6D] shadow-xs">Level {level}</span>
-                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-300 capitalize bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">{displayRole}</span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold text-white font-mono bg-[#04AA6D] shadow-xs">
+                    Level {level}
+                  </span>
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold text-slate-700 dark:text-slate-300 capitalize bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                    {displayRole}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Edit Profile button */}
-            <div className="self-start md:self-end shrink-0">
+            {/* Right: Actions */}
+            <div className="flex items-center gap-2.5 self-start md:self-end shrink-0">
               <button
-                onClick={() => setEditing(!editing)}
+                onClick={copyProfileLink}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 cursor-pointer"
+              >
+                {copied ? <CheckCircle className="w-4 h-4 text-[#04AA6D]" /> : <Copy className="w-4 h-4" />}
+                {copied ? 'Copied Link' : 'Share Profile'}
+              </button>
+              <button
+                onClick={() => setActiveTab(activeTab === 'Settings' ? 'Overview' : 'Settings')}
                 className="flex items-center gap-2 px-5 py-2.5 rounded-2xl text-xs font-bold transition-all bg-[#04AA6D] hover:bg-[#03935e] text-white shadow-lg shadow-emerald-500/20 border border-emerald-500/30 cursor-pointer"
               >
                 <Edit2 className="w-4 h-4" />
-                Edit Profile
+                {activeTab === 'Settings' ? 'View Overview' : 'Edit Profile'}
               </button>
             </div>
           </div>
 
-          {/* Details below title & avatar: Location, joined date, bio, social icons */}
+          {/* Details below title & avatar */}
           <div className="mt-5 pt-4 border-t border-slate-100 dark:border-slate-800/80 flex flex-col gap-3">
             <div className="flex flex-wrap gap-4 text-xs text-slate-600 dark:text-slate-400 font-mono">
-              <span className="flex items-center gap-1.5"><MapPin className="w-3.5 h-3.5 text-[#04AA6D] dark:text-emerald-400" />{displayLoc}</span>
-              {displaySite && <span className="flex items-center gap-1.5"><Link2 className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />{displaySite}</span>}
-              <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />Joined {joinedDate}</span>
+              <span className="flex items-center gap-1.5">
+                <MapPin className="w-3.5 h-3.5 text-[#04AA6D] dark:text-emerald-400" />
+                {displayLoc}
+              </span>
+              {displaySite && (
+                <a
+                  href={displaySite.startsWith('http') ? displaySite : `https://${displaySite}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 hover:text-[#04AA6D] transition-colors"
+                >
+                  <Link2 className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400" />
+                  {displaySite}
+                </a>
+              )}
+              <span className="flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-amber-500 dark:text-amber-400" />
+                Joined {joinedDate}
+              </span>
             </div>
 
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-2xl leading-relaxed">{displayBio}</p>
+            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 max-w-3xl leading-relaxed">
+              {displayBio}
+            </p>
 
-            {/* Social icons */}
             <div className="flex gap-2.5 mt-1">
               {[Github, Linkedin, Twitter, Globe].map((Icon, i) => (
-                <button key={i} className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700/60 transition-colors cursor-pointer">
+                <button
+                  key={i}
+                  className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-700/60 transition-colors cursor-pointer"
+                >
                   <Icon className="w-4 h-4" />
                 </button>
               ))}
@@ -266,9 +300,9 @@ export const Profile = () => {
         </div>
       </div>
 
-      {/* ── 52-Week GitHub-Style Activity Contribution Grid ── */}
+      {/* ── 2. CONTRIBUTION HEATMAP GRID ── */}
       <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 shadow-sm flex flex-col gap-3 font-mono">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-center flex-wrap gap-2">
           <h4 className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider flex items-center gap-2">
             <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
             2026 Coding Contributions & Activity
@@ -278,9 +312,13 @@ export const Profile = () => {
         <div className="grid grid-cols-16 sm:grid-cols-26 md:grid-cols-52 gap-1.5 overflow-x-auto py-2">
           {Array.from({ length: 52 }).map((_, weekIdx) => {
             const count = (weekIdx % 3 === 0 || weekIdx % 7 === 0) ? (weekIdx % 4) + 1 : 0;
-            const bgClass = count === 0 ? 'bg-slate-100 dark:bg-slate-950' :
-                             count === 1 ? 'bg-emerald-900/40 border border-emerald-700/30' :
-                             count === 2 ? 'bg-emerald-600' : 'bg-[#04AA6D] shadow-xs';
+            const bgClass = count === 0
+              ? 'bg-slate-100 dark:bg-slate-950'
+              : count === 1
+              ? 'bg-emerald-900/40 border border-emerald-700/30'
+              : count === 2
+              ? 'bg-emerald-600'
+              : 'bg-[#04AA6D] shadow-xs';
             return (
               <div
                 key={weekIdx}
@@ -292,7 +330,7 @@ export const Profile = () => {
         </div>
       </div>
 
-      {/* ── Tabs ── */}
+      {/* ── 3. TABS NAVIGATION ── */}
       <div className="flex items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-1 no-scrollbar overflow-x-auto">
         {TABS.map((tab) => (
           <button
@@ -309,121 +347,155 @@ export const Profile = () => {
         ))}
       </div>
 
-      {/* ── Main 3-column layout ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
+      {/* ── 4. MAIN CONTENT + SIDEBAR GRID ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
-        {/* LEFT — Edit form (col-span-4) */}
-        <div className="xl:col-span-4 flex flex-col gap-5">
-          <div className={cardClass}>
-            <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider">Edit Profile</h3>
-              <div className="flex gap-2">
-                <button onClick={() => setEditing(false)} className="text-xs font-medium px-3 py-1.5 rounded-xl text-slate-500 hover:text-slate-900 dark:hover:text-slate-200 transition-colors">Cancel</button>
-                <button onClick={handleSave} disabled={saving} className="text-xs font-bold px-4 py-1.5 rounded-xl text-white bg-[#04AA6D] hover:bg-emerald-600 transition-all cursor-pointer shadow-xs">
-                  {saving ? 'Saving…' : 'Save Changes'}
-                </button>
+        {/* MAIN TAB AREA (8 columns) */}
+        <div className="lg:col-span-8 flex flex-col gap-6">
+          
+          {/* TAB 1: OVERVIEW */}
+          {activeTab === 'Overview' && (
+            <>
+              {/* Top Skills */}
+              <div className={cardClass}>
+                <h3 className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider mb-4 font-mono">
+                  Top Skills & Technologies
+                </h3>
+                {profile?.skills && profile.skills.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {profile.skills.map((skill) => (
+                      <span
+                        key={skill}
+                        className="px-3 py-1.5 rounded-xl text-xs font-bold bg-[#04AA6D]/10 text-[#04AA6D] dark:text-emerald-400 border border-[#04AA6D]/30 font-mono flex items-center gap-1.5"
+                      >
+                        <Code2 className="w-3.5 h-3.5" />
+                        {skill}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-6 text-center text-slate-400 text-xs font-mono">
+                    <p>No skills added yet.</p>
+                    <button
+                      onClick={() => setActiveTab('Settings')}
+                      className="mt-2 text-[#04AA6D] dark:text-emerald-400 font-bold hover:underline"
+                    >
+                      + Add skills in Profile Settings
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Achievements & Badges Preview */}
+              <div className={cardClass}>
+                <div className="flex justify-between items-center mb-4">
+                  <h3 className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider font-mono">
+                    Earned Badges & Credentials
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab('Achievements')}
+                    className="text-xs font-bold text-[#04AA6D] dark:text-emerald-400 hover:underline font-mono"
+                  >
+                    View All
+                  </button>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {userBadges.map((badge, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                        badge.unlocked
+                          ? 'bg-slate-50 dark:bg-slate-950/60 border-slate-200 dark:border-slate-800'
+                          : 'bg-slate-100/50 dark:bg-slate-950/20 border-slate-200/50 dark:border-slate-800/40 opacity-50'
+                      }`}
+                    >
+                      <span className="text-2xl">{badge.icon}</span>
+                      <div className="flex flex-col">
+                        <span className="text-xs font-bold text-slate-900 dark:text-white">{badge.name}</span>
+                        <span className="text-[10px] text-slate-500">{badge.desc}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Recent Activity Feed */}
+              <div className={cardClass}>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xs font-black uppercase text-slate-900 dark:text-white tracking-wider font-mono">
+                    Recent Activity
+                  </h3>
+                  <button
+                    onClick={() => setActiveTab('Activity')}
+                    className="text-xs font-bold text-[#04AA6D] dark:text-emerald-400 hover:underline font-mono"
+                  >
+                    View Timeline
+                  </button>
+                </div>
+                <div className="flex flex-col gap-3">
+                  {profile?.activity && profile.activity.length > 0 ? (
+                    profile.activity.map((act, i) => (
+                      <div key={i} className="flex items-start gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                        <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-emerald-500/10 text-[#04AA6D]">
+                          <Code2 className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{act.title}</p>
+                          <p className="text-[11px] text-slate-500">{act.sub}</p>
+                          <p className="text-[10px] text-slate-400 font-mono mt-0.5">{act.time}</p>
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="text-xs text-slate-400 font-mono text-center py-6">
+                      No recent activity recorded.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+          {/* TAB 2: ACTIVITY */}
+          {activeTab === 'Activity' && (
+            <div className={cardClass}>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider mb-4">
+                Activity Log & Submissions
+              </h3>
+              <div className="flex flex-col gap-3">
+                {profile?.activity && profile.activity.length > 0 ? (
+                  profile.activity.map((act, i) => (
+                    <div key={i} className="flex items-start gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-500/10 text-[#04AA6D]">
+                        <Code2 className="w-5 h-5" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="text-xs font-bold text-slate-900 dark:text-slate-100">{act.title}</p>
+                        <p className="text-xs text-slate-500 mt-0.5">{act.sub}</p>
+                        <span className="text-[10px] text-slate-400 font-mono block mt-1">{act.time}</span>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-10 text-slate-400 font-mono text-xs">
+                    <p>No activity records available yet.</p>
+                  </div>
+                )}
               </div>
             </div>
+          )}
 
-            <form onSubmit={handleSave} className="flex flex-col gap-4">
-              {/* Full Name */}
-              <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Full Name</label>
-                <input
-                  value={form.fullName}
-                  onChange={(e) => setForm({ ...form, fullName: e.target.value })}
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Username */}
-              <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Username</label>
-                <input
-                  value={form.username}
-                  onChange={(e) => setForm({ ...form, username: e.target.value })}
-                  className={inputClass}
-                />
-                <button type="button" onClick={copyProfileLink} className="flex items-center gap-1 mt-1.5 text-xs text-[#04AA6D] dark:text-emerald-400 hover:underline font-mono">
-                  <span>codesphere.dev/u/{form.username}</span>
-                  {copied ? <CheckCircle className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                </button>
-              </div>
-
-              {/* Bio */}
-              <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Bio</label>
-                <textarea
-                  value={form.bio}
-                  onChange={(e) => setForm({ ...form, bio: e.target.value })}
-                  rows={4}
-                  maxLength={200}
-                  className={`${inputClass} resize-none`}
-                />
-                <p className="text-[10px] text-right mt-1 text-slate-400 font-mono">{form.bio.length} / 200</p>
-              </div>
-
-              {/* Website + Location */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Website</label>
-                  <input
-                    value={form.website}
-                    onChange={(e) => setForm({ ...form, website: e.target.value })}
-                    placeholder="https://yoursite.dev"
-                    className={inputClass}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Location</label>
-                  <input
-                    value={form.location}
-                    onChange={(e) => setForm({ ...form, location: e.target.value })}
-                    placeholder="City, Country"
-                    className={inputClass}
-                  />
-                </div>
-              </div>
-
-              {/* Skills */}
-              <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Skills (comma-separated)</label>
-                <input
-                  value={form.skills}
-                  onChange={(e) => setForm({ ...form, skills: e.target.value })}
-                  placeholder="JavaScript, React, Python"
-                  className={inputClass}
-                />
-              </div>
-
-              {/* Avatar */}
-              <div>
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-2">Avatar</label>
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-300 dark:border-slate-700">
-                    {displayAvatar
-                      ? <img src={displayAvatar} alt="avatar" className="w-full h-full object-cover" />
-                      : <span className="text-sm font-bold text-slate-500 dark:text-slate-400">{displayName.slice(0, 2).toUpperCase()}</span>
-                    }
-                  </div>
-                  <div>
-                    <button type="button" onClick={() => fileRef.current?.click()} className="text-xs font-semibold text-[#04AA6D] dark:text-emerald-400 hover:underline block cursor-pointer">Click to change avatar</button>
-                    <span className="text-[10px] text-slate-400 font-mono">JPG, PNG or GIF (Max. 2MB)</span>
-                  </div>
-                </div>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        {/* CENTER — Tab Content */}
-        <div className="xl:col-span-8 flex flex-col gap-5">
-          {activeTab === 'Achievements' ? (
+          {/* TAB 3: ACHIEVEMENTS */}
+          {activeTab === 'Achievements' && (
             <div className={cardClass}>
-              <h3 className="text-lg font-black mb-6 text-slate-900 dark:text-white">Upload Certificate</h3>
-              <form onSubmit={handleUploadCertificate} className="flex flex-col gap-4 max-w-md">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider mb-4">
+                Upload External Certificate
+              </h3>
+              <form onSubmit={handleUploadCertificate} className="flex flex-col gap-4 max-w-lg mb-8">
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Certificate Title</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                    Certificate Title
+                  </label>
                   <input
                     value={certForm.title}
                     onChange={(e) => setCertForm({ ...certForm, title: e.target.value })}
@@ -433,7 +505,9 @@ export const Profile = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Issuer / Organization</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                    Issuer / Organization
+                  </label>
                   <input
                     value={certForm.issuer}
                     onChange={(e) => setCertForm({ ...certForm, issuer: e.target.value })}
@@ -443,7 +517,9 @@ export const Profile = () => {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Certificate File (PDF or Image)</label>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                    Certificate File (PDF or Image)
+                  </label>
                   <input
                     type="file"
                     ref={certFileRef}
@@ -452,133 +528,214 @@ export const Profile = () => {
                     required
                   />
                 </div>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={uploadingCert}
-                  className="px-4 py-2 mt-2 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-xl text-sm transition-all"
+                  className="px-5 py-2.5 bg-[#04AA6D] hover:bg-[#03935e] text-white font-bold rounded-xl text-xs transition-all self-start cursor-pointer shadow-md"
                 >
                   {uploadingCert ? 'Uploading...' : 'Upload Certificate'}
                 </button>
               </form>
-              
-              <h3 className="text-lg font-black mt-8 mb-4 text-slate-900 dark:text-white">Your Certificates</h3>
+
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider pt-6 border-t border-slate-200 dark:border-slate-800 mb-4">
+                Your Earned Certificates
+              </h3>
               {profile?.certificates?.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {profile.certificates.map(cert => (
-                    <a key={cert._id} href={cert.certificateUrl} target="_blank" rel="noreferrer" className="flex flex-col p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 hover:border-blue-500/50 transition-all">
-                      <h4 className="font-bold text-sm text-slate-900 dark:text-white">{cert.title || cert.course?.title || 'Certificate'}</h4>
-                      <p className="text-xs text-slate-500">By: {cert.issuer || 'CodeSphere'}</p>
+                  {profile.certificates.map((cert) => (
+                    <a
+                      key={cert._id}
+                      href={cert.certificateUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex flex-col p-4 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-[#04AA6D]/50 transition-all group"
+                    >
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-[#04AA6D] transition-colors">
+                          {cert.title || cert.course?.title || 'Certificate'}
+                        </h4>
+                        <Award className="w-5 h-5 text-[#04AA6D] shrink-0" />
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1">Issued by: {cert.issuer || 'CodeSphere'}</p>
                     </a>
                   ))}
                 </div>
               ) : (
-                <p className="text-sm text-slate-500">No certificates uploaded yet.</p>
+                <p className="text-xs text-slate-400 font-mono py-4">No certificates uploaded yet.</p>
               )}
             </div>
-          ) : (
-            <>
-              <div className={cardClass}>
-                <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-200 dark:border-slate-800">
-                  <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider">Public Profile Preview</h3>
-              <button className="flex items-center gap-1 text-xs font-semibold text-[#04AA6D] dark:text-emerald-400 hover:underline cursor-pointer">
-                View Public Profile <ExternalLink className="w-3 h-3" />
-              </button>
-            </div>
-
-            {/* Mini profile card */}
-            <div className="flex items-start gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 shrink-0 border border-slate-300 dark:border-slate-700">
-                {displayAvatar
-                  ? <img src={displayAvatar} alt={displayName} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center text-sm font-bold text-slate-500 dark:text-slate-400">{displayName.slice(0,2).toUpperCase()}</div>
-                }
-              </div>
-              <div>
-                <div className="flex items-center gap-1.5">
-                  <p className="text-sm font-bold text-slate-900 dark:text-white">{displayName}</p>
-                  {(profile?.isVerified || authUser?.isVerified) && <CheckCircle className="w-4 h-4 text-[#04AA6D]" />}
-                </div>
-                <div className="flex gap-1.5 mt-0.5">
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-bold text-white bg-[#04AA6D] font-mono">Level {level}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full font-medium capitalize bg-slate-200/70 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-mono">{displayRole}</span>
-                </div>
-                <div className="flex gap-3 mt-1.5 text-xs text-slate-500 dark:text-slate-400 font-mono">
-                  <span className="flex items-center gap-1"><MapPin className="w-3 h-3 text-[#04AA6D]" />{displayLoc}</span>
-                  {displaySite && <span className="flex items-center gap-1"><Link2 className="w-3 h-3 text-blue-400" />{displaySite}</span>}
-                </div>
-              </div>
-            </div>
-
-            <p className="text-xs leading-relaxed mb-4 text-slate-600 dark:text-slate-400">{displayBio}</p>
-
-            {/* Mini stats */}
-            <div className="grid grid-cols-4 gap-2 py-3 mb-4 border-y border-slate-200 dark:border-slate-800 font-mono">
-              {stats.map((s) => (
-                <div key={s.label} className="flex flex-col items-center gap-0.5">
-                  <span className="text-sm font-extrabold text-slate-900 dark:text-white">{s.value}</span>
-                  <span className="text-[9px] uppercase tracking-wider text-slate-400">{s.label}</span>
-                </div>
-              ))}
-            </div>
-
-            {/* Top Skills */}
-            <div className="mb-5">
-              <p className="text-xs font-bold text-slate-900 dark:text-white mb-2.5 uppercase font-mono tracking-wider">Top Skills</p>
-              {profile?.skills && profile.skills.length > 0 ? (
-                <div className="flex flex-wrap gap-1.5">
-                  {profile.skills.map((s) => (
-                    <span key={s} className="px-2.5 py-1 rounded-lg text-xs font-bold bg-[#04AA6D]/10 text-[#04AA6D] dark:text-emerald-400 border border-[#04AA6D]/30 font-mono">
-                      {s}
-                    </span>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-xs italic text-slate-400 font-mono">No skills listed yet.</p>
-              )}
-            </div>
-
-            {/* Recent Achievements */}
-            <div>
-              <p className="text-xs font-bold text-slate-900 dark:text-white mb-3 uppercase font-mono tracking-wider">Recent Achievements</p>
-              <div className="flex flex-col gap-3">
-                {userBadges.length > 0 ? (
-                  userBadges.map((a, i) => (
-                    <div key={i} className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-100/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
-                      <div className="flex items-center gap-2.5">
-                        <span className="text-lg">{a.icon}</span>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900 dark:text-white">{a.name}</p>
-                          <p className="text-[10px] text-slate-500 dark:text-slate-400">{a.desc}</p>
-                        </div>
-                      </div>
-                      <span className="text-[10px] text-emerald-500 font-bold font-mono">{a.date}</span>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-xs text-slate-400 font-mono">No achievements earned yet. Start learning to unlock!</p>
-                )}
-              </div>
-            </div>
-          </div>
-          </>
           )}
+
+          {/* TAB 4: BOOKMARKS */}
+          {activeTab === 'Bookmarks' && (
+            <div className={cardClass}>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider mb-4">
+                Saved Resources & Bookmarks
+              </h3>
+              <p className="text-xs text-slate-400 font-mono py-6 text-center">
+                No bookmarked items saved yet. Browse learning resources to bookmark notes and docs.
+              </p>
+            </div>
+          )}
+
+          {/* TAB 5: COLLECTIONS */}
+          {activeTab === 'Collections' && (
+            <div className={cardClass}>
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider mb-4">
+                Saved Collections
+              </h3>
+              <p className="text-xs text-slate-400 font-mono py-6 text-center">
+                No custom collections created yet.
+              </p>
+            </div>
+          )}
+
+          {/* TAB 6: SETTINGS */}
+          {activeTab === 'Settings' && (
+            <div className={cardClass}>
+              <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-200 dark:border-slate-800">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider">
+                  Edit Profile Settings
+                </h3>
+              </div>
+
+              <form onSubmit={handleSave} className="flex flex-col gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Full Name</label>
+                    <input
+                      value={form.fullName}
+                      onChange={(e) => setForm({ ...form, fullName: e.target.value })}
+                      className={inputClass}
+                      required
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Username</label>
+                    <input
+                      value={form.username}
+                      onChange={(e) => setForm({ ...form, username: e.target.value })}
+                      className={inputClass}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Bio</label>
+                  <textarea
+                    value={form.bio}
+                    onChange={(e) => setForm({ ...form, bio: e.target.value })}
+                    rows={4}
+                    maxLength={200}
+                    placeholder="Tell other developers about your journey and tech stack..."
+                    className={`${inputClass} resize-none`}
+                  />
+                  <p className="text-[10px] text-right mt-1 text-slate-400 font-mono">{form.bio.length} / 200</p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Website</label>
+                    <input
+                      value={form.website}
+                      onChange={(e) => setForm({ ...form, website: e.target.value })}
+                      placeholder="https://yoursite.dev"
+                      className={inputClass}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">Location</label>
+                    <input
+                      value={form.location}
+                      onChange={(e) => setForm({ ...form, location: e.target.value })}
+                      placeholder="City, Country"
+                      className={inputClass}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1.5">
+                    Skills (comma-separated)
+                  </label>
+                  <input
+                    value={form.skills}
+                    onChange={(e) => setForm({ ...form, skills: e.target.value })}
+                    placeholder="JavaScript, React, Node.js, Python"
+                    className={inputClass}
+                  />
+                </div>
+
+                <div className="pt-2">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-2">Avatar Picture</label>
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-200 dark:bg-slate-800 flex items-center justify-center shrink-0 border border-slate-300 dark:border-slate-700">
+                      {displayAvatar ? (
+                        <img src={displayAvatar} alt="avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="text-base font-bold text-slate-500 dark:text-slate-400">
+                          {displayName.slice(0, 2).toUpperCase()}
+                        </span>
+                      )}
+                    </div>
+                    <div>
+                      <button
+                        type="button"
+                        onClick={() => fileRef.current?.click()}
+                        className="text-xs font-bold text-[#04AA6D] dark:text-emerald-400 hover:underline block cursor-pointer"
+                      >
+                        Click to upload new avatar
+                      </button>
+                      <span className="text-[10px] text-slate-400 font-mono">JPG, PNG or GIF (Max. 2MB)</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end items-center gap-3 pt-4 border-t border-slate-200 dark:border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('Overview')}
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-all cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-6 py-2.5 rounded-xl text-xs font-bold bg-[#04AA6D] hover:bg-[#03935e] text-white shadow-md transition-all cursor-pointer"
+                  >
+                    {saving ? 'Saving...' : 'Save Profile Changes'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
         </div>
 
-        {/* RIGHT — Stats sidebar (col-span-4) */}
-        <div className="xl:col-span-4 flex flex-col gap-5">
+        {/* RIGHT SIDEBAR AREA (4 columns) */}
+        <div className="lg:col-span-4 flex flex-col gap-6">
 
           {/* Profile Stats */}
           <div className={cardClass}>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase font-mono tracking-wider">Profile Stats</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase font-mono tracking-wider mb-4">
+              Profile Stats
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
               {stats.map((s) => (
-                <div key={s.label} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-100/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <div
+                  key={s.label}
+                  className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800"
+                >
                   <div className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0" style={{ background: `${s.color}20` }}>
                     <s.icon className="w-4 h-4" style={{ color: s.color }} />
                   </div>
                   <div>
                     <p className="text-base font-black leading-none text-slate-900 dark:text-white font-mono">{s.value}</p>
-                    <p className="text-[10px] mt-1 text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider">{s.label}</p>
+                    <p className="text-[9px] mt-1 text-slate-500 dark:text-slate-400 font-mono uppercase tracking-wider">{s.label}</p>
                   </div>
                 </div>
               ))}
@@ -587,10 +744,12 @@ export const Profile = () => {
 
           {/* Activity Summary */}
           <div className={cardClass}>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 uppercase font-mono tracking-wider">Activity Summary</h3>
-            <div className="flex flex-col gap-3">
+            <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase font-mono tracking-wider mb-4">
+              Activity Summary
+            </h3>
+            <div className="flex flex-col gap-2.5">
               {activitySummary.map(({ icon: Icon, label, count }) => (
-                <div key={label} className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-100/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
+                <div key={label} className="flex items-center justify-between p-2.5 rounded-2xl bg-slate-50 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800">
                   <div className="flex items-center gap-2.5">
                     <div className="w-7 h-7 rounded-xl flex items-center justify-center bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-300">
                       <Icon className="w-3.5 h-3.5" />
@@ -603,45 +762,33 @@ export const Profile = () => {
             </div>
           </div>
 
-          {/* Recent Activity */}
+          {/* Connect / Public Link */}
           <div className={cardClass}>
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider">Recent Activity</h3>
-              <button className="text-xs font-bold text-[#04AA6D] dark:text-emerald-400 hover:underline font-mono cursor-pointer">View All</button>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase font-mono tracking-wider">
+                Public Profile
+              </h3>
+              <button
+                onClick={() => navigate(`/u/${displayUser}`)}
+                className="flex items-center gap-1 text-[11px] font-bold text-[#04AA6D] dark:text-emerald-400 hover:underline cursor-pointer font-mono"
+              >
+                View Public <ExternalLink className="w-3 h-3" />
+              </button>
             </div>
-            <div className="flex flex-col gap-4">
-              {profile?.activity && profile.activity.length > 0 ? (
-                profile.activity.map((a, i) => (
-                  <div key={i} className="flex items-start gap-3">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-emerald-500/10 text-[#04AA6D]">
-                      <Code2 className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <p className="text-xs font-semibold text-slate-900 dark:text-slate-100">{a.title}</p>
-                      <p className="text-[11px] mt-0.5 text-slate-500 dark:text-slate-400">{a.sub}</p>
-                      <p className="text-[10px] mt-0.5 text-slate-400 font-mono">{a.time}</p>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="text-xs text-slate-400 font-mono text-center py-4">No recent activity.</p>
-              )}
-            </div>
-          </div>
-
-          {/* Connect */}
-          <div className={cardClass}>
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-3 uppercase font-mono tracking-wider">Connect</h3>
-            <div className="flex gap-3">
-              {[Github, Linkedin, Twitter, Globe].map((Icon, i) => (
-                <button key={i} className="w-9 h-9 rounded-xl flex items-center justify-center transition-all bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:text-[#04AA6D] cursor-pointer">
-                  <Icon className="w-4 h-4" />
-                </button>
-              ))}
-            </div>
+            <p className="text-xs text-slate-500 mb-3 leading-relaxed">
+              Share your public profile URL with recruiters and developers.
+            </p>
+            <button
+              onClick={copyProfileLink}
+              className="w-full py-2.5 rounded-xl text-xs font-bold bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-800 dark:text-slate-200 hover:text-[#04AA6D] transition-all flex items-center justify-center gap-2 cursor-pointer font-mono"
+            >
+              {copied ? <CheckCircle className="w-3.5 h-3.5 text-[#04AA6D]" /> : <Copy className="w-3.5 h-3.5" />}
+              {copied ? 'Copied URL!' : `codesphere.dev/u/${displayUser}`}
+            </button>
           </div>
 
         </div>
+
       </div>
     </div>
   );

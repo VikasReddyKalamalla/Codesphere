@@ -3,7 +3,7 @@ const path = require('path');
 
 const SEEDED_NOTES = [
   {
-    "_id": "6a7a194170f375aa0f0743c7",
+    "_id": "6a7ac1699b0e7e532cd5d872",
     "title": "CSS3 Complete Master Notes & Cheat Sheet",
     "description": "Master Cascading Style Sheets (CSS3) from basic selectors, box model, and Flexbox/Grid layouts to keyframe animations and responsive design.",
     "category": "Full Stack & Web Dev",
@@ -23,15 +23,15 @@ const SEEDED_NOTES = [
       "fullName": "Admin User",
       "avatar": ""
     },
-    "views": 334,
-    "downloadsCount": 67,
+    "views": 176,
+    "downloadsCount": 105,
     "averageRating": 4.9,
-    "createdAt": "2026-08-11T05:59:42.166Z",
+    "createdAt": "2026-08-11T06:30:01.390Z",
     "status": "published",
     "isCloudinary": false
   },
   {
-    "_id": "6a7a194f70f375aa0f0743d0",
+    "_id": "6a7ac1699b0e7e532cd5d873",
     "title": "DSA Complete Notes & Algorithms Handbook",
     "description": "Comprehensive Data Structures & Algorithms handbook covering Arrays, Linked Lists, Stacks, Queues, Trees, Graphs, Sorting, DP, and LeetCode patterns.",
     "category": "DSA & Algorithms",
@@ -51,15 +51,15 @@ const SEEDED_NOTES = [
       "fullName": "Admin User",
       "avatar": ""
     },
-    "views": 343,
-    "downloadsCount": 108,
+    "views": 312,
+    "downloadsCount": 89,
     "averageRating": 4.9,
-    "createdAt": "2026-08-11T05:59:42.176Z",
+    "createdAt": "2026-08-11T06:30:01.395Z",
     "status": "published",
     "isCloudinary": false
   },
   {
-    "_id": "6a7a195070f375aa0f0743d3",
+    "_id": "6a7ac1699b0e7e532cd5d874",
     "title": "Flask Web Framework Complete Cheatsheet",
     "description": "Quick reference for Python Flask micro-framework: routing, request handling, Jinja2 templating, ORM database integration, and REST APIs.",
     "category": "AI, ML & Data Science",
@@ -79,15 +79,15 @@ const SEEDED_NOTES = [
       "fullName": "Admin User",
       "avatar": ""
     },
-    "views": 108,
-    "downloadsCount": 52,
+    "views": 417,
+    "downloadsCount": 92,
     "averageRating": 4.9,
-    "createdAt": "2026-08-11T05:59:42.305Z",
+    "createdAt": "2026-08-11T06:30:01.402Z",
     "status": "published",
     "isCloudinary": false
   },
   {
-    "_id": "6a7a196f70f375aa0f0743e7",
+    "_id": "6a7ac1699b0e7e532cd5d875",
     "title": "HTML5 Complete Handbook & Reference",
     "description": "Essential HTML5 fundamentals, semantic elements, form controls, web accessibility (a11y), canvas, media tags, and document structure.",
     "category": "Full Stack & Web Dev",
@@ -107,15 +107,42 @@ const SEEDED_NOTES = [
       "fullName": "Admin User",
       "avatar": ""
     },
-    "views": 297,
-    "downloadsCount": 211,
+    "views": 431,
+    "downloadsCount": 249,
     "averageRating": 4.9,
-    "createdAt": "2026-08-11T05:59:42.318Z",
+    "createdAt": "2026-08-11T06:30:01.406Z",
     "status": "published",
     "isCloudinary": false
   },
   {
-    "_id": "6a7aba4e70f375aa0f07491d",
+    "_id": "6a7ac1699b0e7e532cd5d876",
+    "title": "Java Complete Mastery Notes & Handbook",
+    "description": "Complete Core Java reference covering Object-Oriented Programming (OOP), Multithreading, Collections Framework, JVM internals, and Exception Handling.",
+    "category": "General CS",
+    "difficulty": "intermediate",
+    "tags": [
+      "java",
+      "core-java",
+      "oop",
+      "backend",
+      "notes"
+    ],
+    "resourceType": "pdf",
+    "fileUrl": "/mock-resources-proxy/Java_Complete_Notes.pdf",
+    "externalUrl": "/mock-resources-proxy/Java_Complete_Notes.pdf",
+    "uploadedBy": {
+      "fullName": "Admin User",
+      "avatar": ""
+    },
+    "views": 172,
+    "downloadsCount": 64,
+    "averageRating": 4.9,
+    "createdAt": "2026-08-11T06:30:01.411Z",
+    "status": "published",
+    "isCloudinary": false
+  },
+  {
+    "_id": "6a7ac1699b0e7e532cd5d877",
     "title": "JavaScript Chapterwise Complete Notes",
     "description": "In-depth JavaScript guide covering variables, DOM manipulation, ES6+ features, closures, prototypes, event loop, Promises, and async/await.",
     "category": "Full Stack & Web Dev",
@@ -135,42 +162,15 @@ const SEEDED_NOTES = [
       "fullName": "Admin User",
       "avatar": ""
     },
-    "views": 231,
-    "downloadsCount": 138,
+    "views": 485,
+    "downloadsCount": 146,
     "averageRating": 4.9,
-    "createdAt": "2026-08-11T05:59:42.351Z",
+    "createdAt": "2026-08-11T06:30:01.415Z",
     "status": "published",
     "isCloudinary": false
   },
   {
-    "_id": "6a7aba4e70f375aa0f074920",
-    "title": "Java Complete Mastery Notes & Handbook",
-    "description": "Complete Core Java reference covering Object-Oriented Programming (OOP), Multithreading, Collections Framework, JVM internals, and Exception Handling.",
-    "category": "General CS",
-    "difficulty": "intermediate",
-    "tags": [
-      "java",
-      "core-java",
-      "oop",
-      "backend",
-      "notes"
-    ],
-    "resourceType": "pdf",
-    "fileUrl": "/mock-resources-proxy/Java_Complete_Notes.pdf",
-    "externalUrl": "/mock-resources-proxy/Java_Complete_Notes.pdf",
-    "uploadedBy": {
-      "fullName": "Admin User",
-      "avatar": ""
-    },
-    "views": 445,
-    "downloadsCount": 178,
-    "averageRating": 4.9,
-    "createdAt": "2026-08-11T05:59:42.377Z",
-    "status": "published",
-    "isCloudinary": false
-  },
-  {
-    "_id": "6a7aba4e70f375aa0f074923",
+    "_id": "6a7ac1699b0e7e532cd5d878",
     "title": "PHP Backend Scripting Complete Cheatsheet",
     "description": "Essential PHP reference covering language syntax, array functions, superglobals, MySQLi/PDO database connections, and session management.",
     "category": "Full Stack & Web Dev",
@@ -190,10 +190,10 @@ const SEEDED_NOTES = [
       "fullName": "Admin User",
       "avatar": ""
     },
-    "views": 220,
-    "downloadsCount": 243,
+    "views": 213,
+    "downloadsCount": 111,
     "averageRating": 4.9,
-    "createdAt": "2026-08-11T05:59:42.394Z",
+    "createdAt": "2026-08-11T06:30:01.420Z",
     "status": "published",
     "isCloudinary": false
   }
