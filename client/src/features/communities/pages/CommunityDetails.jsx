@@ -207,9 +207,9 @@ export const CommunityDetails = () => {
             
             <button 
               onClick={() => setActiveTab('chat')}
-              className={`px-5 py-3 border-b-2 transition-all shrink-0 ${activeTab === 'chat' ? 'border-indigo-500 text-slate-800 dark:text-slate-100 bg-indigo-50/50 dark:bg-indigo-950/5' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
+              className={`px-5 py-3 border-b-2 transition-all shrink-0 ${activeTab === 'chat' ? 'border-[#04AA6D] text-[#04AA6D] dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/10 font-bold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
             >
-              Lobby Chat
+              Live Rocket.Chat
             </button>
 
             <button 
@@ -289,7 +289,7 @@ export const CommunityDetails = () => {
               {activeTab === 'chat' && (
                 <>
                   {isMember ? (
-                    <CommunityChat communityId={communityId} />
+                    <CommunityChat communityId={communityId} communityName={community.name} />
                   ) : (
                     <div className="bg-white dark:bg-slate-950/40 border border-slate-150 dark:border-slate-900 rounded-2xl p-12 text-center flex flex-col items-center justify-center gap-2 select-none h-[400px] shadow-sm">
                       <AlertCircle size={24} className="text-slate-400 dark:text-slate-500" />
