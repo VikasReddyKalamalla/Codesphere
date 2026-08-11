@@ -29,6 +29,9 @@ lerna-debug.log*
 # Uploads and temporary files
 server/uploads/
 server/data/
+compressed_notes/
+server/temp_*/
+temp_*/
 
 
 # IDEs/Editors

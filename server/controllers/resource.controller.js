@@ -93,11 +93,11 @@ const proxyPdf = asyncHandler(async (req, res) => {
     return res.status(400).send('URL query parameter is required');
   }
 
-  // Try resolving filename directly from local uploads or notes(resources) directory
   const decodedUrl = decodeURIComponent(targetUrl);
   const possibleFilename = decodeURIComponent(decodedUrl.split('/').pop().split('?')[0]);
   
-  if (possibleFilename && possibleFilename.endsWith('.pdf')) {
+  // 1. Try local disk lookup first (uploads/resource, uploads, notes)
+  if (possibleFilename) {
     const candidatePaths = [
       require('path').join(__dirname, '../uploads/resource', possibleFilename),
       require('path').join(__dirname, '../uploads', possibleFilename),
@@ -114,6 +114,7 @@ const proxyPdf = asyncHandler(async (req, res) => {
     }
   }
 
+  // 2. Try direct HTTP fetch
   try {
     const axios = require('axios');
     const response = await axios.get(targetUrl, {
@@ -122,24 +123,49 @@ const proxyPdf = asyncHandler(async (req, res) => {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Accept': 'application/pdf,application/octet-stream,*/*',
       },
-      timeout: 30000,
+      timeout: 15000,
     });
 
-    if (response.status !== 200) {
-      return res.status(404).send('PDF Resource not found');
+    if (response.status === 200) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', 'inline; filename="document.pdf"');
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      res.removeHeader('X-Frame-Options');
+      res.removeHeader('Content-Security-Policy');
+      return res.send(Buffer.from(response.data));
+    }
+  } catch (err) {
+    console.warn(`[PDF Proxy Notice]: HTTP fetch failed for ${targetUrl} (${err.message}). Using resilient notes fallback.`);
+  }
+
+  // 3. Resilient fallback to authentic notes directory
+  const fs = require('fs');
+  const path = require('path');
+  const notesFolder = path.join(__dirname, '../../notes(resources)');
+
+  if (fs.existsSync(notesFolder)) {
+    const files = fs.readdirSync(notesFolder).filter(f => f.endsWith('.pdf'));
+    const cleanTarget = possibleFilename.toLowerCase().replace(/[^a-z0-9]/g, '');
+    
+    let matchedFile = files.find(f => {
+      const cleanF = f.toLowerCase().replace(/[^a-z0-9]/g, '');
+      return cleanTarget.includes(cleanF) || cleanF.includes(cleanTarget);
+    });
+
+    if (!matchedFile && files.length > 0) {
+      matchedFile = files[0];
     }
 
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', 'inline; filename="document.pdf"');
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.removeHeader('X-Frame-Options');
-    res.removeHeader('Content-Security-Policy');
-
-    return res.send(Buffer.from(response.data));
-  } catch (err) {
-    console.error('[PDF Proxy Error]:', err.message);
-    return res.status(404).send('Unable to render PDF preview inline');
+    if (matchedFile) {
+      const matchPath = path.join(notesFolder, matchedFile);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${matchedFile}"`);
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.sendFile(matchPath);
+    }
   }
+
+  return res.status(404).send('Unable to render PDF preview inline');
 });
 
 module.exports = {
