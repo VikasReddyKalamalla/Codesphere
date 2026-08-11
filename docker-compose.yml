@@ -132,6 +132,9 @@ services:
       - PORT=3000
       - MONGO_URL=mongodb://rocketchat-db:27017/rocketchat?replicaSet=rs0
       - MONGO_OPLOG_URL=mongodb://rocketchat-db:27017/local?replicaSet=rs0
+      - OVERWRITE_SETTING_Iframe_Restrict_Access=false
+      - OVERWRITE_SETTING_Iframe_X_Frame_Options=*
+      - DISABLE_X_FRAME=true
     depends_on:
       rocketchat-db:
         condition: service_healthy
@@ -140,18 +143,14 @@ services:
 
   # MongoDB Replica Set Primary for Rocket.Chat
   rocketchat-db:
-    image: docker.io/bitnami/mongodb:6.0
+    image: mongo:8.0
     container_name: codesphere-rocketchat-db
     restart: unless-stopped
     volumes:
-      - rocketchat_mongodb_data:/bitnami/mongodb
-    environment:
-      - MONGODB_REPLICA_SET_MODE=primary
-      - MONGODB_REPLICA_SET_NAME=rs0
-      - MONGODB_PORT_NUMBER=27017
-      - ALLOW_EMPTY_PASSWORD=yes
+      - rocketchat_mongodb_data:/data/db
+    command: mongod --oplogSize 128 --replSet rs0
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "rs.status().ok"]
+      test: ["CMD-SHELL", "mongosh --eval 'try { rs.status() } catch (e) { rs.initiate({_id: \"rs0\", members: [{_id: 0, host: \"localhost:27017\"}]}) }'"]
       interval: 10s
       timeout: 5s
       retries: 5
