@@ -108,6 +108,13 @@ const updateProgress = async (projectId, userId, body) => {
       if (!progress.completedSteps.includes(stepNumber)) {
         progress.completedSteps.push(stepNumber);
 
+        const { recordUserActivity } = require('./activity.service');
+        recordUserActivity(userId, {
+          module: 'Codex',
+          action: 'completed_sandbox_step',
+          referenceId: projectId,
+        }).catch(() => {});
+
         // Calculate completion percentage
         progress.completionPercent = progress.totalSteps > 0
           ? Math.round((progress.completedSteps.length / progress.totalSteps) * 100)

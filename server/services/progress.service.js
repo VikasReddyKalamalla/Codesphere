@@ -35,6 +35,14 @@ const markLessonComplete = async (userId, lessonId, unmark) => {
   } else {
     if (!progress.completedLessons.includes(lessonId)) {
       progress.completedLessons.push(lessonId);
+      // Record user activity for streak & daily contribution heatmap
+      const { recordUserActivity } = require('./activity.service');
+      recordUserActivity(userId, {
+        module: 'Learning',
+        action: 'completed_lesson',
+        referenceId: lessonId,
+        referenceType: 'Lesson',
+      }).catch(() => {});
     } else {
       return progress; // Already completed, no change
     }

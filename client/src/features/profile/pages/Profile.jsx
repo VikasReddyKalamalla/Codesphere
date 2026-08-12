@@ -12,6 +12,7 @@ import { FiGithub as Github, FiLinkedin as Linkedin, FiTwitter as Twitter } from
 import toast from 'react-hot-toast';
 import { fetchProfileAPI, updateProfileAPI, uploadAvatarAPI, uploadCertificateAPI } from '../services/profileAPI.js';
 import { updateUser } from '@features/auth/redux/authSlice.js';
+import { socket } from '../../../socket/socket.js';
 
 const TABS = ['Overview', 'Activity', 'Achievements', 'Bookmarks', 'Collections', 'Settings'];
 
@@ -40,6 +41,32 @@ export const Profile = () => {
   const [certForm, setCertForm] = useState({ title: '', issuer: '' });
   const certFileRef = useRef(null);
   const [uploadingCert, setUploadingCert] = useState(false);
+
+  /* Real-time streak & contribution listener */
+  useEffect(() => {
+    const handleStreakUpdate = (data) => {
+      if (data?.dayStreak !== undefined) {
+        setProfile((prev) => {
+          if (!prev) return prev;
+          const newTotal = data.totalContributions ?? ((prev.totalContributions || 0) + 1);
+          return {
+            ...prev,
+            dayStreak: data.dayStreak,
+            totalContributions: newTotal,
+          };
+        });
+        dispatch(updateUser({
+          dayStreak: data.dayStreak,
+          totalContributions: data.totalContributions,
+        }));
+      }
+    };
+
+    socket.on('user:streak_updated', handleStreakUpdate);
+    return () => {
+      socket.off('user:streak_updated', handleStreakUpdate);
+    };
+  }, [dispatch]);
 
   /* Load user profile */
   useEffect(() => {
@@ -307,26 +334,32 @@ export const Profile = () => {
             <Flame className="w-4 h-4 text-amber-500 fill-amber-500" />
             2026 Coding Contributions & Activity
           </h4>
-          <span className="text-[10px] text-slate-400">142 total contributions</span>
+          <span className="text-[10px] text-slate-400 font-mono">
+            {(profile?.totalContributions ?? authUser?.totalContributions ?? 0)} total contribution{(profile?.totalContributions ?? authUser?.totalContributions ?? 0) === 1 ? '' : 's'}
+          </span>
         </div>
-        <div className="grid grid-cols-16 sm:grid-cols-26 md:grid-cols-52 gap-1.5 overflow-x-auto py-2">
-          {Array.from({ length: 52 }).map((_, weekIdx) => {
-            const count = (weekIdx % 3 === 0 || weekIdx % 7 === 0) ? (weekIdx % 4) + 1 : 0;
-            const bgClass = count === 0
-              ? 'bg-slate-100 dark:bg-slate-950'
-              : count === 1
-              ? 'bg-emerald-900/40 border border-emerald-700/30'
-              : count === 2
-              ? 'bg-emerald-600'
-              : 'bg-[#04AA6D] shadow-xs';
-            return (
-              <div
-                key={weekIdx}
-                title={`Week ${weekIdx + 1}: ${count} contributions`}
-                className={`w-3 h-3 rounded-xs transition-all ${bgClass}`}
-              />
-            );
-          })}
+        <div className="flex gap-1.5 overflow-x-auto py-2">
+          {(profile?.contributions || Array.from({ length: 52 }, () => Array.from({ length: 7 }, () => ({ count: 0 })))).map((week, weekIdx) => (
+            <div key={weekIdx} className="flex flex-col gap-1">
+              {week.map((day, dayIdx) => {
+                const count = day.count || 0;
+                const bgClass = count === 0
+                  ? 'bg-slate-100 dark:bg-slate-950 border border-slate-200/40 dark:border-slate-800/40'
+                  : count === 1
+                  ? 'bg-emerald-900/40 border border-emerald-700/30'
+                  : count === 2
+                  ? 'bg-emerald-600'
+                  : 'bg-[#04AA6D] shadow-xs';
+                return (
+                  <div
+                    key={dayIdx}
+                    title={day.date ? `${day.date}: ${count} contribution${count === 1 ? '' : 's'}` : `Week ${weekIdx + 1}, Day ${dayIdx + 1}: 0 contributions`}
+                    className={`w-3.5 h-3.5 rounded-xs transition-all ${bgClass}`}
+                  />
+                );
+              })}
+            </div>
+          ))}
         </div>
       </div>
 

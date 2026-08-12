@@ -66,6 +66,14 @@ const createPost = async (body, userId) => {
 
   const post = await Post.create({ ...body, author: userId });
 
+  const { recordUserActivity } = require('./activity.service');
+  recordUserActivity(userId, {
+    module: 'Community',
+    action: 'created_post',
+    referenceId: post._id,
+    referenceType: 'Post',
+  }).catch(() => {});
+
   // Update community post count
   await Community.findByIdAndUpdate(communityId, {
     $push: { posts: post._id },

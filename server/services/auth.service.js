@@ -21,8 +21,9 @@ const sanitizeUser = (user) => ({
   applicationStatus: user.applicationStatus,
   isVerified:        user.isVerified,
   isActive:          user.isActive,
-  dayStreak:         user.dayStreak,
-  achievementPoints: user.achievementPoints,
+  dayStreak:         user.dayStreak || 0,
+  totalContributions:user.totalContributions || 0,
+  achievementPoints: user.achievementPoints || 0,
   createdAt:         user.createdAt,
 });
 
@@ -160,6 +161,9 @@ const login = async ({ email, password }) => {
       await user.save();
     }
   }
+
+  const { recordUserActivity } = require('./activity.service');
+  await recordUserActivity(user._id, { module: 'Auth', action: 'daily_login' }).catch(() => {});
 
   const token = generateToken(user);
   return { token, user: sanitizeUser(user) };

@@ -249,7 +249,7 @@ export const Communities = () => {
                 </div>
                 <div className="text-left">
                   <span className="text-[8px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-wider font-mono block">Streak Level</span>
-                  <span className="text-xs font-black text-slate-800 dark:text-slate-200">{currentUser?.dayStreak || 1} Days Active</span>
+                  <span className="text-xs font-black text-slate-800 dark:text-slate-200">{currentUser?.dayStreak || 0} Days Active</span>
                 </div>
               </div>
               <span className="text-xs font-mono font-bold text-[#04AA6D] dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-500/20 px-2 py-0.5 rounded">

@@ -48,12 +48,14 @@ const userSchema = new mongoose.Schema(
       default: 'free',
     },
 
-    // ─── Learning Progress ────────────────────────────────────────────────────
-    dayStreak:         { type: Number, default: 0 },
-    achievementPoints: { type: Number, default: 0 },
-    learningPaths:     [{ type: mongoose.Schema.Types.ObjectId, ref: 'LearningPath' }],
-    bookmarks:         [{ type: mongoose.Schema.Types.ObjectId, ref: 'Bookmark' }],
-    skills:            [{ type: String, trim: true }],
+    // ─── Learning Progress & Activity ─────────────────────────────────────────
+    dayStreak:          { type: Number, default: 0 },
+    lastActiveDate:     { type: Date, default: null },
+    totalContributions: { type: Number, default: 0 },
+    achievementPoints:  { type: Number, default: 0 },
+    learningPaths:      [{ type: mongoose.Schema.Types.ObjectId, ref: 'LearningPath' }],
+    bookmarks:          [{ type: mongoose.Schema.Types.ObjectId, ref: 'Bookmark' }],
+    skills:             [{ type: String, trim: true }],
 
     // ─── Social ───────────────────────────────────────────────────────────────
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],

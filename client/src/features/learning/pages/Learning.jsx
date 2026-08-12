@@ -129,7 +129,7 @@ export const Learning = () => {
   const enrolledCount = allProgress.length;
   const lessonsTotal  = allProgress.reduce((s,p) => s + (p.completedLessons?.length || 0), 0);
   const overallPct    = enrolledCount ? Math.round(allProgress.reduce((s,p) => s + (p.completionPercentage||0), 0) / enrolledCount) : 0;
-  const streak        = user?.dayStreak ?? 7;
+  const streak        = user?.dayStreak ?? 0;
 
   /* ── Single Path Card Component ── */
   const PathCard = ({ path }) => {

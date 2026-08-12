@@ -37,6 +37,7 @@ async function seed() {
   console.log('Connected to MongoDB. Starting seed...\n');
 
   // ── 0. Wipe existing data ──────────────────────────────────────────────────
+  const DailyContribution = require('./models/DailyContribution');
   const collections = [
     User, LearningPath, Module, Lesson,
     SandboxProject, SandboxStep,
@@ -44,7 +45,7 @@ async function seed() {
     Event, EventCategory,
     Test, Question,
     Resource, SubscriptionPlan,
-    Workspace, Notification,
+    Workspace, Notification, DailyContribution,
   ];
   for (const col of collections) {
     await col.deleteMany({});
@@ -143,11 +144,27 @@ async function seed() {
       email: 'alex@example.com', password: pw,
       role: 'student', plan: 'free',
       bio: 'Beginner coder, learning JavaScript.',
-      achievementPoints: 320, dayStreak: 2, isActive: true,
+      achievementPoints: 0, dayStreak: 0, totalContributions: 0, isActive: true,
     },
   ]);
   const [vikas, sarah, james, priya, admin, alex] = users;
-  console.log(`✓ Seeded ${users.length} users`);
+
+  // Seed sample contributions for Vikas
+  const today = new Date();
+  const contribDocs = [];
+  let vikasTotal = 0;
+  for (let i = 0; i < 45; i += 2) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0];
+    const count = (i % 3) + 1;
+    vikasTotal += count;
+    contribDocs.push({ user: vikas._id, date: dateStr, count });
+  }
+  await DailyContribution.insertMany(contribDocs);
+  await User.findByIdAndUpdate(vikas._id, { totalContributions: vikasTotal });
+
+  console.log(`✓ Seeded ${users.length} users and daily contribution history`);
 
   // ── 3. Learning Paths & Modules ─────────────────────────────────────────────
   let roadmapsData = [];

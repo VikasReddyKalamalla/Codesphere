@@ -158,6 +158,14 @@ const submitTest = async (testId, userId) => {
   attempt.endTime          = new Date();
   attempt.timeTaken        = timeTaken;
   attempt.totalScore       = Math.max(0, totalScore);
+
+  const { recordUserActivity } = require('./activity.service');
+  recordUserActivity(userId, {
+    module: 'Assessment',
+    action: 'submitted_test',
+    referenceId: testId,
+    referenceType: 'Test',
+  }).catch(() => {});
   attempt.percentage       = parseFloat(percentage);
   attempt.correctAnswers   = correct;
   attempt.wrongAnswers     = wrong;
