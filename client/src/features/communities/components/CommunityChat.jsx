@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { MessageSquare, ExternalLink, RefreshCw, Sparkles, Shield, Wifi } from 'lucide-react';
+import { MessageSquare, RefreshCw, Sparkles, Shield, Wifi, Lock } from 'lucide-react';
 
 export const CommunityChat = ({ communityId, communityName }) => {
   const [iframeKey, setIframeKey] = useState(0);
   
-  // Use CodeSphere's zero-header backend proxy to embed Rocket.Chat seamlessly
+  // Use CodeSphere's zero-header backend proxy to embed Rocket.Chat in layout=embedded mode
   const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api';
-  const proxyUrl = apiBaseUrl.replace(/\/api\/?$/, '') + '/api/rocketchat-proxy';
-  const directRocketChatUrl = import.meta.env.VITE_ROCKETCHAT_URL || 'http://localhost:3000';
+  const rawProxyUrl = apiBaseUrl.replace(/\/api\/?$/, '') + '/api/rocketchat-proxy';
+  const embeddedProxyUrl = `${rawProxyUrl}?layout=embedded`;
 
   const handleRefresh = () => {
     setIframeKey((prev) => prev + 1);
@@ -25,15 +25,15 @@ export const CommunityChat = ({ communityId, communityName }) => {
           <div>
             <div className="flex items-center gap-2">
               <h3 className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-wider font-mono">
-                {communityName || 'CodeSphere'} Live Workspace Chat
+                {communityName || 'CodeSphere'} Inbuilt Live Chat
               </h3>
               <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full bg-[#04AA6D]/15 text-[#04AA6D] dark:text-emerald-400 border border-[#04AA6D]/30 font-mono">
                 <Sparkles className="w-2.5 h-2.5" />
-                Rocket.Chat Engine
+                Inbuilt Engine
               </span>
             </div>
             <p className="text-[10px] text-slate-500 dark:text-slate-400 font-mono mt-0.5">
-              Real-time enterprise channel messaging powered by Rocket.Chat & Docker
+              Embedded channel messaging — contained directly inside CodeSphere
             </p>
           </div>
         </div>
@@ -41,26 +41,17 @@ export const CommunityChat = ({ communityId, communityName }) => {
         <div className="flex items-center gap-3">
           <div className="hidden sm:flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 rounded-xl">
             <Wifi className="w-3 h-3 text-emerald-500 animate-pulse" />
-            <span>PROXIED LIVE EMBED</span>
+            <span>INBUILT EMBEDDED</span>
           </div>
 
           <button
             onClick={handleRefresh}
-            className="p-2 rounded-xl bg-slate-200/60 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer"
-            title="Reload Rocket.Chat iframe"
+            className="p-2 rounded-xl bg-slate-200/60 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all cursor-pointer flex items-center gap-1 text-xs font-mono font-bold"
+            title="Reload embedded chat frame"
           >
             <RefreshCw className="w-4 h-4" />
+            <span>Reload</span>
           </button>
-
-          <a
-            href={directRocketChatUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#04AA6D] hover:bg-emerald-600 text-white shadow-md shadow-emerald-500/20 transition-all font-mono"
-          >
-            <span>Open Rocket.Chat</span>
-            <ExternalLink className="w-3.5 h-3.5" />
-          </a>
         </div>
       </div>
 
@@ -68,8 +59,8 @@ export const CommunityChat = ({ communityId, communityName }) => {
       <div className="flex-1 relative bg-slate-950 flex flex-col items-center justify-center">
         <iframe
           key={iframeKey}
-          src={proxyUrl}
-          title="Rocket.Chat Live Engine"
+          src={embeddedProxyUrl}
+          title="CodeSphere Inbuilt Live Chat"
           className="w-full h-full border-none z-10"
           allow="camera; microphone; display-capture; autoplay; clipboard-write; fullscreen"
         />
@@ -79,10 +70,11 @@ export const CommunityChat = ({ communityId, communityName }) => {
       <div className="px-6 py-2.5 border-t border-slate-200 dark:border-slate-800 bg-slate-100/50 dark:bg-slate-950/60 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 font-mono">
         <span className="flex items-center gap-1.5">
           <Shield className="w-3.5 h-3.5 text-[#04AA6D]" />
-          CodeSphere Express Reverse Proxy & REST API integrated
+          CodeSphere Reverse Proxy — Layout Embedded Mode Active
         </span>
-        <span>
-          Live Port: <code className="text-[#04AA6D] font-bold">:3000</code>
+        <span className="flex items-center gap-1">
+          <Lock className="w-3 h-3 text-emerald-500" />
+          Single-Page Inbuilt Window
         </span>
       </div>
     </div>
@@ -90,3 +82,4 @@ export const CommunityChat = ({ communityId, communityName }) => {
 };
 
 export default CommunityChat;
+
