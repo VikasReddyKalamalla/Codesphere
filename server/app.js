@@ -115,30 +115,6 @@ app.use('/uploads', express.static('uploads'));
 app.use('/preview', express.static(require('path').join(__dirname, 'uploads/workspaces')));
 app.use('/mock-resources-proxy', express.static(require('path').join(__dirname, '../notes(resources)')));
 
-// ─── Rocket.Chat Seamless Iframe Proxy ──────────────────────────────────────
-const { createProxyMiddleware } = require('http-proxy-middleware');
-const rocketChatTarget = process.env.ROCKETCHAT_URL || 'http://127.0.0.1:3000';
-
-app.use(
-  '/api/rocketchat-proxy',
-  createProxyMiddleware({
-    target: rocketChatTarget,
-    changeOrigin: true,
-    ws: true,
-    pathRewrite: {
-      '^/api/rocketchat-proxy': '',
-    },
-    on: {
-      proxyRes: (proxyRes) => {
-        delete proxyRes.headers['x-frame-options'];
-        delete proxyRes.headers['content-security-policy'];
-        delete proxyRes.headers['x-content-type-options'];
-        proxyRes.headers['access-control-allow-origin'] = '*';
-      },
-    },
-  })
-);
-
 // ─── API Routes ──────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRoutes);
 app.use('/api/dashboard',     dashboardRoutes);
