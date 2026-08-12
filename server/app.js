@@ -76,10 +76,11 @@ app.use('/workspace-proxy', cloudWorkspaceProxyHandler);
 // ─── Global Middlewares ───────────────────────────────────────────────────────
 const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',');
 
-// Security headers (allow VS Code iframe to load from same origin)
+// Security headers (allow VS Code iframe to load from same origin & Firebase Auth popups)
 app.use(helmet({
   contentSecurityPolicy: false,   // VS Code Web sets its own CSP
   frameguard: false,              // we control X-Frame-Options per-route
+  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
 }));
 
 // Compression
