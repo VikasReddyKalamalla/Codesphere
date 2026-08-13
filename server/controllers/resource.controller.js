@@ -126,7 +126,31 @@ const proxyPdf = asyncHandler(async (req, res) => {
     }
   }
 
-  // 3. Scan uploads/resource for any matching pdf file or sole uploaded pdf
+  // 3. Database lookup for resource to find associated local fileUrl
+  try {
+    const Resource = require('../models/Resource');
+    const matchedDoc = await Resource.findOne({
+      $or: [
+        { fileUrl: decodedUrl },
+        { externalUrl: decodedUrl },
+        { fileUrl: { $regex: possibleFilename, $options: 'i' } }
+      ]
+    });
+    if (matchedDoc && matchedDoc.fileUrl && matchedDoc.fileUrl.includes('/uploads/')) {
+      const relPath = matchedDoc.fileUrl.split('/uploads/')[1];
+      const fullDocPath = path.join(__dirname, '../uploads', relPath);
+      if (fs.existsSync(fullDocPath)) {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${path.basename(fullDocPath)}"`);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        return res.sendFile(fullDocPath);
+      }
+    }
+  } catch (dbErr) {
+    // Ignore DB lookup error
+  }
+
+  // 4. Scan uploads/resource for any matching pdf file or most recently uploaded pdf
   const resourceDir = path.join(__dirname, '../uploads/resource');
   if (fs.existsSync(resourceDir)) {
     const uploadedFiles = fs.readdirSync(resourceDir).filter(f => f.endsWith('.pdf'));
@@ -137,7 +161,10 @@ const proxyPdf = asyncHandler(async (req, res) => {
         return cleanTarget.includes(cleanF) || cleanF.includes(cleanTarget);
       });
 
-      if (!matchedFile && uploadedFiles.length === 1) {
+      if (!matchedFile) {
+        uploadedFiles.sort((a, b) => {
+          return fs.statSync(path.join(resourceDir, b)).mtimeMs - fs.statSync(path.join(resourceDir, a)).mtimeMs;
+        });
         matchedFile = uploadedFiles[0];
       }
 
@@ -151,7 +178,7 @@ const proxyPdf = asyncHandler(async (req, res) => {
     }
   }
 
-  // 4. Try direct HTTP fetch for remote URLs (with quick 4s timeout)
+  // 5. Try direct HTTP fetch for remote URLs (with quick 4s timeout)
   if (decodedUrl.startsWith('http://') || decodedUrl.startsWith('https://')) {
     try {
       const axios = require('axios');
