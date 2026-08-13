@@ -29,9 +29,9 @@ const DEFAULT_PDF_URLS = {
 };
 
 const autoSeedResources = async () => {
-  return; // Auto-seeding disabled to preserve user/admin resource modifications
-
-    console.log('[ResourceSeeder] No resources found in database. Auto-seeding developer resources & PDF notes...');
+  // Auto-seeding disabled completely so database stores only admin-created resources
+  return;
+};
 
     // 1. Get or create uploader admin user
     let admin = await User.findOne({ role: { $in: ['admin', 'instructor'] } });

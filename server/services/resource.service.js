@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Resource = require('../models/Resource');
 const Bookmark = require('../models/Bookmark');
+const User = require('../models/User');
 const { getPagination } = require('../utils/pagination');
 
 const createError = (message, statusCode) => {
@@ -66,16 +67,14 @@ const getAllResources = async (query) => {
     order = 'desc',
   } = query;
 
-  // Fallback to mock data if MongoDB is not connected (readyState !== 1)
+  // Return empty list if database not connected
   if (mongoose.connection.readyState !== 1) {
-    const { seedMockResources } = require('./mockResources');
-    const mockData = seedMockResources();
     return {
-      total: mockData.length,
+      total: 0,
       page: 1,
       limit: 12,
-      totalPages: 1,
-      resources: mockData
+      totalPages: 0,
+      resources: []
     };
   }
 
@@ -303,10 +302,7 @@ const rateResource = async (resourceId, userId, value) => {
 
 // ─── FEATURED RESOURCES ───────────────────────────────────────────────────────
 const getFeaturedResources = async () => {
-  if (mongoose.connection.readyState !== 1) {
-    const { seedMockResources } = require('./mockResources');
-    return seedMockResources().slice(0, 6);
-  }
+  if (mongoose.connection.readyState !== 1) return [];
   let featured = await Resource.find({ status: 'published', isFeatured: true })
     .populate('uploadedBy', 'fullName avatar')
     .limit(6)
@@ -324,10 +320,7 @@ const getFeaturedResources = async () => {
 
 // ─── TRENDING RESOURCES ────────────────────────────────────────────────────────
 const getTrendingResources = async () => {
-  if (mongoose.connection.readyState !== 1) {
-    const { seedMockResources } = require('./mockResources');
-    return seedMockResources().slice(0, 6);
-  }
+  if (mongoose.connection.readyState !== 1) return [];
   return Resource.find({ status: 'published' })
     .populate('uploadedBy', 'fullName avatar')
     .sort({ views: -1, downloadsCount: -1 })
@@ -336,10 +329,7 @@ const getTrendingResources = async () => {
 
 // ─── RECOMMENDED RESOURCES ─────────────────────────────────────────────────────
 const getRecommendedResources = async () => {
-  if (mongoose.connection.readyState !== 1) {
-    const { seedMockResources } = require('./mockResources');
-    return seedMockResources().slice(0, 6);
-  }
+  if (mongoose.connection.readyState !== 1) return [];
   return Resource.find({ status: 'published' })
     .populate('uploadedBy', 'fullName avatar')
     .sort({ averageRating: -1, createdAt: -1 })

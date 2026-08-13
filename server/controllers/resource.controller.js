@@ -93,71 +93,39 @@ const proxyPdf = asyncHandler(async (req, res) => {
     return res.status(400).send('URL query parameter is required');
   }
 
+  const path = require('path');
+  const fs = require('fs');
+
   const decodedUrl = decodeURIComponent(targetUrl);
   const possibleFilename = decodeURIComponent(decodedUrl.split('/').pop().split('?')[0]);
   
-  // 1. Try local disk lookup first (uploads/resource, uploads, notes)
-  if (possibleFilename) {
-    const candidatePaths = [
-      require('path').join(__dirname, '../uploads/resource', possibleFilename),
-      require('path').join(__dirname, '../uploads', possibleFilename),
-      require('path').join(__dirname, '../../notes(resources)', possibleFilename),
-    ];
+  // 1. Check local disk storage (uploads/resource, uploads)
+  const candidatePaths = [
+    path.join(__dirname, '../uploads/resource', possibleFilename),
+    path.join(__dirname, '../uploads', possibleFilename),
+  ];
 
-    for (const localPath of candidatePaths) {
-      if (require('fs').existsSync(localPath)) {
-        res.setHeader('Content-Type', 'application/pdf');
-        res.setHeader('Content-Disposition', `inline; filename="${possibleFilename}"`);
-        res.setHeader('Access-Control-Allow-Origin', '*');
-        return res.sendFile(localPath);
-      }
-    }
-  }
-
-  // 2. Try direct HTTP fetch
-  try {
-    const axios = require('axios');
-    const response = await axios.get(targetUrl, {
-      responseType: 'arraybuffer',
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/pdf,application/octet-stream,*/*',
-      },
-      timeout: 15000,
-    });
-
-    if (response.status === 200) {
+  for (const localPath of candidatePaths) {
+    if (fs.existsSync(localPath)) {
       res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', 'inline; filename="document.pdf"');
+      res.setHeader('Content-Disposition', `inline; filename="${possibleFilename}"`);
       res.setHeader('Access-Control-Allow-Origin', '*');
-      res.removeHeader('X-Frame-Options');
-      res.removeHeader('Content-Security-Policy');
-      return res.send(Buffer.from(response.data));
+      return res.sendFile(localPath);
     }
-  } catch (err) {
-    console.warn(`[PDF Proxy Notice]: HTTP fetch failed for ${targetUrl} (${err.message}). Using resilient notes fallback.`);
   }
 
-  // 3. Resilient fallback to authentic notes directory
-  const fs = require('fs');
-  const path = require('path');
-  const notesFolder = path.join(__dirname, '../../notes(resources)');
-
-  if (fs.existsSync(notesFolder)) {
-    const files = fs.readdirSync(notesFolder).filter(f => f.endsWith('.pdf'));
+  // 2. Scan uploads/resource for any matching pdf file if filename matches partially
+  const resourceDir = path.join(__dirname, '../uploads/resource');
+  if (fs.existsSync(resourceDir)) {
+    const uploadedFiles = fs.readdirSync(resourceDir).filter(f => f.endsWith('.pdf'));
     const cleanTarget = possibleFilename.toLowerCase().replace(/[^a-z0-9]/g, '');
-    
-    let matchedFile = files.find(f => {
+    const matchedFile = uploadedFiles.find(f => {
       const cleanF = f.toLowerCase().replace(/[^a-z0-9]/g, '');
       return cleanTarget.includes(cleanF) || cleanF.includes(cleanTarget);
     });
 
-    if (!matchedFile && files.length > 0) {
-      matchedFile = files[0];
-    }
-
     if (matchedFile) {
-      const matchPath = path.join(notesFolder, matchedFile);
+      const matchPath = path.join(resourceDir, matchedFile);
       res.setHeader('Content-Type', 'application/pdf');
       res.setHeader('Content-Disposition', `inline; filename="${matchedFile}"`);
       res.setHeader('Access-Control-Allow-Origin', '*');
@@ -165,7 +133,33 @@ const proxyPdf = asyncHandler(async (req, res) => {
     }
   }
 
-  return res.status(404).send('Unable to render PDF preview inline');
+  // 3. Try direct HTTP fetch for remote URLs
+  if (decodedUrl.startsWith('http://') || decodedUrl.startsWith('https://')) {
+    try {
+      const axios = require('axios');
+      const response = await axios.get(decodedUrl, {
+        responseType: 'arraybuffer',
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'application/pdf,application/octet-stream,*/*',
+        },
+        timeout: 15000,
+      });
+
+      if (response.status === 200) {
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 'inline; filename="document.pdf"');
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        res.removeHeader('X-Frame-Options');
+        res.removeHeader('Content-Security-Policy');
+        return res.send(Buffer.from(response.data));
+      }
+    } catch (err) {
+      console.warn(`[PDF Proxy Notice]: Direct HTTP fetch failed for ${decodedUrl}: ${err.message}`);
+    }
+  }
+
+  return res.status(404).send('Unable to render PDF preview: file asset not found on server');
 });
 
 module.exports = {
