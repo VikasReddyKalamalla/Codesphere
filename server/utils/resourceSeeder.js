@@ -29,11 +29,7 @@ const DEFAULT_PDF_URLS = {
 };
 
 const autoSeedResources = async () => {
-  try {
-    if (!mongoose.connection || mongoose.connection.readyState !== 1) return;
-
-    const count = await Resource.countDocuments().catch(() => 0);
-    if (count > 0) return; // Already has resources
+  return; // Auto-seeding disabled to preserve user/admin resource modifications
 
     console.log('[ResourceSeeder] No resources found in database. Auto-seeding developer resources & PDF notes...');
 

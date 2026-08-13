@@ -545,6 +545,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
     if (!resourceForm.title) return toast.error('Resource title is required');
     const loader = toast.loading(selectedResourceFile ? 'Uploading file asset & saving resource...' : 'Saving resource...');
     try {
+      let savedResource = null;
       if (selectedResourceFile) {
         const formData = new FormData();
         formData.append('title', resourceForm.title);
@@ -554,16 +555,18 @@ export default function AdminFeaturesPage({ defaultTab }) {
         formData.append('difficulty', resourceForm.difficulty || 'beginner');
         if (resourceForm.url) formData.append('externalUrl', resourceForm.url);
         if (resourceForm.content) formData.append('markdownContent', resourceForm.content);
-        formData.append('isFeatured', resourceForm.isFeatured);
+        formData.append('isFeatured', resourceForm.isFeatured ? 'true' : 'false');
         formData.append('status', 'published');
         formData.append('file', selectedResourceFile);
 
         const config = { headers: { 'Content-Type': 'multipart/form-data' } };
         if (editingResource) {
-          await apiClient.put(`/resources/${editingResource._id}`, formData, config);
+          const res = await apiClient.put(`/resources/${editingResource._id}`, formData, config);
+          savedResource = res.data?.data || res.data;
           toast.success('Resource file uploaded & updated live!', { id: loader });
         } else {
-          await apiClient.post('/resources', formData, config);
+          const res = await apiClient.post('/resources', formData, config);
+          savedResource = res.data?.data || res.data;
           toast.success('Resource file uploaded & published live!', { id: loader });
         }
       } else {
@@ -577,16 +580,32 @@ export default function AdminFeaturesPage({ defaultTab }) {
           status: 'published',
         };
         if (editingResource) {
-          await apiClient.put(`/resources/${editingResource._id}`, payload);
+          const res = await apiClient.put(`/resources/${editingResource._id}`, payload);
+          savedResource = res.data?.data || res.data;
           toast.success('Resource updated & synchronized live!', { id: loader });
         } else {
-          await apiClient.post('/resources', payload);
+          const res = await apiClient.post('/resources', payload);
+          savedResource = res.data?.data || res.data;
           toast.success('Resource created & published live to CodeSphere!', { id: loader });
         }
       }
+
       setSelectedResourceFile(null);
+      setEditingResource(null);
+      setResourceForm({
+        title: '',
+        description: '',
+        type: 'documentation',
+        category: 'Documentation',
+        url: '',
+        content: '',
+        difficulty: 'beginner',
+        author: 'Platform Admin',
+        isFeatured: false,
+        status: 'published',
+      });
       setIsResourceModalOpen(false);
-      fetchResources();
+      await fetchResources();
     } catch (err) {
       toast.error(err.response?.data?.message || err.message || 'Failed to save resource', { id: loader });
     }
@@ -595,12 +614,15 @@ export default function AdminFeaturesPage({ defaultTab }) {
   const handleDeleteResource = async (id) => {
     if (!confirm('Are you sure you want to delete this resource?')) return;
     const loader = toast.loading('Deleting resource...');
+    // Instantly filter out from UI
+    setResources((prev) => prev.filter((r) => String(r._id || r.id) !== String(id)));
     try {
       await apiClient.delete(`/resources/${id}`);
-      toast.success('Resource deleted', { id: loader });
+      toast.success('Resource deleted & synchronized live!', { id: loader });
       fetchResources();
     } catch (err) {
       toast.error(err.response?.data?.message || err.message || 'Failed to delete resource', { id: loader });
+      fetchResources();
     }
   };
 

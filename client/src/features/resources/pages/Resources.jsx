@@ -45,7 +45,8 @@ import {
   setSearchQuery,
   toggleBookmark,
   resetFilters,
-  setSelectedResource
+  setSelectedResource,
+  removeResourceItem
 } from '../redux/resourceSlice.js';
 
 export const Resources = () => {
@@ -74,6 +75,10 @@ export const Resources = () => {
 
     const handleResourceChanged = (evt) => {
       const entity = evt?.entity;
+      const deletedId = evt?.id || evt?.resourceId || evt?.data?.id || evt?.data?._id;
+      if (deletedId) {
+        dispatch(removeResourceItem(deletedId));
+      }
       if (!entity || entity === 'resource' || entity === 'all') {
         dispatch(fetchResourcesThunk());
         dispatch(fetchFeaturedResourcesThunk());
@@ -81,12 +86,24 @@ export const Resources = () => {
       }
     };
 
+    const handleResourceDeleted = (data) => {
+      const deletedId = data?.id || data?.resourceId || data?._id;
+      if (deletedId) {
+        dispatch(removeResourceItem(deletedId));
+      }
+      dispatch(fetchResourcesThunk());
+      dispatch(fetchFeaturedResourcesThunk());
+      dispatch(fetchTrendingResourcesThunk());
+    };
+
     socket.on('admin:data_changed', handleResourceChanged);
     socket.on('resource:changed', handleResourceChanged);
+    socket.on('resource:deleted', handleResourceDeleted);
 
     return () => {
       socket.off('admin:data_changed', handleResourceChanged);
       socket.off('resource:changed', handleResourceChanged);
+      socket.off('resource:deleted', handleResourceDeleted);
     };
   }, [dispatch]);
 

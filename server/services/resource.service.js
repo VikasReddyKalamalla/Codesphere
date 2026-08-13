@@ -9,17 +9,45 @@ const createError = (message, statusCode) => {
   return err;
 };
 
-const VALID_TYPES = ['pdf', 'notes', 'video', 'documentation', 'source_code', 'github', 'link', 'presentation', 'ppt', 'word', 'doc', 'zip', 'other'];
+const VALID_TYPES = ['pdf', 'notes', 'video', 'documentation', 'source_code', 'github', 'link', 'presentation', 'ppt', 'pptx', 'word', 'doc', 'docx', 'zip', 'other'];
 
 const normalizeResourceType = (typeStr) => {
   if (!typeStr) return 'documentation';
   const lower = String(typeStr).toLowerCase().trim();
-  if (VALID_TYPES.includes(lower)) return lower;
   if (lower === 'article' || lower === 'article & docs') return 'documentation';
   if (lower === 'cheatsheet' || lower === 'cheat sheet') return 'notes';
   if (lower.includes('powerpoint') || lower.includes('presentation') || lower === 'ppt' || lower === 'pptx') return 'presentation';
   if (lower.includes('word') || lower === 'doc' || lower === 'docx') return 'documentation';
+  if (VALID_TYPES.includes(lower)) return lower;
   return 'other';
+};
+
+const uploadToCloudinaryBackground = async (resourceId, localFilePath) => {
+  try {
+    const { isCloudinaryConfigured } = require('../middlewares/upload.middleware');
+    if (!isCloudinaryConfigured()) return;
+    const fs = require('fs');
+    if (!fs.existsSync(localFilePath)) return;
+    const stats = fs.statSync(localFilePath);
+    if (stats.size > 10 * 1024 * 1024) {
+      console.log(`[Cloudinary Background] File ${localFilePath} exceeds 10MB limit. Retaining local URL.`);
+      return;
+    }
+    const cloudinary = require('../config/cloudinary');
+    const ext = path.extname(localFilePath).toLowerCase().replace('.', '');
+    const isPdf = ext === 'pdf';
+    const res = await cloudinary.uploader.upload(localFilePath, {
+      folder: 'codesphere/resource',
+      resource_type: isPdf ? 'raw' : 'auto',
+      type: 'upload',
+    });
+    if (res && res.secure_url) {
+      await Resource.findByIdAndUpdate(resourceId, { fileUrl: res.secure_url });
+      console.log(`[Cloudinary Background] Synced ${resourceId} to Cloudinary: ${res.secure_url}`);
+    }
+  } catch (err) {
+    console.warn(`[Cloudinary Background Sync Notice]: ${err.message}`);
+  }
 };
 
 // ─── GET ALL RESOURCES (with search & filters) ────────────────────────────────
@@ -150,12 +178,14 @@ const createResource = async (body, file, userId) => {
 
   const finalResourceType = normalizeResourceType(resourceType || type || 'documentation');
   const finalCategory = category || 'Documentation';
+  const isFeaturedBool = body.isFeatured === true || body.isFeatured === 'true';
 
   const data = {
     ...body,
     title: title.trim(),
     category: finalCategory,
     resourceType: finalResourceType,
+    isFeatured: isFeaturedBool,
     status: body.status || 'published',
     uploadedBy: userId,
     fileUrl: body.fileUrl || url || '',
@@ -167,7 +197,13 @@ const createResource = async (body, file, userId) => {
     data.fileUrl = getFileUrl(file);
   }
 
-  return Resource.create(data);
+  const created = await Resource.create(data);
+
+  if (file && file.path) {
+    uploadToCloudinaryBackground(created._id, file.path).catch(() => null);
+  }
+
+  return created;
 };
 
 // ─── UPDATE ───────────────────────────────────────────────────────────────────
@@ -175,12 +211,13 @@ const updateResource = async (id, body, file, userId, userRole) => {
   const resource = await Resource.findById(id);
   if (!resource) throw createError('Resource not found', 404);
 
-  // Only uploader or admin can update
-  if (userRole !== 'admin' && resource.uploadedBy.toString() !== userId.toString()) {
+  const roleLower = String(userRole || '').toLowerCase();
+  const isUploader = resource.uploadedBy && resource.uploadedBy.toString() === userId?.toString();
+
+  if (roleLower !== 'admin' && !isUploader) {
     throw createError('You are not authorized to update this resource', 403);
   }
 
-  // Prevent changing uploader
   delete body.uploadedBy;
 
   const updateData = { ...body };
@@ -194,11 +231,20 @@ const updateResource = async (id, body, file, userId, userRole) => {
   if (body.content) {
     if (!body.markdownContent) updateData.markdownContent = body.content;
   }
+  if (body.isFeatured !== undefined) {
+    updateData.isFeatured = body.isFeatured === true || body.isFeatured === 'true';
+  }
   if (file) {
     updateData.fileUrl = getFileUrl(file);
   }
 
-  return Resource.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+  const updated = await Resource.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+
+  if (file && file.path) {
+    uploadToCloudinaryBackground(updated._id, file.path).catch(() => null);
+  }
+
+  return updated;
 };
 
 // ─── DELETE ───────────────────────────────────────────────────────────────────

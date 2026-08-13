@@ -5,6 +5,7 @@ import {
   fetchTrendingResourcesAPI,
   fetchRecommendedResourcesAPI,
   createResourceAPI,
+  deleteResourceAPI,
   toggleLikeAPI,
   rateResourceAPI,
   addCommentAPI,
@@ -18,6 +19,7 @@ import {
   setRecommendedResources,
   setSelectedResource,
   addResourceItem,
+  removeResourceItem,
 } from './resourceSlice.js';
 
 export const fetchResourcesThunk = (params) => async (dispatch) => {
@@ -89,5 +91,15 @@ export const fetchResourceByIdThunk = (id) => async (dispatch) => {
   } catch (err) {
     console.error('Error fetching resource by id:', err);
     dispatch(setSelectedResource(null));
+  }
+};
+
+export const deleteResourceThunk = (id) => async (dispatch) => {
+  try {
+    await deleteResourceAPI(id);
+    dispatch(removeResourceItem(id));
+  } catch (err) {
+    console.error('Error deleting resource:', err);
+    throw err;
   }
 };

@@ -37,12 +37,14 @@ export const AdminResources = () => {
 
   const handleDeleteResource = async (id) => {
     if (!confirm('Are you sure you want to delete this resource?')) return;
+    setResources((prev) => prev.filter((r) => String(r._id || r.id) !== String(id)));
     try {
       await apiClient.delete(`/resources/${id}`);
       toast.success('Resource deleted successfully');
       fetchResources();
     } catch (err) {
       toast.error('Failed to delete resource');
+      fetchResources();
     }
   };
 

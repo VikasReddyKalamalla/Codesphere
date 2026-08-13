@@ -40,7 +40,7 @@ const resourceSchema = new mongoose.Schema(
     resourceType: {
       type: String,
       enum: {
-        values: ['pdf', 'notes', 'video', 'documentation', 'source_code', 'github', 'link', 'presentation', 'zip', 'other'],
+        values: ['pdf', 'notes', 'video', 'documentation', 'source_code', 'github', 'link', 'presentation', 'ppt', 'pptx', 'word', 'doc', 'docx', 'zip', 'other'],
         message: '{VALUE} is not a valid resource type',
       },
       required: [true, 'Resource type is required'],

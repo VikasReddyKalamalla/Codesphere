@@ -368,11 +368,16 @@ const getResources = async (query = {}) => {
   return { resources: items, pagination: buildPagination(total, page, limit) };
 };
 
+const Bookmark = require('../models/Bookmark');
+const { broadcastDataChange } = require('../utils/realtimeBroadcast');
+
 const deleteResource = async (resourceId, adminId) => {
   const resource = await Resource.findByIdAndDelete(resourceId);
   if (!resource) throw createError('Resource not found', 404);
-  await AdminLog.create({ admin: adminId, action: 'Resource Deleted', module: 'Content', affectedResourceId: resourceId, affectedResourceType: 'Resource' });
-  return { message: 'Resource deleted' };
+  await Bookmark.deleteMany({ resourceId }).catch(() => {});
+  await AdminLog.create({ admin: adminId, action: 'Resource Deleted', module: 'Content', affectedResourceId: resourceId, affectedResourceType: 'Resource' }).catch(() => {});
+  broadcastDataChange('resource', 'deleted', { id: resourceId, resourceId });
+  return { message: 'Resource deleted', id: resourceId };
 };
 
 // ─── COMMUNITIES ──────────────────────────────────────────────────────────────

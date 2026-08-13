@@ -83,6 +83,18 @@ const resourceSlice = createSlice({
       state.items = state.items.filter(r => String(r._id || r.id || r.title) !== id);
       state.items.unshift(action.payload);
     },
+    removeResourceItem: (state, action) => {
+      if (!action.payload) return;
+      const id = String(action.payload);
+      state.items = state.items.filter(r => String(r._id || r.id) !== id);
+      state.featuredItems = state.featuredItems.filter(r => String(r._id || r.id) !== id);
+      state.trendingItems = state.trendingItems.filter(r => String(r._id || r.id) !== id);
+      state.recommendedItems = state.recommendedItems.filter(r => String(r._id || r.id) !== id);
+      state.userHistory = state.userHistory.filter(r => String(r._id || r.id) !== id);
+      if (state.selectedResource && String(state.selectedResource._id || state.selectedResource.id) === id) {
+        state.selectedResource = null;
+      }
+    },
     resetFilters: (state) => {
       state.activeCategory = 'all';
       state.activeResourceType = 'all';
@@ -107,6 +119,7 @@ export const {
   setPriceFilter,
   toggleBookmark,
   addResourceItem,
+  removeResourceItem,
   resetFilters,
 } = resourceSlice.actions;
 
