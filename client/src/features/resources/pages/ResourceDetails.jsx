@@ -308,7 +308,8 @@ export const ResourceDetails = () => {
             <div className="flex flex-col gap-5">
               {/* PDF & Live Embedded Document Viewer */}
               {isPdf && rawUrl && !rawUrl.includes('example.com') && (() => {
-                const pdfDirectUrl = fullFileUrl.includes('/mock-resources-proxy/')
+                const isLocalUpload = fullFileUrl.includes('/uploads/') || fullFileUrl.includes('localhost:5000/uploads/');
+                const pdfDirectUrl = isLocalUpload
                   ? fullFileUrl
                   : fullFileUrl.startsWith('http')
                   ? `http://localhost:5000/api/resources/proxy-pdf?url=${encodeURIComponent(fullFileUrl)}`

@@ -43,8 +43,8 @@ const uploadToCloudinaryBackground = async (resourceId, localFilePath) => {
       type: 'upload',
     });
     if (res && res.secure_url) {
-      await Resource.findByIdAndUpdate(resourceId, { fileUrl: res.secure_url });
-      console.log(`[Cloudinary Background] Synced ${resourceId} to Cloudinary: ${res.secure_url}`);
+      await Resource.findByIdAndUpdate(resourceId, { externalUrl: res.secure_url });
+      console.log(`[Cloudinary Background] Synced ${resourceId} to Cloudinary backup URL: ${res.secure_url}`);
     }
   } catch (err) {
     console.warn(`[Cloudinary Background Sync Notice]: ${err.message}`);

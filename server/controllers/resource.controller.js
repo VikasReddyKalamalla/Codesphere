@@ -98,8 +98,20 @@ const proxyPdf = asyncHandler(async (req, res) => {
 
   const decodedUrl = decodeURIComponent(targetUrl);
   const possibleFilename = decodeURIComponent(decodedUrl.split('/').pop().split('?')[0]);
+
+  // 1. Direct path check if URL references /uploads/
+  if (decodedUrl.includes('/uploads/')) {
+    const relativePath = decodedUrl.split('/uploads/')[1];
+    const localUploadPath = path.join(__dirname, '../uploads', relativePath);
+    if (fs.existsSync(localUploadPath)) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${possibleFilename}"`);
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.sendFile(localUploadPath);
+    }
+  }
   
-  // 1. Check local disk storage (uploads/resource, uploads)
+  // 2. Check local disk storage (uploads/resource, uploads)
   const candidatePaths = [
     path.join(__dirname, '../uploads/resource', possibleFilename),
     path.join(__dirname, '../uploads', possibleFilename),
@@ -114,26 +126,32 @@ const proxyPdf = asyncHandler(async (req, res) => {
     }
   }
 
-  // 2. Scan uploads/resource for any matching pdf file if filename matches partially
+  // 3. Scan uploads/resource for any matching pdf file or sole uploaded pdf
   const resourceDir = path.join(__dirname, '../uploads/resource');
   if (fs.existsSync(resourceDir)) {
     const uploadedFiles = fs.readdirSync(resourceDir).filter(f => f.endsWith('.pdf'));
-    const cleanTarget = possibleFilename.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const matchedFile = uploadedFiles.find(f => {
-      const cleanF = f.toLowerCase().replace(/[^a-z0-9]/g, '');
-      return cleanTarget.includes(cleanF) || cleanF.includes(cleanTarget);
-    });
+    if (uploadedFiles.length > 0) {
+      const cleanTarget = possibleFilename.toLowerCase().replace(/[^a-z0-9]/g, '');
+      let matchedFile = uploadedFiles.find(f => {
+        const cleanF = f.toLowerCase().replace(/[^a-z0-9]/g, '');
+        return cleanTarget.includes(cleanF) || cleanF.includes(cleanTarget);
+      });
 
-    if (matchedFile) {
-      const matchPath = path.join(resourceDir, matchedFile);
-      res.setHeader('Content-Type', 'application/pdf');
-      res.setHeader('Content-Disposition', `inline; filename="${matchedFile}"`);
-      res.setHeader('Access-Control-Allow-Origin', '*');
-      return res.sendFile(matchPath);
+      if (!matchedFile && uploadedFiles.length === 1) {
+        matchedFile = uploadedFiles[0];
+      }
+
+      if (matchedFile) {
+        const matchPath = path.join(resourceDir, matchedFile);
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `inline; filename="${matchedFile}"`);
+        res.setHeader('Access-Control-Allow-Origin', '*');
+        return res.sendFile(matchPath);
+      }
     }
   }
 
-  // 3. Try direct HTTP fetch for remote URLs
+  // 4. Try direct HTTP fetch for remote URLs (with quick 4s timeout)
   if (decodedUrl.startsWith('http://') || decodedUrl.startsWith('https://')) {
     try {
       const axios = require('axios');
@@ -143,7 +161,7 @@ const proxyPdf = asyncHandler(async (req, res) => {
           'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
           'Accept': 'application/pdf,application/octet-stream,*/*',
         },
-        timeout: 15000,
+        timeout: 4000,
       });
 
       if (response.status === 200) {
