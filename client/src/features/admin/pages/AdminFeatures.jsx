@@ -2409,7 +2409,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
 
                 {/* 3D Earth Globe Location Container */}
                 <div className="p-4 bg-slate-50 dark:bg-slate-800/60 rounded-2xl space-y-3.5 border border-slate-200 dark:border-slate-700 font-sans">
-                  {/* Header Row */}
+                  {/* Header Row: Title on Left, Google Maps Icon Button on Right */}
                   <div className="flex items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-700 pb-3">
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div className="p-2 bg-[#04AA6D]/10 dark:bg-emerald-500/20 text-[#04AA6D] dark:text-emerald-400 rounded-xl border border-[#04AA6D]/20 shrink-0">
@@ -2425,74 +2425,42 @@ export default function AdminFeaturesPage({ defaultTab }) {
                       </div>
                     </div>
 
-                    {/* Preset Dropdown */}
-                    <select
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (!val) return;
-                        const match = GLOBAL_PLACES_PRESETS.find(p => p.label === val || p.city === val);
-                        if (match) {
-                          setEventForm(prev => ({
-                            ...prev,
-                            city: match.city,
-                            country: match.country,
-                            latitude: match.lat,
-                            longitude: match.lng,
-                          }));
-                          toast.success(`Location set: ${match.city}, ${match.country}`);
-                        }
+                    {/* SINGLE GOOGLE MAPS ICON BUTTON */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const query = [eventForm.city, eventForm.country].filter(Boolean).join(', ') || 'Google Maps';
+                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+                        window.open(mapsUrl, '_blank', 'noopener,noreferrer');
                       }}
-                      className="px-2.5 py-1.5 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-[#04AA6D] shadow-xs cursor-pointer shrink-0 max-w-[180px]"
+                      title="Open Google Maps in new tab to choose location"
+                      className="px-3.5 py-2 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-800 dark:text-slate-200 font-extrabold text-xs flex items-center gap-2 cursor-pointer shadow-xs transition-all shrink-0 hover:border-[#04AA6D]"
                     >
-                      <option value="">🌍 Presets...</option>
-                      {Array.from(new Set(GLOBAL_PLACES_PRESETS.map(p => p.category))).map(cat => (
-                        <optgroup key={cat} label={cat}>
-                          {GLOBAL_PLACES_PRESETS.filter(p => p.category === cat).map(p => (
-                            <option key={p.label} value={p.label}>
-                              {p.label}
-                            </option>
-                          ))}
-                        </optgroup>
-                      ))}
-                    </select>
+                      <span className="text-base leading-none">🗺️</span>
+                      <span className="text-xs font-extrabold text-slate-800 dark:text-slate-200">Open Google Maps</span>
+                      <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
+                    </button>
                   </div>
 
-                  {/* Location Search Bar & Google Maps Icon Button */}
+                  {/* Location Search Bar & Google Maps Link Auto-Fill */}
                   <div className="space-y-1">
                     <div className="flex items-center justify-between text-xs font-extrabold text-slate-700 dark:text-slate-300">
                       <span>Search Place or Paste Google Maps Link</span>
                       <span className="text-[10px] text-[#04AA6D] dark:text-emerald-400 font-semibold">Auto-fills details below</span>
                     </div>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-                        <input
-                          type="text"
-                          placeholder="Type place name or paste Google Maps URL (e.g. Hyderabad, Stanford, Paris)..."
-                          value={locationSearchInput}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setLocationSearchInput(val);
-                            handleLocationAutoFill(val);
-                          }}
-                          className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#04AA6D]"
-                        />
-                      </div>
-
-                      {/* Single Google Maps Icon Button */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const query = [eventForm.city, eventForm.country].filter(Boolean).join(', ') || 'Google Maps';
-                          const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
-                          window.open(mapsUrl, '_blank', 'noopener,noreferrer');
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                      <input
+                        type="text"
+                        placeholder="Type place name or paste Google Maps URL (e.g. Hyderabad, Stanford, Paris)..."
+                        value={locationSearchInput}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setLocationSearchInput(val);
+                          handleLocationAutoFill(val);
                         }}
-                        title="Open Google Maps in new tab to choose location"
-                        className="px-3 py-2 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-700 dark:text-slate-200 font-extrabold text-xs flex items-center gap-1.5 cursor-pointer shadow-xs transition-all shrink-0 hover:border-[#04AA6D]"
-                      >
-                        <span className="text-base leading-none">🗺️</span>
-                        <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Google Maps</span>
-                      </button>
+                        className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#04AA6D]"
+                      />
                     </div>
                   </div>
 
