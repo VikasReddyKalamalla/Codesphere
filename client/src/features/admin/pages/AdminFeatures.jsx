@@ -542,10 +542,10 @@ export default function AdminFeaturesPage({ defaultTab }) {
     meetingUrl: '',
     maxParticipants: 100,
     speakerName: 'Lead Tech Instructor',
-    country: 'United States',
-    city: 'San Francisco',
-    latitude: 37.7749,
-    longitude: -122.4194,
+    country: '',
+    city: '',
+    latitude: '',
+    longitude: '',
     prizePool: '$0',
     banner: '',
     status: 'upcoming',
@@ -1416,10 +1416,10 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   meetingUrl: '',
                   maxParticipants: 100,
                   speakerName: 'Lead Tech Instructor',
-                  country: 'United States',
-                  city: 'San Francisco',
-                  latitude: 37.7749,
-                  longitude: -122.4194,
+                  country: '',
+                  city: '',
+                  latitude: '',
+                  longitude: '',
                   prizePool: '$0',
                   banner: '',
                   status: 'upcoming',
@@ -1497,10 +1497,10 @@ export default function AdminFeaturesPage({ defaultTab }) {
                                 meetingUrl: item.meetingUrl || item.meetingLink || '',
                                 maxParticipants: item.maxParticipants || 100,
                                 speakerName: item.speakerName || item.speakers?.[0]?.name || 'Instructor',
-                                country: item.country || 'United States',
-                                city: item.city || 'San Francisco',
-                                latitude: item.latitude || 37.7749,
-                                longitude: item.longitude || -122.4194,
+                                country: item.country || '',
+                                city: item.city || '',
+                                latitude: item.latitude || '',
+                                longitude: item.longitude || '',
                                 prizePool: item.prizePool || '$0',
                                 banner: item.banner || item.bannerImage || '',
                                 status: item.status || 'upcoming',
@@ -2429,8 +2429,19 @@ export default function AdminFeaturesPage({ defaultTab }) {
                     <button
                       type="button"
                       onClick={() => {
-                        const query = [eventForm.city, eventForm.country].filter(Boolean).join(', ') || 'Google Maps';
-                        const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+                        const city = eventForm.city?.trim();
+                        const country = eventForm.country?.trim();
+                        const lat = eventForm.latitude;
+                        const lng = eventForm.longitude;
+
+                        let mapsUrl = 'https://www.google.com/maps';
+                        if (lat && lng) {
+                          mapsUrl = `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+                        } else if (city || country) {
+                          const query = [city, country].filter(Boolean).join(', ');
+                          mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`;
+                        }
+
                         window.open(mapsUrl, '_blank', 'noopener,noreferrer');
                       }}
                       title="Open Google Maps in new tab to choose location"
