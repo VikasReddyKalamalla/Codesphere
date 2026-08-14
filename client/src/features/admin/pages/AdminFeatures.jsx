@@ -12,6 +12,9 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { socket } from '../../../socket/socket.js';
 
+// Import existing Learning Path management component for full integration
+import AdminLearning from './AdminLearning.jsx';
+
 const GLOBAL_PLACES_PRESETS = [
   // 🇮🇳 India Tech & Innovation Hubs
   { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Hyderabad, Telangana, India', city: 'Hyderabad', country: 'India', lat: 17.3850, lng: 78.4867 },
