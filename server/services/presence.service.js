@@ -1,49 +1,97 @@
 const Presence = require('../models/Presence');
 
+// In-memory presence cache for fast synchronous socket lookups
+const inMemoryPresence = new Map();
+
+// Deferred MongoDB write queue to batch database operations
+const pendingDbFlushes = new Set();
+
+let isFlushTimerScheduled = false;
+const scheduleLazyFlush = () => {
+  if (isFlushTimerScheduled) return;
+  isFlushTimerScheduled = true;
+  setTimeout(async () => {
+    isFlushTimerScheduled = false;
+    if (pendingDbFlushes.size === 0) return;
+
+    const userIdsToFlush = Array.from(pendingDbFlushes);
+    pendingDbFlushes.clear();
+
+    for (const userId of userIdsToFlush) {
+      const state = inMemoryPresence.get(String(userId));
+      if (state) {
+        try {
+          await Presence.findOneAndUpdate(
+            { user: userId },
+            {
+              isOnline: state.isOnline,
+              status: state.status,
+              lastActiveAt: new Date(state.lastActiveAt),
+              currentRoom: state.currentRoom || null,
+              socketIds: Array.from(state.socketIds || []),
+            },
+            { upsert: true, new: true }
+          ).catch(() => {});
+        } catch (_) {}
+      }
+    }
+  }, 30000); // Batch flush presence state to MongoDB every 30 seconds
+};
+
 /**
  * Mark a user as online and register their socketId.
  */
 const setOnline = async (userId, socketId, room) => {
-  const presence = await Presence.findOneAndUpdate(
-    { user: userId },
-    {
+  const uidStr = String(userId);
+  let record = inMemoryPresence.get(uidStr);
+  if (!record) {
+    record = {
+      user: userId,
       isOnline: true,
       status: 'online',
-      lastActiveAt: new Date(),
+      lastActiveAt: Date.now(),
       currentRoom: room || null,
-      $addToSet: { socketIds: socketId },
-    },
-    { upsert: true, new: true }
-  );
-  return presence;
+      socketIds: new Set(),
+    };
+  }
+
+  record.isOnline = true;
+  record.status = 'online';
+  record.lastActiveAt = Date.now();
+  if (room) record.currentRoom = room;
+  record.socketIds.add(socketId);
+
+  inMemoryPresence.set(uidStr, record);
+  pendingDbFlushes.add(uidStr);
+  scheduleLazyFlush();
+
+  return record;
 };
 
 /**
  * Mark a user as offline (remove socketId; if none left, set offline).
  */
 const setOffline = async (userId, socketId) => {
-  const presence = await Presence.findOneAndUpdate(
-    { user: userId },
-    {
-      $pull: { socketIds: socketId },
-      lastActiveAt: new Date(),
-    },
-    { new: true }
-  );
+  const uidStr = String(userId);
+  let record = inMemoryPresence.get(uidStr);
+  if (!record) return null;
 
-  if (!presence) return null;
+  record.socketIds.delete(socketId);
+  record.lastActiveAt = Date.now();
 
-  // If no active sockets remain, mark as offline
-  if (!presence.socketIds || presence.socketIds.length === 0) {
-    presence.isOnline = false;
-    presence.status = 'offline';
-    presence.currentRoom = null;
-    presence.currentWorkspace = null;
-    presence.currentSession = null;
-    await presence.save();
+  if (record.socketIds.size === 0) {
+    record.isOnline = false;
+    record.status = 'offline';
+    record.currentRoom = null;
+    record.currentWorkspace = null;
+    record.currentSession = null;
   }
 
-  return presence;
+  inMemoryPresence.set(uidStr, record);
+  pendingDbFlushes.add(uidStr);
+  scheduleLazyFlush();
+
+  return record;
 };
 
 /**

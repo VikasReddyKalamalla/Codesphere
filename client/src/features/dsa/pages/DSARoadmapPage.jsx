@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -9,7 +9,7 @@ import {
 import { dsaAPI } from '../services/dsaAPI';
 import toast from 'react-hot-toast';
 
-const DifficultyBadge = ({ difficulty }) => {
+const DifficultyBadge = React.memo(({ difficulty }) => {
   const colors = {
     easy: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
     medium: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
@@ -23,7 +23,7 @@ const DifficultyBadge = ({ difficulty }) => {
       {difficulty}
     </span>
   );
-};
+});
 
 const getRankTitle = (solved) => {
   if (solved >= 300) return { title: 'Grandmaster Alchemist', badge: '👑', color: '#04AA6D' };
@@ -248,12 +248,14 @@ export default function DSARoadmapPage() {
   const overallCompletion = Math.min(100, Math.round((totalSolved / totalProblems) * 100));
   const userRank = getRankTitle(totalSolved);
 
-  const filteredTopics = topics.filter(t => {
-    const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                          t.description?.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesDiff = filterDifficulty === 'all' || t.difficulty === filterDifficulty;
-    return matchesSearch && matchesDiff;
-  });
+  const filteredTopics = useMemo(() => {
+    return topics.filter(t => {
+      const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            t.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesDiff = filterDifficulty === 'all' || t.difficulty === filterDifficulty;
+      return matchesSearch && matchesDiff;
+    });
+  }, [topics, searchQuery, filterDifficulty]);
 
   const handleSimulate = async (action) => {
     try {

@@ -90,6 +90,55 @@ const del = async (key) => {
 };
 
 /**
+ * Delete values from cache matching a pattern
+ */
+const delByPattern = async (pattern) => {
+  try {
+    if (!redisClient || !redisClient.isOpen) return false;
+    const keys = await redisClient.keys(pattern);
+    if (keys && keys.length > 0) {
+      await redisClient.del(keys);
+    }
+    return true;
+  } catch (error) {
+    logger.error(`Cache delByPattern error: ${error.message}`);
+    return false;
+  }
+};
+
+// In-memory locks map to prevent Thundering Herd on single node
+const activeLocks = new Map();
+
+/**
+ * Get cached value or execute fetchFn with mutex lock to prevent cache stampedes
+ */
+const getOrSetWithLock = async (key, fetchFn, ttl = 3600) => {
+  const cached = await get(key);
+  if (cached) return cached;
+
+  if (activeLocks.has(key)) {
+    // Wait for active lock to finish
+    await activeLocks.get(key);
+    return (await get(key)) || (await fetchFn());
+  }
+
+  let resolveLock;
+  const lockPromise = new Promise((res) => { resolveLock = res; });
+  activeLocks.set(key, lockPromise);
+
+  try {
+    const freshData = await fetchFn();
+    if (freshData !== undefined && freshData !== null) {
+      await set(key, freshData, ttl);
+    }
+    return freshData;
+  } finally {
+    activeLocks.delete(key);
+    resolveLock();
+  }
+};
+
+/**
  * Clear all cache (use with caution)
  */
 const clear = async () => {
@@ -167,6 +216,8 @@ module.exports = {
   get,
   set,
   del,
+  delByPattern,
+  getOrSetWithLock,
   clear,
   cacheMiddleware,
   cacheKeys,
