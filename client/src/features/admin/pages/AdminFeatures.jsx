@@ -12,8 +12,72 @@ import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { socket } from '../../../socket/socket.js';
 
-// Import existing Learning Path management component for full integration
-import AdminLearning from './AdminLearning.jsx';
+const GLOBAL_PLACES_PRESETS = [
+  // 🇮🇳 India Tech & Innovation Hubs
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Hyderabad, Telangana, India', city: 'Hyderabad', country: 'India', lat: 17.3850, lng: 78.4867 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Bengaluru, Karnataka, India', city: 'Bengaluru', country: 'India', lat: 12.9716, lng: 77.5946 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Mumbai, Maharashtra, India', city: 'Mumbai', country: 'India', lat: 19.0760, lng: 72.8777 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 New Delhi / NCR, India', city: 'New Delhi', country: 'India', lat: 28.6139, lng: 77.2090 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Pune, Maharashtra, India', city: 'Pune', country: 'India', lat: 18.5204, lng: 73.8567 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Chennai, Tamil Nadu, India', city: 'Chennai', country: 'India', lat: 13.0827, lng: 80.2707 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Kolkata, West Bengal, India', city: 'Kolkata', country: 'India', lat: 22.5726, lng: 88.3639 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Ahmedabad, Gujarat, India', city: 'Ahmedabad', country: 'India', lat: 23.0225, lng: 72.5714 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Jaipur, Rajasthan, India', city: 'Jaipur', country: 'India', lat: 26.9124, lng: 75.7873 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Kochi, Kerala, India', city: 'Kochi', country: 'India', lat: 9.9312, lng: 76.2673 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Chandigarh, India', city: 'Chandigarh', country: 'India', lat: 30.7333, lng: 76.7794 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Visakhapatnam, AP, India', city: 'Visakhapatnam', country: 'India', lat: 17.6868, lng: 83.2185 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Indore, MP, India', city: 'Indore', country: 'India', lat: 22.7196, lng: 75.8577 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Coimbatore, TN, India', city: 'Coimbatore', country: 'India', lat: 11.0168, lng: 76.9558 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Bhubaneswar, Odisha, India', city: 'Bhubaneswar', country: 'India', lat: 20.2961, lng: 85.8245 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Noida, UP, India', city: 'Noida', country: 'India', lat: 28.5355, lng: 77.3910 },
+  { category: '🇮🇳 India Tech Hubs', label: '🇮🇳 Gurugram, Haryana, India', city: 'Gurugram', country: 'India', lat: 28.4595, lng: 77.0266 },
+
+  // 🇺🇸 Americas & Silicon Valley
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇺🇸 San Francisco, CA, USA', city: 'San Francisco', country: 'United States', lat: 37.7749, lng: -122.4194 },
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇺🇸 Mountain View, CA, USA', city: 'Mountain View', country: 'United States', lat: 37.4220, lng: -122.0840 },
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇺🇸 Seattle, WA, USA', city: 'Seattle', country: 'United States', lat: 47.6062, lng: -122.3321 },
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇺🇸 New York City, NY, USA', city: 'New York', country: 'United States', lat: 40.7128, lng: -74.0060 },
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇺🇸 Austin, TX, USA', city: 'Austin', country: 'United States', lat: 30.2672, lng: -97.7431 },
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇺🇸 Boston, MA, USA', city: 'Boston', country: 'United States', lat: 42.3601, lng: -71.0589 },
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇺🇸 Los Angeles, CA, USA', city: 'Los Angeles', country: 'United States', lat: 34.0522, lng: -118.2437 },
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇺🇸 Chicago, IL, USA', city: 'Chicago', country: 'United States', lat: 41.8781, lng: -87.6298 },
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇨🇦 Toronto, Ontario, Canada', city: 'Toronto', country: 'Canada', lat: 43.6532, lng: -79.3832 },
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇨🇦 Vancouver, BC, Canada', city: 'Vancouver', country: 'Canada', lat: 49.2827, lng: -123.1207 },
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇲🇽 Mexico City, Mexico', city: 'Mexico City', country: 'Mexico', lat: 19.4326, lng: -99.1332 },
+  { category: '🇺🇸 Americas & Silicon Valley', label: '🇧🇷 São Paulo, Brazil', city: 'São Paulo', country: 'Brazil', lat: -23.5505, lng: -46.6333 },
+
+  // 🇪🇺 Europe & UK
+  { category: '🇪🇺 Europe & UK', label: '🇬🇧 London, United Kingdom', city: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278 },
+  { category: '🇪🇺 Europe & UK', label: '🇩🇪 Berlin, Germany', city: 'Berlin', country: 'Germany', lat: 52.5200, lng: 13.4050 },
+  { category: '🇪🇺 Europe & UK', label: '🇫🇷 Paris, France', city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 },
+  { category: '🇪🇺 Europe & UK', label: '🇳🇱 Amsterdam, Netherlands', city: 'Amsterdam', country: 'Netherlands', lat: 52.3676, lng: 4.9041 },
+  { category: '🇪🇺 Europe & UK', label: '🇮🇪 Dublin, Ireland', city: 'Dublin', country: 'Ireland', lat: 53.3498, lng: -6.2603 },
+  { category: '🇪🇺 Europe & UK', label: '🇸🇪 Stockholm, Sweden', city: 'Stockholm', country: 'Sweden', lat: 59.3293, lng: 18.0686 },
+  { category: '🇪🇺 Europe & UK', label: '🇨🇭 Zurich, Switzerland', city: 'Zurich', country: 'Switzerland', lat: 47.3769, lng: 8.5417 },
+  { category: '🇪🇺 Europe & UK', label: '🇪🇸 Barcelona, Spain', city: 'Barcelona', country: 'Spain', lat: 41.3851, lng: 2.1734 },
+  { category: '🇪🇺 Europe & UK', label: '🇩🇪 Munich, Germany', city: 'Munich', country: 'Germany', lat: 48.1351, lng: 11.5820 },
+  { category: '🇪🇺 Europe & UK', label: '🇪🇪 Tallinn, Estonia', city: 'Tallinn', country: 'Estonia', lat: 59.4370, lng: 24.7536 },
+
+  // 🌏 Asia-Pacific & Oceania
+  { category: '🌏 Asia-Pacific & Oceania', label: '🇯🇵 Tokyo, Japan', city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 },
+  { category: '🌏 Asia-Pacific & Oceania', label: '🇸🇬 Singapore', city: 'Singapore', country: 'Singapore', lat: 1.3521, lng: 103.8198 },
+  { category: '🌏 Asia-Pacific & Oceania', label: '🇰🇷 Seoul, South Korea', city: 'Seoul', country: 'South Korea', lat: 37.5665, lng: 126.9780 },
+  { category: '🌏 Asia-Pacific & Oceania', label: '🇦🇺 Sydney, Australia', city: 'Sydney', country: 'Australia', lat: -33.8688, lng: 151.2093 },
+  { category: '🌏 Asia-Pacific & Oceania', label: '🇦🇺 Melbourne, Australia', city: 'Melbourne', country: 'Australia', lat: -37.8136, lng: 144.9631 },
+  { category: '🌏 Asia-Pacific & Oceania', label: '🇭🇰 Hong Kong', city: 'Hong Kong', country: 'Hong Kong', lat: 22.3193, lng: 114.1694 },
+  { category: '🌏 Asia-Pacific & Oceania', label: '🇨🇳 Shanghai, China', city: 'Shanghai', country: 'China', lat: 31.2304, lng: 121.4737 },
+  { category: '🌏 Asia-Pacific & Oceania', label: '🇹🇼 Taipei, Taiwan', city: 'Taipei', country: 'Taiwan', lat: 25.0330, lng: 121.5654 },
+  { category: '🌏 Asia-Pacific & Oceania', label: '🇳🇿 Auckland, New Zealand', city: 'Auckland', country: 'New Zealand', lat: -36.8485, lng: 174.7633 },
+
+  // 🌍 Middle East & Africa
+  { category: '🌍 Middle East & Africa', label: '🇦🇪 Dubai, UAE', city: 'Dubai', country: 'United Arab Emirates', lat: 25.2048, lng: 55.2708 },
+  { category: '🌍 Middle East & Africa', label: '🇮🇱 Tel Aviv, Israel', city: 'Tel Aviv', country: 'Israel', lat: 32.0853, lng: 34.7818 },
+  { category: '🌍 Middle East & Africa', label: '🇸🇦 Riyadh, Saudi Arabia', city: 'Riyadh', country: 'Saudi Arabia', lat: 24.7136, lng: 46.6753 },
+  { category: '🌍 Middle East & Africa', label: '🇿🇦 Cape Town, South Africa', city: 'Cape Town', country: 'South Africa', lat: -33.9249, lng: 18.4241 },
+
+  // 🌐 Virtual / Remote Global
+  { category: '🌐 Virtual & Global', label: '🌐 Remote / Global Virtual Event', city: 'Remote', country: 'Global', lat: 20.5937, lng: 78.9629 },
+];
 
 export default function AdminFeaturesPage({ defaultTab }) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -2284,82 +2348,162 @@ export default function AdminFeaturesPage({ defaultTab }) {
                   </div>
                 </div>
 
-                {/* Location Presets & Coordinates */}
-                <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl space-y-3 border border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center justify-between">
-                    <span className="font-bold text-[#04AA6D] dark:text-emerald-400">3D Earth Globe Coordinates</span>
-                    <select
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        if (!val) return;
-                        const presets = [
-                          { label: 'Hyderabad, India', city: 'Hyderabad', country: 'India', lat: 17.3850, lng: 78.4867 },
-                          { label: 'Bengaluru, India', city: 'Bengaluru', country: 'India', lat: 12.9716, lng: 77.5946 },
-                          { label: 'Mumbai, India', city: 'Mumbai', country: 'India', lat: 19.0760, lng: 72.8777 },
-                          { label: 'New Delhi, India', city: 'New Delhi', country: 'India', lat: 28.6139, lng: 77.2090 },
-                          { label: 'San Francisco, CA', city: 'San Francisco', country: 'United States', lat: 37.7749, lng: -122.4194 },
-                          { label: 'Mountain View, CA', city: 'Mountain View', country: 'United States', lat: 37.422, lng: -122.084 },
-                          { label: 'New York, NY', city: 'New York', country: 'United States', lat: 40.7128, lng: -74.0060 },
-                          { label: 'London, UK', city: 'London', country: 'United Kingdom', lat: 51.5074, lng: -0.1278 },
-                          { label: 'Tokyo, Japan', city: 'Tokyo', country: 'Japan', lat: 35.6762, lng: 139.6503 },
-                          { label: 'Berlin, Germany', city: 'Berlin', country: 'Germany', lat: 52.5200, lng: 13.4050 },
-                          { label: 'Paris, France', city: 'Paris', country: 'France', lat: 48.8566, lng: 2.3522 },
-                          { label: 'Singapore', city: 'Singapore', country: 'Singapore', lat: 1.3521, lng: 103.8198 },
-                          { label: 'Sydney, Australia', city: 'Sydney', country: 'Australia', lat: -33.8688, lng: 151.2093 },
-                          { label: 'Dubai, UAE', city: 'Dubai', country: 'United Arab Emirates', lat: 25.2048, lng: 55.2708 },
-                          { label: 'Toronto, Canada', city: 'Toronto', country: 'Canada', lat: 43.6532, lng: -79.3832 },
-                          { label: 'Remote Global', city: 'Remote', country: 'Global', lat: 20.5937, lng: 78.9629 },
-                        ];
-                        const match = presets.find(p => p.label === val);
-                        if (match) {
-                          setEventForm(prev => ({
-                            ...prev,
-                            city: match.city,
-                            country: match.country,
-                            latitude: match.lat,
-                            longitude: match.lng,
-                          }));
-                        }
-                      }}
-                      className="px-2 py-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-[11px] font-bold text-slate-700 dark:text-slate-300 outline-none focus:border-[#04AA6D]"
-                    >
-                      <option value="">-- Quick Select Globe Location --</option>
-                      <option value="Hyderabad, India">Hyderabad, India (17.38, 78.48)</option>
-                      <option value="Bengaluru, India">Bengaluru, India (12.97, 77.59)</option>
-                      <option value="Mumbai, India">Mumbai, India (19.07, 72.87)</option>
-                      <option value="New Delhi, India">New Delhi, India (28.61, 77.20)</option>
-                      <option value="San Francisco, CA">San Francisco, USA (37.77, -122.41)</option>
-                      <option value="Mountain View, CA">Mountain View, USA (37.42, -122.08)</option>
-                      <option value="New York, NY">New York, USA (40.71, -74.00)</option>
-                      <option value="London, UK">London, UK (51.50, -0.12)</option>
-                      <option value="Tokyo, Japan">Tokyo, Japan (35.67, 139.65)</option>
-                      <option value="Berlin, Germany">Berlin, Germany (52.52, 13.40)</option>
-                      <option value="Paris, France">Paris, France (48.85, 2.35)</option>
-                      <option value="Singapore">Singapore (1.35, 103.81)</option>
-                      <option value="Sydney, Australia">Sydney, Australia (-33.86, 151.20)</option>
-                      <option value="Dubai, UAE">Dubai, UAE (25.20, 55.27)</option>
-                      <option value="Toronto, Canada">Toronto, Canada (43.65, -79.38)</option>
-                      <option value="Remote Global">Remote Global (20.59, 78.96)</option>
-                    </select>
-                  </div>
-                  <div className="grid grid-cols-4 gap-2">
-                    <div>
-                      <label className="font-bold text-slate-600 dark:text-slate-400">City</label>
-                      <input type="text" value={eventForm.city} onChange={(e) => setEventForm({ ...eventForm, city: e.target.value })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-[#04AA6D]" />
+                {/* 3D Earth Globe & Event Location Selector */}
+                <div className="p-4 bg-gradient-to-br from-slate-50 to-emerald-50/20 dark:from-slate-900/90 dark:to-emerald-950/20 rounded-2xl space-y-4 border border-slate-200/80 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200/80 dark:border-slate-800/80 pb-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2.5 bg-[#04AA6D]/10 dark:bg-emerald-500/20 text-[#04AA6D] dark:text-emerald-400 rounded-xl border border-[#04AA6D]/20 shadow-xs">
+                        <Globe className="w-5 h-5 animate-pulse" />
+                      </div>
+                      <div>
+                        <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
+                          3D Earth Globe Location
+                          <span className="text-[10px] font-mono font-extrabold bg-[#04AA6D]/15 text-[#04AA6D] dark:text-emerald-400 px-2 py-0.5 rounded-full border border-[#04AA6D]/30 uppercase">
+                            Global Tech Hubs & Auto-Detect
+                          </span>
+                        </h4>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                          Select any world location or enter a custom city to auto-pin onto the CodeSphere 3D Interactive Earth.
+                        </p>
+                      </div>
                     </div>
-                    <div>
-                      <label className="font-bold text-slate-600 dark:text-slate-400">Country</label>
-                      <input type="text" value={eventForm.country} onChange={(e) => setEventForm({ ...eventForm, country: e.target.value })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none focus:border-[#04AA6D]" />
-                    </div>
-                    <div>
-                      <label className="font-bold text-slate-600 dark:text-slate-400">Latitude</label>
-                      <input type="number" step="any" value={eventForm.latitude} onChange={(e) => setEventForm({ ...eventForm, latitude: Number(e.target.value) })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-mono focus:border-[#04AA6D]" />
-                    </div>
-                    <div>
-                      <label className="font-bold text-slate-600 dark:text-slate-400">Longitude</label>
-                      <input type="number" step="any" value={eventForm.longitude} onChange={(e) => setEventForm({ ...eventForm, longitude: Number(e.target.value) })} className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-mono focus:border-[#04AA6D]" />
+
+                    {/* Categorized Location Presets without Raw Coordinates */}
+                    <div className="shrink-0">
+                      <select
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (!val) return;
+                          const match = GLOBAL_PLACES_PRESETS.find(p => p.label === val || p.city === val);
+                          if (match) {
+                            setEventForm(prev => ({
+                              ...prev,
+                              city: match.city,
+                              country: match.country,
+                              latitude: match.lat,
+                              longitude: match.lng,
+                            }));
+                            toast.success(`Location set: ${match.city}, ${match.country}`);
+                          }
+                        }}
+                        className="w-full md:w-auto px-3.5 py-2 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-xs font-bold text-slate-800 dark:text-slate-200 outline-none focus:border-[#04AA6D] shadow-xs cursor-pointer"
+                      >
+                        <option value="">🌍 Select Preset World Location...</option>
+                        {Array.from(new Set(GLOBAL_PLACES_PRESETS.map(p => p.category))).map(cat => (
+                          <optgroup key={cat} label={cat}>
+                            {GLOBAL_PLACES_PRESETS.filter(p => p.category === cat).map(p => (
+                              <option key={p.label} value={p.label}>
+                                {p.label}
+                              </option>
+                            ))}
+                          </optgroup>
+                        ))}
+                      </select>
                     </div>
                   </div>
+
+                  {/* Location Inputs & Auto-Detect Geocoding */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
+                    <div className="lg:col-span-2">
+                      <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300">City / City Name</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. San Francisco, Austin, Hyderabad..."
+                        value={eventForm.city}
+                        onChange={(e) => setEventForm({ ...eventForm, city: e.target.value })}
+                        className="w-full mt-1 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D] text-xs font-semibold"
+                      />
+                    </div>
+                    <div className="lg:col-span-2">
+                      <label className="text-xs font-extrabold text-slate-700 dark:text-slate-300">Country / Region</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. United States, India, Germany..."
+                        value={eventForm.country}
+                        onChange={(e) => setEventForm({ ...eventForm, country: e.target.value })}
+                        className="w-full mt-1 p-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:border-[#04AA6D] text-xs font-semibold"
+                      />
+                    </div>
+                    <div className="lg:col-span-1">
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          const query = [eventForm.city, eventForm.country].filter(Boolean).join(', ');
+                          if (!query.trim()) {
+                            return toast.error('Please enter a city or country name first');
+                          }
+                          const loader = toast.loading(`Resolving coordinates for ${query}...`);
+                          try {
+                            const match = GLOBAL_PLACES_PRESETS.find(p => 
+                              p.city.toLowerCase() === eventForm.city.trim().toLowerCase() ||
+                              p.label.toLowerCase().includes(query.toLowerCase())
+                            );
+                            if (match) {
+                              setEventForm(prev => ({
+                                ...prev,
+                                city: match.city,
+                                country: match.country,
+                                latitude: match.lat,
+                                longitude: match.lng,
+                              }));
+                              toast.success(`Coordinates resolved for ${match.city}, ${match.country}!`, { id: loader });
+                              return;
+                            }
+                            const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}`);
+                            const data = await res.json();
+                            if (data && data.length > 0) {
+                              const lat = parseFloat(parseFloat(data[0].lat).toFixed(4));
+                              const lng = parseFloat(parseFloat(data[0].lon).toFixed(4));
+                              setEventForm(prev => ({
+                                ...prev,
+                                latitude: lat,
+                                longitude: lng,
+                              }));
+                              toast.success(`Geocoded ${query} → Pin set on 3D Earth!`, { id: loader });
+                            } else {
+                              toast.error('Could not auto-find location. Expand manual Lat/Lng below.', { id: loader });
+                            }
+                          } catch (err) {
+                            toast.error('Geocoding offline. You can set coordinates manually below.', { id: loader });
+                          }
+                        }}
+                        className="w-full py-2 px-3 bg-[#04AA6D] hover:bg-emerald-600 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+                      >
+                        <Search className="w-3.5 h-3.5" />
+                        Auto-Detect
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Collapsible Advanced Lat/Lng Controls */}
+                  <details className="group pt-1">
+                    <summary className="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 cursor-pointer select-none flex items-center gap-1.5 transition-colors">
+                      <span className="group-open:rotate-90 transition-transform">▸</span>
+                      <span>Advanced 3D Globe Pin Coordinates (Lat: {eventForm.latitude || 0}, Lng: {eventForm.longitude || 0})</span>
+                    </summary>
+                    <div className="grid grid-cols-2 gap-3 pt-2.5">
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Latitude</label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={eventForm.latitude || ''}
+                          onChange={(e) => setEventForm({ ...eventForm, latitude: Number(e.target.value) })}
+                          className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-mono text-xs focus:border-[#04AA6D]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400">Longitude</label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={eventForm.longitude || ''}
+                          onChange={(e) => setEventForm({ ...eventForm, longitude: Number(e.target.value) })}
+                          className="w-full mt-0.5 p-1.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg outline-none font-mono text-xs focus:border-[#04AA6D]"
+                        />
+                      </div>
+                    </div>
+                  </details>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
