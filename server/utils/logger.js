@@ -16,17 +16,34 @@ const writeToFile = (level, message) => {
   fs.appendFileSync(logFile, entry);
 };
 
+const isProd = process.env.NODE_ENV === 'production';
+
+const formatLog = (level, message, meta = {}) => {
+  if (isProd) {
+    return JSON.stringify({
+      timestamp: getTimestamp(),
+      level,
+      message: typeof message === 'object' ? JSON.stringify(message) : message,
+      ...meta,
+    });
+  }
+  return `[${level}] ${typeof message === 'object' ? JSON.stringify(message) : message}`;
+};
+
 const logger = {
-  info: (message) => {
-    console.log(`[INFO] ${message}`);
+  info: (message, meta) => {
+    const formatted = formatLog('INFO', message, meta);
+    console.log(formatted);
     writeToFile('INFO', message);
   },
-  warn: (message) => {
-    console.warn(`[WARN] ${message}`);
+  warn: (message, meta) => {
+    const formatted = formatLog('WARN', message, meta);
+    console.warn(formatted);
     writeToFile('WARN', message);
   },
-  error: (message) => {
-    console.error(`[ERROR] ${message}`);
+  error: (message, meta) => {
+    const formatted = formatLog('ERROR', message, meta);
+    console.error(formatted);
     writeToFile('ERROR', message);
   },
 };

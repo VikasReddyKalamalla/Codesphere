@@ -331,6 +331,19 @@ const resetPasswordWithToken = async (resetToken, newPassword) => {
   return { message: 'Password reset successfully. You may now log in.' };
 };
 
+const revokedTokens = new Set();
+
+const revokeToken = async (token) => {
+  if (!token) return false;
+  revokedTokens.add(token);
+  return true;
+};
+
+const isTokenRevoked = async (token) => {
+  if (!token) return false;
+  return revokedTokens.has(token);
+};
+
 module.exports = {
   register,
   login,
@@ -341,4 +354,6 @@ module.exports = {
   verifyAndEnable2FA,
   requestPasswordReset,
   resetPasswordWithToken,
+  revokeToken,
+  isTokenRevoked,
 };

@@ -16,6 +16,18 @@ export const setupRequestInterceptor = (instance) => {
 export const setupResponseInterceptor = (instance, errorHandler) => {
   instance.interceptors.response.use(
     (response) => response,
-    (error) => errorHandler(error)
+    async (error) => {
+      const config = error.config;
+      if (config && (!config._retryCount || config._retryCount < 2)) {
+        const status = error.response?.status;
+        if (!status || status === 502 || status === 503 || status === 504) {
+          config._retryCount = (config._retryCount || 0) + 1;
+          const delay = Math.pow(2, config._retryCount) * 500; // Exponential backoff: 1s, 2s
+          await new Promise((res) => setTimeout(res, delay));
+          return instance(config);
+        }
+      }
+      return errorHandler(error);
+    }
   );
 };
