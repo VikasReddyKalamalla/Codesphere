@@ -6,7 +6,7 @@ import {
   Plus, Edit, Trash2, Search, Filter, Check, X, Eye, RefreshCw,
   BarChart2, FileText, Layers, ShieldCheck, Sparkles, Activity,
   ChevronRight, ExternalLink, Play, Lock, Globe, ToggleLeft, ToggleRight,
-  Clock, Award, Users, AlertCircle, CheckCircle2, Upload, Video
+  Clock, Award, Users, AlertCircle, CheckCircle2, Upload, Video, MapPin, Map
 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -78,6 +78,248 @@ const GLOBAL_PLACES_PRESETS = [
   // 🌐 Virtual / Remote Global
   { category: '🌐 Virtual & Global', label: '🌐 Remote / Global Virtual Event', city: 'Remote', country: 'Global', lat: 20.5937, lng: 78.9629 },
 ];
+
+const InteractiveMapModal = ({ isOpen, onClose, onConfirm, currentCity, currentCountry, currentLat, currentLng }) => {
+  if (!isOpen) return null;
+
+  const [mapSearch, setMapSearch] = useState(currentCity ? `${currentCity}, ${currentCountry || ''}` : '');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
+  const [selectedPlace, setSelectedPlace] = useState({
+    city: currentCity || 'San Francisco',
+    country: currentCountry || 'United States',
+    displayName: currentCity ? `${currentCity}, ${currentCountry || ''}` : 'San Francisco, United States',
+    lat: currentLat || 37.7749,
+    lng: currentLng || -122.4194,
+  });
+
+  const handleSearchMap = async (e) => {
+    if (e) e.preventDefault();
+    if (!mapSearch.trim()) return;
+    setSearching(true);
+    try {
+      const query = mapSearch.trim().toLowerCase();
+      const localMatches = GLOBAL_PLACES_PRESETS.filter(p => 
+        p.city.toLowerCase().includes(query) || 
+        p.label.toLowerCase().includes(query) ||
+        p.country.toLowerCase().includes(query)
+      ).map(p => ({
+        displayName: p.label.replace(/^[\uD800-\uDBFF\uDC00-\uDFFF\u2600-\u27BF]\s*/, ''),
+        city: p.city,
+        country: p.country,
+        lat: p.lat,
+        lng: p.lng,
+      }));
+
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(mapSearch)}&addressdetails=1&limit=8`);
+      const apiData = await res.json();
+      
+      const apiMatches = (apiData || []).map(item => {
+        const addr = item.address || {};
+        const city = addr.city || addr.town || addr.village || addr.county || addr.state || item.display_name.split(',')[0];
+        const country = addr.country || item.display_name.split(',').pop().trim();
+        return {
+          displayName: item.display_name,
+          city: city,
+          country: country,
+          lat: parseFloat(parseFloat(item.lat).toFixed(4)),
+          lng: parseFloat(parseFloat(item.lon).toFixed(4)),
+        };
+      });
+
+      const combined = [...localMatches, ...apiMatches];
+      const seen = new Set();
+      const unique = combined.filter(c => {
+        const key = `${c.city.toLowerCase()}-${c.country.toLowerCase()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      setSearchResults(unique);
+      if (unique.length > 0) {
+        setSelectedPlace(unique[0]);
+      }
+    } catch (err) {
+      console.warn('Map search fetch notice:', err);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  const iframeUrl = `https://www.openstreetmap.org/export/embed.html?bbox=${(selectedPlace.lng - 0.08).toFixed(4)},${(selectedPlace.lat - 0.08).toFixed(4)},${(selectedPlace.lng + 0.08).toFixed(4)},${(selectedPlace.lat + 0.08).toFixed(4)}&layer=mapnik&marker=${selectedPlace.lat},${selectedPlace.lng}`;
+
+  const openInGoogleMaps = () => {
+    const googleUrl = `https://www.google.com/maps/search/?api=1&query=${selectedPlace.lat},${selectedPlace.lng}`;
+    window.open(googleUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in font-sans">
+      <div className="bg-white dark:bg-[#070a13] border border-slate-200 dark:border-slate-800 rounded-3xl max-w-4xl w-full overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+        {/* Header */}
+        <div className="px-6 py-4 bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 bg-[#04AA6D]/15 text-[#04AA6D] dark:text-emerald-400 rounded-xl border border-[#04AA6D]/30">
+              <MapPin className="w-5 h-5 animate-bounce" />
+            </div>
+            <div>
+              <h3 className="text-base font-black text-slate-900 dark:text-white flex items-center gap-2">
+                Interactive World Map & Location Picker
+                <span className="text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full bg-[#04AA6D]/15 text-[#04AA6D] dark:text-emerald-400 border border-[#04AA6D]/30 uppercase">
+                  Worldwide Pin Search
+                </span>
+              </h3>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Search ANY city, college, landmark or address worldwide to auto-populate form fields.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onClose}
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="p-6 flex flex-col gap-4 overflow-y-auto">
+          {/* Search Bar */}
+          <form onSubmit={handleSearchMap} className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+              <input
+                type="text"
+                placeholder="Type ANY place (e.g. Times Square NYC, Stanford, Berlin Tech Park, Hyderabad)..."
+                value={mapSearch}
+                onChange={(e) => setMapSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2.5 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#04AA6D]"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={searching}
+              className="px-5 py-2.5 bg-[#04AA6D] hover:bg-emerald-600 text-white font-extrabold text-xs rounded-2xl shadow-lg shadow-emerald-500/20 transition-all flex items-center gap-1.5 cursor-pointer shrink-0"
+            >
+              {searching ? (
+                <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
+              ) : (
+                <>
+                  <Search className="w-4 h-4" />
+                  Search Map
+                </>
+              )}
+            </button>
+          </form>
+
+          {/* Search Results Dropdown List */}
+          {searchResults.length > 0 && (
+            <div className="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-2 max-h-40 overflow-y-auto space-y-1">
+              <span className="text-[10px] font-mono font-bold text-slate-400 px-2 uppercase">Matching Worldwide Places:</span>
+              {searchResults.map((place, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setSelectedPlace(place)}
+                  className={`w-full text-left px-3 py-2 rounded-xl text-xs font-semibold flex items-center justify-between transition-colors cursor-pointer ${
+                    selectedPlace.city === place.city && selectedPlace.lat === place.lat
+                      ? 'bg-[#04AA6D]/15 text-[#04AA6D] dark:text-emerald-400 font-bold border border-[#04AA6D]/30'
+                      : 'hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <MapPin className="w-3.5 h-3.5 text-[#04AA6D] shrink-0" />
+                    <span className="truncate">{place.displayName || `${place.city}, ${place.country}`}</span>
+                  </div>
+                  <span className="text-[10px] font-mono text-slate-400 shrink-0 font-bold ml-2">
+                    {place.city}, {place.country}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
+          {/* Map View & Place Preview Card */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+            {/* Interactive Map Viewport */}
+            <div className="md:col-span-2 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-800 shadow-md bg-slate-900 relative min-h-[300px]">
+              <iframe
+                title="Interactive Location Map"
+                src={iframeUrl}
+                className="w-full h-full min-h-[320px] border-0"
+              />
+              <div className="absolute top-3 left-3 bg-slate-950/85 backdrop-blur-md text-white text-[10px] font-mono px-3 py-1.5 rounded-xl border border-slate-700/80 shadow-lg flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span>Selected Pin: {selectedPlace.lat.toFixed(4)}, {selectedPlace.lng.toFixed(4)}</span>
+              </div>
+            </div>
+
+            {/* Target Location Card */}
+            <div className="bg-slate-50 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 p-5 rounded-2xl flex flex-col justify-between gap-4">
+              <div className="flex flex-col gap-3">
+                <div className="flex items-center gap-2 text-emerald-500 font-extrabold text-xs font-mono">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>TARGET EVENT PIN LOCATION</span>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono uppercase font-bold text-slate-400">City / City Name</label>
+                  <p className="text-sm font-black text-slate-900 dark:text-white leading-snug">
+                    {selectedPlace.city}
+                  </p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono uppercase font-bold text-slate-400">Country / Region</label>
+                  <p className="text-xs font-bold text-slate-700 dark:text-slate-300">
+                    {selectedPlace.country}
+                  </p>
+                </div>
+
+                <div className="p-3 bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl space-y-1">
+                  <span className="text-[10px] font-mono text-slate-400 font-bold block">3D GLOBE COORDINATES</span>
+                  <div className="flex justify-between text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                    <span>Lat: {selectedPlace.lat}</span>
+                    <span>Lng: {selectedPlace.lng}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                <button
+                  type="button"
+                  onClick={openInGoogleMaps}
+                  className="w-full py-2 px-3 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 text-slate-800 dark:text-slate-200 font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all"
+                >
+                  <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
+                  Open in Google Maps
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    onConfirm({
+                      city: selectedPlace.city,
+                      country: selectedPlace.country,
+                      latitude: selectedPlace.lat,
+                      longitude: selectedPlace.lng,
+                    });
+                    onClose();
+                  }}
+                  className="w-full py-2.5 px-4 bg-[#04AA6D] hover:bg-emerald-600 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <Check className="w-4 h-4" />
+                  Confirm & Fill Form Fields
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function AdminFeaturesPage({ defaultTab }) {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -470,6 +712,7 @@ export default function AdminFeaturesPage({ defaultTab }) {
   const [eventSearch, setEventSearch] = useState('');
   const [eventTypeFilter, setEventTypeFilter] = useState('');
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [eventForm, setEventForm] = useState({
     title: '',
@@ -2359,17 +2602,39 @@ export default function AdminFeaturesPage({ defaultTab }) {
                         <h4 className="font-extrabold text-sm text-slate-900 dark:text-white flex items-center gap-2">
                           3D Earth Globe Location
                           <span className="text-[10px] font-mono font-extrabold bg-[#04AA6D]/15 text-[#04AA6D] dark:text-emerald-400 px-2 py-0.5 rounded-full border border-[#04AA6D]/30 uppercase">
-                            Global Tech Hubs & Auto-Detect
+                            Global Pin Picker & Auto-Fill
                           </span>
                         </h4>
                         <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                          Select any world location or enter a custom city to auto-pin onto the CodeSphere 3D Interactive Earth.
+                          Select any world location, open the Interactive Map Picker, or enter a custom city to map onto 3D Earth.
                         </p>
                       </div>
                     </div>
 
-                    {/* Categorized Location Presets without Raw Coordinates */}
-                    <div className="shrink-0">
+                    {/* Top Action Bar: Dropdown, Interactive Map Button & Google Maps Redirect */}
+                    <div className="flex flex-wrap items-center gap-2 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setIsMapModalOpen(true)}
+                        className="px-3.5 py-2 bg-gradient-to-r from-[#04AA6D] to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-extrabold text-xs rounded-xl shadow-md shadow-emerald-500/20 flex items-center gap-1.5 cursor-pointer transition-all active:scale-95"
+                      >
+                        <MapPin className="w-4 h-4 animate-bounce" />
+                        <span>📍 Open Map Picker</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const query = [eventForm.city, eventForm.country].filter(Boolean).join(', ') || '37.7749,-122.4194';
+                          window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(query)}`, '_blank', 'noopener,noreferrer');
+                        }}
+                        className="px-3 py-2 bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl flex items-center gap-1.5 cursor-pointer transition-all shadow-xs"
+                        title="Open in Google Maps"
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Google Maps</span>
+                      </button>
+
                       <select
                         onChange={(e) => {
                           const val = e.target.value;
@@ -2820,6 +3085,25 @@ export default function AdminFeaturesPage({ defaultTab }) {
           </div>
         )}
       </AnimatePresence>
+      {/* Interactive Map Location Picker Modal */}
+      <InteractiveMapModal
+        isOpen={isMapModalOpen}
+        onClose={() => setIsMapModalOpen(false)}
+        onConfirm={(loc) => {
+          setEventForm(prev => ({
+            ...prev,
+            city: loc.city,
+            country: loc.country,
+            latitude: loc.latitude,
+            longitude: loc.longitude,
+          }));
+          toast.success(`Selected ${loc.city}, ${loc.country} from Map!`);
+        }}
+        currentCity={eventForm.city}
+        currentCountry={eventForm.country}
+        currentLat={eventForm.latitude}
+        currentLng={eventForm.longitude}
+      />
     </div>
   );
 }
