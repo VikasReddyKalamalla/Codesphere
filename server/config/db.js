@@ -16,6 +16,11 @@ const connectDB = async () => {
       console.log(`Connecting to MongoDB (${isAtlas ? 'Atlas Remote' : 'Local'})...`);
       const conn = await mongoose.connect(uri, {
         serverSelectionTimeoutMS: 5000,
+        maxPoolSize: parseInt(process.env.MONGO_MAX_POOL_SIZE || '200', 10),
+        minPoolSize: parseInt(process.env.MONGO_MIN_POOL_SIZE || '20', 10),
+        maxIdleTimeMS: 30000,
+        socketTimeoutMS: 45000,
+        readPreference: process.env.NODE_ENV === 'production' ? 'secondaryPreferred' : 'primary',
       });
       console.log(`✓ MongoDB Connected: ${conn.connection.host} | DB Name: ${conn.connection.name}`);
       return conn;

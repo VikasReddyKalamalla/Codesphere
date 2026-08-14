@@ -63,6 +63,19 @@ const normalizeLanguage = (rawLang) => {
   return l;
 };
 
+const MAX_CONCURRENT_LOCAL_EXEC = parseInt(process.env.MAX_CONCURRENT_LOCAL_EXEC || '10', 10);
+const MAX_PENDING_QUEUE = parseInt(process.env.MAX_PENDING_EXEC_QUEUE || '50', 10);
+
+let activeExecutions = 0;
+const pendingExecQueue = [];
+
+const processNextInQueue = () => {
+  if (activeExecutions < MAX_CONCURRENT_LOCAL_EXEC && pendingExecQueue.length > 0) {
+    const nextFn = pendingExecQueue.shift();
+    nextFn();
+  }
+};
+
 /**
  * Executes code locally using child_process
  * Supports: Python, JavaScript, TypeScript, C, C++, Java, Go, Rust, PHP, Ruby, Bash/Shell
@@ -70,113 +83,140 @@ const normalizeLanguage = (rawLang) => {
  */
 const executeCodeLocally = (code, language, input = '') => {
   return new Promise((resolve) => {
-    const startTime = Date.now();
-    const tmpDir = path.join(os.tmpdir(), 'codesphere_exec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
-    fs.mkdirSync(tmpDir, { recursive: true });
-
-    let cmd = '';
-    let filePath = '';
-
-    const lang = normalizeLanguage(language);
-    const isWin = process.platform === 'win32';
-
-    if (lang === 'python') {
-      filePath = path.join(tmpDir, 'solution.py');
-      fs.writeFileSync(filePath, code);
-      const pyBin = isWin ? 'python' : 'python3';
-      cmd = `${pyBin} "${filePath}"`;
-    } else if (lang === 'javascript') {
-      filePath = path.join(tmpDir, 'solution.js');
-      fs.writeFileSync(filePath, code);
-      cmd = `node "${filePath}"`;
-    } else if (lang === 'typescript') {
-      filePath = path.join(tmpDir, 'solution.ts');
-      fs.writeFileSync(filePath, code);
-      cmd = `npx -y ts-node "${filePath}"`;
-    } else if (lang === 'c') {
-      filePath = path.join(tmpDir, 'solution.c');
-      const binPath = path.join(tmpDir, 'solution');
-      fs.writeFileSync(filePath, code);
-      cmd = `gcc -O2 "${filePath}" -o "${binPath}" && "${binPath}"`;
-    } else if (lang === 'cpp') {
-      filePath = path.join(tmpDir, 'solution.cpp');
-      const binPath = path.join(tmpDir, 'solution');
-      fs.writeFileSync(filePath, code);
-      cmd = `g++ -O2 "${filePath}" -o "${binPath}" && "${binPath}"`;
-    } else if (lang === 'java') {
-      filePath = path.join(tmpDir, 'Solution.java');
-      fs.writeFileSync(filePath, code);
-      cmd = `javac "${filePath}" && java -cp "${tmpDir}" Solution`;
-    } else if (lang === 'go') {
-      filePath = path.join(tmpDir, 'main.go');
-      fs.writeFileSync(filePath, code);
-      cmd = `go run "${filePath}"`;
-    } else if (lang === 'rust') {
-      filePath = path.join(tmpDir, 'solution.rs');
-      const binPath = path.join(tmpDir, 'solution');
-      fs.writeFileSync(filePath, code);
-      cmd = `rustc "${filePath}" -o "${binPath}" && "${binPath}"`;
-    } else if (lang === 'php') {
-      filePath = path.join(tmpDir, 'solution.php');
-      fs.writeFileSync(filePath, code);
-      cmd = `php "${filePath}"`;
-    } else if (lang === 'ruby') {
-      filePath = path.join(tmpDir, 'solution.rb');
-      fs.writeFileSync(filePath, code);
-      cmd = `ruby "${filePath}"`;
-    } else if (lang === 'bash') {
-      filePath = path.join(tmpDir, 'solution.sh');
-      fs.writeFileSync(filePath, code);
-      cmd = `bash "${filePath}"`;
-    } else {
-      filePath = path.join(tmpDir, 'solution.js');
-      fs.writeFileSync(filePath, code);
-      cmd = `node "${filePath}"`;
+    if (activeExecutions >= MAX_CONCURRENT_LOCAL_EXEC && pendingExecQueue.length >= MAX_PENDING_QUEUE) {
+      return resolve({
+        success: false,
+        status: { id: 13, description: 'System Busy' },
+        statusText: 'Server Concurrency Limit Reached',
+        output: '',
+        error: 'Server is currently experiencing heavy load. Please retry your code submission in a few moments.',
+        executionTime: 0,
+        memory: 0,
+      });
     }
 
-    const fullPathEnv = `${process.env.PATH || ''}:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:/usr/local/go/bin:${os.homedir()}/.cargo/bin`;
+    const runExecution = () => {
+      activeExecutions++;
+      const startTime = Date.now();
+      const tmpDir = path.join(os.tmpdir(), 'codesphere_exec_' + Date.now() + '_' + Math.random().toString(36).substr(2, 5));
+      fs.mkdirSync(tmpDir, { recursive: true });
 
-    const child = exec(cmd, { 
-      timeout: EXECUTION_TIMEOUT * 1000, 
-      maxBuffer: 128 * 1024 * 1024,
-      env: { ...process.env, PATH: fullPathEnv }
-    }, (error, stdout, stderr) => {
-      const executionTime = (Date.now() - startTime) / 1000;
-      
-      // Cleanup temp directory
-      try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
+      let cmd = '';
+      let filePath = '';
 
-      if (error && error.killed) {
-        return resolve({
-          success: false,
-          status: { id: 5, description: 'Time Limit Exceeded' },
-          statusText: 'Time Limit Exceeded',
-          output: '',
-          error: `Time Limit Exceeded (max ${EXECUTION_TIMEOUT}s)`,
+      const lang = normalizeLanguage(language);
+      const isWin = process.platform === 'win32';
+
+      if (lang === 'python') {
+        filePath = path.join(tmpDir, 'solution.py');
+        fs.writeFileSync(filePath, code);
+        const pyBin = isWin ? 'python' : 'python3';
+        cmd = `${pyBin} "${filePath}"`;
+      } else if (lang === 'javascript') {
+        filePath = path.join(tmpDir, 'solution.js');
+        fs.writeFileSync(filePath, code);
+        cmd = `node "${filePath}"`;
+      } else if (lang === 'typescript') {
+        filePath = path.join(tmpDir, 'solution.ts');
+        fs.writeFileSync(filePath, code);
+        cmd = `npx -y ts-node "${filePath}"`;
+      } else if (lang === 'c') {
+        filePath = path.join(tmpDir, 'solution.c');
+        const binPath = path.join(tmpDir, 'solution');
+        fs.writeFileSync(filePath, code);
+        cmd = `gcc -O2 "${filePath}" -o "${binPath}" && "${binPath}"`;
+      } else if (lang === 'cpp') {
+        filePath = path.join(tmpDir, 'solution.cpp');
+        const binPath = path.join(tmpDir, 'solution');
+        fs.writeFileSync(filePath, code);
+        cmd = `g++ -O2 "${filePath}" -o "${binPath}" && "${binPath}"`;
+      } else if (lang === 'java') {
+        filePath = path.join(tmpDir, 'Solution.java');
+        fs.writeFileSync(filePath, code);
+        cmd = `javac "${filePath}" && java -cp "${tmpDir}" Solution`;
+      } else if (lang === 'go') {
+        filePath = path.join(tmpDir, 'main.go');
+        fs.writeFileSync(filePath, code);
+        cmd = `go run "${filePath}"`;
+      } else if (lang === 'rust') {
+        filePath = path.join(tmpDir, 'solution.rs');
+        const binPath = path.join(tmpDir, 'solution');
+        fs.writeFileSync(filePath, code);
+        cmd = `rustc "${filePath}" -o "${binPath}" && "${binPath}"`;
+      } else if (lang === 'php') {
+        filePath = path.join(tmpDir, 'solution.php');
+        fs.writeFileSync(filePath, code);
+        cmd = `php "${filePath}"`;
+      } else if (lang === 'ruby') {
+        filePath = path.join(tmpDir, 'solution.rb');
+        fs.writeFileSync(filePath, code);
+        cmd = `ruby "${filePath}"`;
+      } else if (lang === 'bash') {
+        filePath = path.join(tmpDir, 'solution.sh');
+        fs.writeFileSync(filePath, code);
+        cmd = `bash "${filePath}"`;
+      } else {
+        filePath = path.join(tmpDir, 'solution.js');
+        fs.writeFileSync(filePath, code);
+        cmd = `node "${filePath}"`;
+      }
+
+      const fullPathEnv = `${process.env.PATH || ''}:/usr/local/bin:/usr/bin:/bin:/opt/homebrew/bin:/usr/local/go/bin:${os.homedir()}/.cargo/bin`;
+
+      const finishExecution = (resultPayload) => {
+        activeExecutions--;
+        processNextInQueue();
+        resolve(resultPayload);
+      };
+
+      const child = exec(cmd, { 
+        timeout: EXECUTION_TIMEOUT * 1000, 
+        maxBuffer: 128 * 1024 * 1024,
+        env: { ...process.env, PATH: fullPathEnv }
+      }, (error, stdout, stderr) => {
+        const executionTime = (Date.now() - startTime) / 1000;
+        
+        // Cleanup temp directory
+        try { fs.rmSync(tmpDir, { recursive: true, force: true }); } catch (_) {}
+
+        if (error && error.killed) {
+          return finishExecution({
+            success: false,
+            status: { id: 5, description: 'Time Limit Exceeded' },
+            statusText: 'Time Limit Exceeded',
+            output: '',
+            error: `Time Limit Exceeded (max ${EXECUTION_TIMEOUT}s)`,
+            executionTime,
+            memory: 128000,
+          });
+        }
+
+        const hasError = !!stderr && stderr.trim().length > 0 && !stdout;
+
+        finishExecution({
+          success: !error && !hasError,
+          status: !error && !hasError ? { id: 3, description: 'Accepted' } : { id: 6, description: 'Compilation / Runtime Error' },
+          statusText: !error && !hasError ? 'Accepted' : 'Error',
+          output: (stdout || '').trim(),
+          error: (stderr || error?.message || '').trim(),
+          exitCode: error ? error.code || 1 : 0,
           executionTime,
           memory: 128000,
         });
-      }
-
-      const hasError = !!stderr && stderr.trim().length > 0 && !stdout;
-
-      resolve({
-        success: !error && !hasError,
-        status: !error && !hasError ? { id: 3, description: 'Accepted' } : { id: 6, description: 'Compilation / Runtime Error' },
-        statusText: !error && !hasError ? 'Accepted' : 'Error',
-        output: (stdout || '').trim(),
-        error: (stderr || error?.message || '').trim(),
-        exitCode: error ? error.code || 1 : 0,
-        executionTime,
-        memory: 128000,
       });
-    });
 
-    // Write standard input to child process stdin
-    if (input) {
-      child.stdin.write(input + '\n');
+      // Write standard input to child process stdin
+      if (input) {
+        child.stdin.write(input + '\n');
+      }
+      child.stdin.end();
+    };
+
+    if (activeExecutions < MAX_CONCURRENT_LOCAL_EXEC) {
+      runExecution();
+    } else {
+      pendingExecQueue.push(runExecution);
     }
-    child.stdin.end();
   });
 };
 
@@ -233,10 +273,18 @@ const validateCodeSyntax = async (code) => {
   return { valid: true };
 };
 
+const getLanguageId = (rawLang) => {
+  const normalized = normalizeLanguage(rawLang);
+  const id = LANGUAGE_MAP[normalized];
+  if (!id) throw new Error(`Unsupported language: ${rawLang}`);
+  return id;
+};
+
 module.exports = {
   executeCode,
   executeCodeLocally,
   validateCodeSyntax,
+  getLanguageId,
   LANGUAGE_MAP,
   EXECUTION_TIMEOUT,
 };

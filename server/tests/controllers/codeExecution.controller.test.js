@@ -14,7 +14,8 @@ jest.mock('../../middlewares/auth.middleware', () => ({
     }
     req.user = { _id: '507f1f77bcf86cd799439011', isActive: true };
     next();
-  }
+  },
+  optionalAuth: (req, res, next) => next(),
 }));
 
 const app = require('../../app');

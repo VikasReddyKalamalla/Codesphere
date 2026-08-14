@@ -87,7 +87,7 @@ describe('Judge0 Service', () => {
 
   describe('EXECUTION_TIMEOUT', () => {
     it('should have reasonable timeout value', () => {
-      expect(judge0Service.EXECUTION_TIMEOUT).toBe(15);
+      expect(judge0Service.EXECUTION_TIMEOUT).toBe(5);
       expect(judge0Service.EXECUTION_TIMEOUT).toBeGreaterThan(0);
       expect(judge0Service.EXECUTION_TIMEOUT).toBeLessThan(60);
     });

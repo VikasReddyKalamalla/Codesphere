@@ -6,8 +6,58 @@ const execPromise = util.promisify(exec);
 
 const WORKSPACES_DIR = path.resolve(__dirname, '../../../../workspaces');
 
-// In-memory registry of active workspace runtimes
+// In-memory registry fallback & hot cache
 const workspaceRegistry = new Map();
+
+// Redis Client initialization for state persistence across restarts
+let redisClient = null;
+try {
+  const redis = require('redis');
+  const redisUrl = process.env.REDIS_URL || process.env.UPSTASH_REDIS_URL || 'redis://localhost:6379';
+  if (redisUrl && !redisUrl.includes('host:port')) {
+    redisClient = redis.createClient({ url: redisUrl });
+    redisClient.on('error', () => {});
+    redisClient.connect().catch(() => { redisClient = null; });
+  }
+} catch (e) {
+  redisClient = null;
+}
+
+async function saveWorkspaceState(workspaceId, wsInfo) {
+  workspaceRegistry.set(workspaceId, wsInfo);
+  if (redisClient && redisClient.isOpen) {
+    try {
+      const safeInfo = { ...wsInfo, process: undefined };
+      await redisClient.setEx(`workspace:registry:${workspaceId}`, 86400, JSON.stringify(safeInfo));
+    } catch (e) {}
+  }
+}
+
+async function loadWorkspaceState(workspaceId) {
+  if (workspaceRegistry.has(workspaceId)) {
+    return workspaceRegistry.get(workspaceId);
+  }
+  if (redisClient && redisClient.isOpen) {
+    try {
+      const data = await redisClient.get(`workspace:registry:${workspaceId}`);
+      if (data) {
+        const wsInfo = JSON.parse(data);
+        workspaceRegistry.set(workspaceId, wsInfo);
+        return wsInfo;
+      }
+    } catch (e) {}
+  }
+  return null;
+}
+
+async function removeWorkspaceState(workspaceId) {
+  workspaceRegistry.delete(workspaceId);
+  if (redisClient && redisClient.isOpen) {
+    try {
+      await redisClient.del(`workspace:registry:${workspaceId}`);
+    } catch (e) {}
+  }
+}
 
 let nextPort = 8100;
 function allocatePort() {
@@ -92,9 +142,10 @@ async function autoHealWorkspaceContainer(studentId, workspaceId, language = 'ja
  * Create and start workspace environment
  */
 async function createOrStartWorkspaceContainer(studentId, workspaceId, language = 'javascript', plan = 'free') {
-  const existing = workspaceRegistry.get(workspaceId);
+  const existing = await loadWorkspaceState(workspaceId);
   if (existing && existing.status === 'running') {
     existing.lastActivity = Date.now();
+    await saveWorkspaceState(workspaceId, existing);
     return existing;
   }
 
@@ -162,7 +213,7 @@ async function createOrStartWorkspaceContainer(studentId, workspaceId, language 
         url: `http://localhost:${allocatedPort}`
       };
 
-      workspaceRegistry.set(workspaceId, wsInfo);
+      await saveWorkspaceState(workspaceId, wsInfo);
       return wsInfo;
     } catch (dockerErr) {
       console.warn(`[WorkspaceManager] Docker launch warning (${dockerErr.message}). Falling back to local process runner...`);
@@ -191,12 +242,12 @@ async function createOrStartWorkspaceContainer(studentId, workspaceId, language 
     url: `http://localhost:${allocatedPort}`
   };
 
-  workspaceRegistry.set(workspaceId, wsInfo);
+  await saveWorkspaceState(workspaceId, wsInfo);
   return wsInfo;
 }
 
 async function stopWorkspaceContainer(workspaceId) {
-  const wsInfo = workspaceRegistry.get(workspaceId);
+  const wsInfo = await loadWorkspaceState(workspaceId);
   if (!wsInfo) return { status: 'stopped', message: 'Workspace container not found' };
 
   if (wsInfo.type === 'docker') {
@@ -208,11 +259,12 @@ async function stopWorkspaceContainer(workspaceId) {
   }
 
   wsInfo.status = 'stopped';
+  await saveWorkspaceState(workspaceId, wsInfo);
   return { status: 'stopped', workspaceId };
 }
 
 async function deleteWorkspaceContainer(workspaceId, removeFiles = false) {
-  const wsInfo = workspaceRegistry.get(workspaceId);
+  const wsInfo = await loadWorkspaceState(workspaceId);
   if (wsInfo && wsInfo.type === 'docker') {
     try {
       await execPromise(`docker rm -f ${wsInfo.containerName}`);
@@ -223,7 +275,7 @@ async function deleteWorkspaceContainer(workspaceId, removeFiles = false) {
     try { wsInfo.process.kill('SIGKILL'); } catch (e) {}
   }
 
-  workspaceRegistry.delete(workspaceId);
+  await removeWorkspaceState(workspaceId);
 
   if (removeFiles && wsInfo?.studentId) {
     const dir = path.join(WORKSPACES_DIR, String(wsInfo.studentId), String(workspaceId));

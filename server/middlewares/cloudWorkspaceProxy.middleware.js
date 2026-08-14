@@ -1,4 +1,10 @@
-const { createProxyMiddleware } = require('http-proxy-middleware');
+let createProxyMiddleware;
+try {
+  const hpm = require('http-proxy-middleware');
+  createProxyMiddleware = hpm.createProxyMiddleware || hpm;
+} catch (e) {
+  createProxyMiddleware = null;
+}
 const containerManager = require('../../services/workspace-service/src/services/containerManager');
 
 /**
