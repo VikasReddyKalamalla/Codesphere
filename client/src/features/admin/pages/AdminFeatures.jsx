@@ -472,10 +472,15 @@ export default function AdminFeaturesPage({ defaultTab }) {
   const [isEventModalOpen, setIsEventModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState(null);
   const [locationSearchInput, setLocationSearchInput] = useState('');
+  const [locationSuggestions, setLocationSuggestions] = useState([]);
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
-  const handleLocationAutoFill = async (inputVal) => {
-    if (!inputVal || inputVal.trim().length < 2) return;
-    const val = inputVal.trim();
+  const fetchLocationSuggestions = async (query) => {
+    if (!query || query.trim().length < 2) {
+      setLocationSuggestions([]);
+      return;
+    }
+    const val = query.trim();
 
     // 1. Parse Google Maps URL (@lat,lng or q=lat,lng)
     const googleMatch = val.match(/@(-?\d+\.\d+),(-?\d+\.\d+)/) || val.match(/q=(-?\d+\.\d+),(-?\d+\.\d+)/);
@@ -489,45 +494,79 @@ export default function AdminFeaturesPage({ defaultTab }) {
         const city = addr.city || addr.town || addr.village || addr.county || addr.state || 'Selected Location';
         const country = addr.country || 'Global';
         setEventForm(prev => ({ ...prev, city, country, latitude: lat, longitude: lng }));
-        toast.success(`Loaded Google Maps location: ${city}, ${country}`);
+        toast.success(`Location set from Google Maps: ${city}, ${country}`);
+        setLocationSuggestions([]);
         return;
       } catch (e) {
         setEventForm(prev => ({ ...prev, latitude: lat, longitude: lng }));
+        setLocationSuggestions([]);
         return;
       }
     }
 
-    // 2. Local Preset match
-    const presetMatch = GLOBAL_PLACES_PRESETS.find(p => 
-      p.city.toLowerCase() === val.toLowerCase() || 
+    // 2. Local Presets match
+    const localMatches = GLOBAL_PLACES_PRESETS.filter(p => 
+      p.city.toLowerCase().includes(val.toLowerCase()) || 
       p.label.toLowerCase().includes(val.toLowerCase())
-    );
-    if (presetMatch) {
-      setEventForm(prev => ({
-        ...prev,
-        city: presetMatch.city,
-        country: presetMatch.country,
-        latitude: presetMatch.lat,
-        longitude: presetMatch.lng,
-      }));
-      return;
-    }
+    ).map(p => ({
+      city: p.city,
+      country: p.country,
+      lat: p.lat,
+      lng: p.lng,
+      label: `${p.city}, ${p.country}`,
+    }));
 
-    // 3. OpenStreetMap Search fallback
+    setIsGeocoding(true);
     try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=1`);
-      const data = await res.json();
-      if (data && data.length > 0) {
-        const item = data[0];
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(val)}&addressdetails=1&limit=5`);
+      const apiData = await res.json();
+      const apiMatches = (apiData || []).map(item => {
         const addr = item.address || {};
         const city = addr.city || addr.town || addr.village || addr.county || addr.state || item.display_name.split(',')[0];
         const country = addr.country || item.display_name.split(',').pop().trim();
-        const lat = parseFloat(parseFloat(item.lat).toFixed(4));
-        const lng = parseFloat(parseFloat(item.lon).toFixed(4));
-        setEventForm(prev => ({ ...prev, city, country, latitude: lat, longitude: lng }));
+        return {
+          city,
+          country,
+          lat: parseFloat(parseFloat(item.lat).toFixed(4)),
+          lng: parseFloat(parseFloat(item.lon).toFixed(4)),
+          label: item.display_name,
+        };
+      });
+
+      const combined = [...localMatches, ...apiMatches];
+      const seen = new Set();
+      const unique = combined.filter(c => {
+        const key = `${c.city.toLowerCase()}-${c.country.toLowerCase()}`;
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+
+      setLocationSuggestions(unique);
+      if (unique.length > 0) {
+        const top = unique[0];
+        setEventForm(prev => ({
+          ...prev,
+          city: top.city,
+          country: top.country,
+          latitude: top.lat,
+          longitude: top.lng,
+        }));
       }
     } catch (err) {
-      // Silent catch
+      if (localMatches.length > 0) {
+        setLocationSuggestions(localMatches);
+        const top = localMatches[0];
+        setEventForm(prev => ({
+          ...prev,
+          city: top.city,
+          country: top.country,
+          latitude: top.lat,
+          longitude: top.lng,
+        }));
+      }
+    } finally {
+      setIsGeocoding(false);
     }
   };
   const [eventForm, setEventForm] = useState({
@@ -2453,26 +2492,90 @@ export default function AdminFeaturesPage({ defaultTab }) {
                     </button>
                   </div>
 
-                  {/* Location Search Bar & Google Maps Link Auto-Fill */}
-                  <div className="space-y-1">
+                  {/* Location Search Bar & Autocomplete Menu */}
+                  <div className="space-y-1 relative">
                     <div className="flex items-center justify-between text-xs font-extrabold text-slate-700 dark:text-slate-300">
                       <span>Search Place or Paste Google Maps Link</span>
                       <span className="text-[10px] text-[#04AA6D] dark:text-emerald-400 font-semibold">Auto-fills details below</span>
                     </div>
-                    <div className="relative">
-                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-                      <input
-                        type="text"
-                        placeholder="Type place name or paste Google Maps URL (e.g. Hyderabad, Stanford, Paris)..."
-                        value={locationSearchInput}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setLocationSearchInput(val);
-                          handleLocationAutoFill(val);
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
+                        <input
+                          type="text"
+                          placeholder="Type place name or paste Google Maps link (e.g. Dundigal, Hyderabad, Paris)..."
+                          value={locationSearchInput}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setLocationSearchInput(val);
+                            fetchLocationSuggestions(val);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              fetchLocationSuggestions(locationSearchInput);
+                            }
+                          }}
+                          className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#04AA6D]"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!locationSearchInput.trim()) {
+                            return toast.error('Please type a place name or paste a Google Maps link first');
+                          }
+                          fetchLocationSuggestions(locationSearchInput);
                         }}
-                        className="w-full pl-8 pr-3 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-semibold text-slate-900 dark:text-white outline-none focus:border-[#04AA6D]"
-                      />
+                        className="px-3 py-2 bg-[#04AA6D] hover:bg-emerald-600 active:scale-95 text-white font-extrabold text-xs rounded-xl shadow-xs flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
+                      >
+                        {isGeocoding ? (
+                          <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
+                        ) : (
+                          <>
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Get Details</span>
+                          </>
+                        )}
+                      </button>
                     </div>
+
+                    {/* Autocomplete Suggestions Menu */}
+                    {locationSuggestions.length > 0 && (
+                      <div className="absolute left-0 right-0 top-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl shadow-xl z-20 overflow-hidden max-h-44 overflow-y-auto p-1 space-y-0.5">
+                        <div className="text-[10px] font-mono font-bold text-slate-400 px-2 py-1 uppercase border-b border-slate-100 dark:border-slate-800">
+                          Click to select & auto-fill details:
+                        </div>
+                        {locationSuggestions.map((item, idx) => (
+                          <button
+                            key={idx}
+                            type="button"
+                            onClick={() => {
+                              setEventForm(prev => ({
+                                ...prev,
+                                city: item.city,
+                                country: item.country,
+                                latitude: item.lat,
+                                longitude: item.lng,
+                              }));
+                              setLocationSearchInput(`${item.city}, ${item.country}`);
+                              setLocationSuggestions([]);
+                              toast.success(`Location set: ${item.city}, ${item.country}`);
+                            }}
+                            className="w-full text-left px-2.5 py-1.5 hover:bg-emerald-50 dark:hover:bg-slate-800/80 rounded-lg text-xs font-semibold text-slate-800 dark:text-slate-200 flex items-center justify-between transition-colors cursor-pointer"
+                          >
+                            <div className="flex items-center gap-2 truncate">
+                              <Globe className="w-3 h-3 text-[#04AA6D] shrink-0" />
+                              <span className="truncate">{item.label || `${item.city}, ${item.country}`}</span>
+                            </div>
+                            <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold shrink-0 ml-2">
+                              {item.lat}, {item.lng}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
 
                   {/* 4 Form Field Inputs: City, Country, Latitude, Longitude */}
