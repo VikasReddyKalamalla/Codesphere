@@ -24,7 +24,8 @@ import { toggleBookmark } from '../redux/resourceSlice.js';
 import { BackButton } from '@components/common/BackButton.jsx';
 
 export const ResourceDetails = () => {
-  const { id } = useParams();
+  const { id: paramId, resourceId } = useParams();
+  const id = resourceId || paramId;
   const navigate = useNavigate();
   const dispatch = useDispatch();
 
@@ -58,6 +59,8 @@ export const ResourceDetails = () => {
         } finally {
           if (isMounted) setIsFetching(false);
         }
+      } else {
+        if (isMounted) setIsFetching(false);
       }
     };
 
@@ -106,9 +109,10 @@ export const ResourceDetails = () => {
       // Analytics tracking fallback
     }
 
+    const backendBase = (import.meta.env?.VITE_SOCKET_URL || 'http://localhost:5000').replace(/\/$/, '');
     const fullUrl = targetUrl.startsWith('http') || targetUrl.startsWith('data:')
       ? targetUrl
-      : `http://localhost:5000${targetUrl.startsWith('/') ? '' : '/'}${targetUrl}`;
+      : `${backendBase}${targetUrl.startsWith('/') ? '' : '/'}${targetUrl}`;
 
     const lower = fullUrl.toLowerCase();
     const isDirectFile = lower.endsWith('.pdf') || lower.endsWith('.zip') || lower.endsWith('.docx') || lower.endsWith('.doc') || lower.endsWith('.png') || lower.endsWith('.jpg');
@@ -186,9 +190,10 @@ export const ResourceDetails = () => {
 
   // Construct absolute file URL
   const rawUrl = resource.fileUrl || resource.externalUrl || resource.url || '';
+  const backendBase = (import.meta.env?.VITE_SOCKET_URL || 'http://localhost:5000').replace(/\/$/, '');
   const fullFileUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:')
     ? rawUrl
-    : `http://localhost:5000${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
+    : `${backendBase}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;
 
   const lowerUrl = rawUrl.toLowerCase();
   const ext = lowerUrl.split('.').pop()?.split('?')[0] || '';
@@ -308,11 +313,17 @@ export const ResourceDetails = () => {
             <div className="flex flex-col gap-5">
               {/* PDF & Live Embedded Document Viewer */}
               {isPdf && rawUrl && !rawUrl.includes('example.com') && (() => {
-                const isLocalUpload = fullFileUrl.includes('/uploads/') || fullFileUrl.includes('localhost:5000/uploads/');
+                const isLocalUpload =
+                  rawUrl.startsWith('/') ||
+                  fullFileUrl.includes('/uploads/') ||
+                  fullFileUrl.includes('/mock-resources-proxy/') ||
+                  fullFileUrl.includes('localhost:') ||
+                  fullFileUrl.includes('127.0.0.1:');
+
                 const pdfDirectUrl = isLocalUpload
                   ? fullFileUrl
                   : fullFileUrl.startsWith('http')
-                  ? `http://localhost:5000/api/resources/proxy-pdf?url=${encodeURIComponent(fullFileUrl)}`
+                  ? `${backendBase}/api/resources/proxy-pdf?url=${encodeURIComponent(fullFileUrl)}`
                   : fullFileUrl;
 
                 return (

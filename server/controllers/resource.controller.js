@@ -110,11 +110,25 @@ const proxyPdf = asyncHandler(async (req, res) => {
       return res.sendFile(localUploadPath);
     }
   }
+
+  // 2. Direct path check if URL references /mock-resources-proxy/
+  if (decodedUrl.includes('/mock-resources-proxy/')) {
+    const relativePath = decodedUrl.split('/mock-resources-proxy/')[1];
+    const notesPath = path.join(__dirname, '../../notes(resources)', decodeURIComponent(relativePath));
+    if (fs.existsSync(notesPath)) {
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${possibleFilename}"`);
+      res.setHeader('Access-Control-Allow-Origin', '*');
+      return res.sendFile(notesPath);
+    }
+  }
   
-  // 2. Check local disk storage (uploads/resource, uploads)
+  // 3. Check local disk storage (uploads/resources, uploads/resource, uploads, notes(resources))
   const candidatePaths = [
+    path.join(__dirname, '../uploads/resources', possibleFilename),
     path.join(__dirname, '../uploads/resource', possibleFilename),
     path.join(__dirname, '../uploads', possibleFilename),
+    path.join(__dirname, '../../notes(resources)', possibleFilename),
   ];
 
   for (const localPath of candidatePaths) {

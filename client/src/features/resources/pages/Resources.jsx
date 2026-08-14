@@ -135,9 +135,10 @@ export const Resources = () => {
       // Analytics tracking fallback
     }
 
+    const backendBase = (import.meta.env?.VITE_SOCKET_URL || 'http://localhost:5000').replace(/\/$/, '');
     const fullUrl = targetUrl.startsWith('http') || targetUrl.startsWith('data:')
       ? targetUrl
-      : `http://localhost:5000${targetUrl.startsWith('/') ? '' : '/'}${targetUrl}`;
+      : `${backendBase}${targetUrl.startsWith('/') ? '' : '/'}${targetUrl}`;
 
     const lower = fullUrl.toLowerCase();
     const isDirectFile = lower.endsWith('.pdf') || lower.endsWith('.zip') || lower.endsWith('.docx') || lower.endsWith('.doc') || lower.endsWith('.png') || lower.endsWith('.jpg');
