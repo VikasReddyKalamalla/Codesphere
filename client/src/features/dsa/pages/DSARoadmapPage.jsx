@@ -231,6 +231,15 @@ export default function DSARoadmapPage() {
     }
   };
 
+  const filteredTopics = useMemo(() => {
+    return topics.filter(t => {
+      const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                            t.description?.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchesDiff = filterDifficulty === 'all' || t.difficulty === filterDifficulty;
+      return matchesSearch && matchesDiff;
+    });
+  }, [topics, searchQuery, filterDifficulty]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-3">
@@ -247,15 +256,6 @@ export default function DSARoadmapPage() {
   const totalProblems = 446; // Exact curriculum problem total!
   const overallCompletion = Math.min(100, Math.round((totalSolved / totalProblems) * 100));
   const userRank = getRankTitle(totalSolved);
-
-  const filteredTopics = useMemo(() => {
-    return topics.filter(t => {
-      const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            t.description?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesDiff = filterDifficulty === 'all' || t.difficulty === filterDifficulty;
-      return matchesSearch && matchesDiff;
-    });
-  }, [topics, searchQuery, filterDifficulty]);
 
   const handleSimulate = async (action) => {
     try {
