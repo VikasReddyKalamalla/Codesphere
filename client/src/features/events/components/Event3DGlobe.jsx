@@ -63,9 +63,12 @@ export const Event3DGlobe = ({ markers = [], onSelectEvent }) => {
   const [tooltipPos, setTooltipPos] = useState({ x: 0, y: 0 });
   const [countriesData, setCountriesData] = useState([]);
 
-  // Load realistic GeoJSON country borders for hyper-realistic Earth continents
+  // Load realistic GeoJSON country borders for hyper-realistic Earth continents with fast timeout
   useEffect(() => {
-    fetch('https://raw.githubusercontent.com/vasturiano/react-globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson')
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 1200);
+
+    fetch('https://raw.githubusercontent.com/vasturiano/react-globe.gl/master/example/datasets/ne_110m_admin_0_countries.geojson', { signal: controller.signal })
       .then(res => res.json())
       .then(data => {
         if (data && data.features) {
@@ -73,22 +76,47 @@ export const Event3DGlobe = ({ markers = [], onSelectEvent }) => {
         }
       })
       .catch(() => {
-        // Fallback gracefully if offline
+        // Fallback gracefully if offline or timeout
+      })
+      .finally(() => {
+        clearTimeout(timeoutId);
       });
   }, []);
 
-  // Measure container width dynamically so the Three.js space canvas fills 100% of container
+  // Measure container width dynamically using ResizeObserver for INSTANT zero-delay updates
   useEffect(() => {
     const updateWidth = () => {
       if (globeContainerRef.current) {
-        setContainerWidth(globeContainerRef.current.clientWidth || 1000);
+        const w = globeContainerRef.current.clientWidth || 1000;
+        if (w > 0) setContainerWidth(w);
       }
     };
 
     updateWidth();
+
+    let observer;
+    if (window.ResizeObserver && globeContainerRef.current) {
+      observer = new ResizeObserver(updateWidth);
+      observer.observe(globeContainerRef.current);
+    }
+
     window.addEventListener('resize', updateWidth);
-    return () => window.removeEventListener('resize', updateWidth);
+    return () => {
+      if (observer) observer.disconnect();
+      window.removeEventListener('resize', updateWidth);
+    };
   }, []);
+
+  // Auto-rotate globe smoothly once initialized
+  useEffect(() => {
+    if (globeEl.current) {
+      const controls = globeEl.current.controls();
+      if (controls) {
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.8;
+      }
+    }
+  }, [containerWidth]);
 
   // Format markers directly from MongoDB — ONLY render if admin/instructor events exist in DB
   const processedMarkers = useMemo(() => {

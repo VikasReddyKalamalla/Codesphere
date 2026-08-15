@@ -215,40 +215,38 @@ export const Events = () => {
       </div>
 
       {/* Tab Content Display */}
-      {activeTab === 'globe' && (
-        <div className="flex flex-col gap-6">
-          {/* Interactive Fixed-Center 3D Earth Globe */}
-          <Event3DGlobe
-            markers={globeMarkers}
-            onSelectEvent={handleSelectEvent}
-          />
+      <div className={`flex flex-col gap-6 ${activeTab === 'globe' ? 'block' : 'hidden'}`}>
+        {/* Interactive Fixed-Center 3D Earth Globe */}
+        <Event3DGlobe
+          markers={globeMarkers}
+          onSelectEvent={handleSelectEvent}
+        />
 
-          {/* Featured Events Rail below Globe */}
-          <div className="flex flex-col gap-4">
-            <div className="flex justify-between items-center">
-              <div className="flex items-center gap-2">
-                <Flame className="w-5 h-5 text-[#04AA6D]" />
-                <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Featured & Trending Global Events</h2>
-              </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Showing {filteredEvents.length} events</span>
+        {/* Featured Events Rail below Globe */}
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center gap-2">
+              <Flame className="w-5 h-5 text-[#04AA6D]" />
+              <h2 className="text-lg font-extrabold text-slate-900 dark:text-white">Featured & Trending Global Events</h2>
             </div>
+            <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">Showing {filteredEvents.length} events</span>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredEvents.slice(0, 6).map(ev => (
-                <EventCard
-                  key={ev._id || ev.id}
-                  event={ev}
-                  isBookmarked={userBookmarks.includes(ev._id || ev.id)}
-                  isRegistered={userRegistrations.includes(ev._id || ev.id)}
-                  onSelect={handleSelectEvent}
-                  onBookmark={handleBookmark}
-                  onRegister={handleRegister}
-                />
-              ))}
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredEvents.slice(0, 6).map(ev => (
+              <EventCard
+                key={ev._id || ev.id}
+                event={ev}
+                isBookmarked={userBookmarks.includes(ev._id || ev.id)}
+                isRegistered={userRegistrations.includes(ev._id || ev.id)}
+                onSelect={handleSelectEvent}
+                onBookmark={handleBookmark}
+                onRegister={handleRegister}
+              />
+            ))}
           </div>
         </div>
-      )}
+      </div>
 
       {activeTab === 'explore' && (
         <div className="flex flex-col lg:flex-row gap-6">
