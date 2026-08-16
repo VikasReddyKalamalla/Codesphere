@@ -72,4 +72,47 @@ export default defineConfig({
       '@pages': resolve(__dirname, 'src/pages'),
     },
   },
+  build: {
+    target: 'esnext',
+    cssCodeSplit: true,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('@monaco-editor') || id.includes('monaco-editor')) {
+              return 'vendor-monaco';
+            }
+            if (id.includes('three') || id.includes('react-globe.gl')) {
+              return 'vendor-three';
+            }
+            if (id.includes('recharts') || id.includes('d3-')) {
+              return 'vendor-charts';
+            }
+            if (id.includes('firebase')) {
+              return 'vendor-firebase';
+            }
+            if (id.includes('lucide-react') || id.includes('react-icons')) {
+              return 'vendor-icons';
+            }
+            if (id.includes('framer-motion') || id.includes('lottie-react')) {
+              return 'vendor-animation';
+            }
+            if (id.includes('react-pdf') || id.includes('pdfjs-dist')) {
+              return 'vendor-pdf';
+            }
+            if (id.includes('react-syntax-highlighter') || id.includes('prismjs')) {
+              return 'vendor-syntax';
+            }
+            if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/')) {
+              return 'vendor-react';
+            }
+            if (id.includes('@reduxjs/toolkit') || id.includes('react-redux') || id.includes('redux-persist')) {
+              return 'vendor-redux';
+            }
+          }
+        },
+      },
+    },
+  },
 });

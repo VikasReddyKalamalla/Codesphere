@@ -36,54 +36,52 @@ const PrivacyPage   = lazy(() => import('@features/legal/pages/PrivacyPage.jsx')
 const TermsPage     = lazy(() => import('@features/legal/pages/TermsPage.jsx'));
 const CookiesPage   = lazy(() => import('@features/legal/pages/CookiesPage.jsx'));
 
-// ─── Student dashboard pages (Statically imported for 100% stability) ─────────
-import DashboardPage from '@features/dashboard/pages/DashboardPage.jsx';
-import LeaderboardPage from '@features/leaderboard/pages/LeaderboardPage.jsx';
-import LearningPage from '@features/learning/pages/LearningPage.jsx';
-import LearningPathPage from '@features/learning/pages/LearningPathPage.jsx';
-import LessonPage from '@features/learning/pages/LessonPage.jsx';
-import ArticlePage from '@features/learning/pages/ArticlePage.jsx';
-import ResourcesPage from '@features/resources/pages/ResourcesPage.jsx';
-import ResourceDetailPage from '@features/resources/pages/ResourceDetailPage.jsx';
-import CommunityPage from '@features/communities/pages/CommunityPage.jsx';
-import CommunityDetailPage from '@features/communities/pages/CommunityDetailPage.jsx';
-import CreateCommunityPage from '@features/communities/pages/CreateCommunity.jsx';
-import CommunitySettingsPage from '@features/communities/pages/CommunitySettings.jsx';
-import SessionsPage from '@features/sessions/pages/SessionsPage.jsx';
-import SessionDetailPage from '@features/sessions/pages/SessionDetailPage.jsx';
-import LiveSessionPage from '@features/sessions/pages/LiveSession.jsx';
-import EventsPage from '@features/events/pages/EventsPage.jsx';
-import EventDetailPage from '@features/events/pages/EventDetailPage.jsx';
-import CodexPage from '@features/codex/pages/CodexPage.jsx';
-import CreateWorkspacePage from '@features/codex/pages/CreateWorkspace.jsx';
-import WorkspacePage from '@features/codex/pages/WorkspacePage.jsx';
-import SandboxPage from '@features/sandbox/pages/SandboxPage.jsx';
-import SandboxProjectPage from '@features/sandbox/pages/SandboxProjectPage.jsx';
-import CloudWorkspaceView from '@features/workspace/pages/CloudWorkspaceView.jsx';
-import WebIDEPage from '@features/ide/WebIDE.jsx';
-import TestsPage from '@features/tests/pages/TestsPage.jsx';
-import TestDetailPage from '@features/tests/pages/TestDetailPage.jsx';
-import TestAttemptPage from '@features/tests/pages/TestAttemptPage.jsx';
-import TestResultsPage from '@features/tests/pages/TestResultsPage.jsx';
-import ProfilePage from '@features/profile/pages/ProfilePage.jsx';
-import PublicProfilePage from '@features/profile/pages/PublicProfilePage.jsx';
-import NotificationsPage from '@features/notifications/pages/NotificationsPage.jsx';
-import SubscriptionPage from '@features/subscription/pages/SubscriptionPage.jsx';
-import BillingPage from '@features/subscription/pages/BillingPage.jsx';
-import SettingsPage from '@features/settings/pages/SettingsPage.jsx';
+// ─── Student dashboard pages (Lazily loaded for maximum performance & fast load) ─
+const DashboardPage         = lazy(() => import('@features/dashboard/pages/DashboardPage.jsx'));
+const LeaderboardPage       = lazy(() => import('@features/leaderboard/pages/LeaderboardPage.jsx'));
+const LearningPage          = lazy(() => import('@features/learning/pages/LearningPage.jsx'));
+const LearningPathPage      = lazy(() => import('@features/learning/pages/LearningPathPage.jsx'));
+const LessonPage            = lazy(() => import('@features/learning/pages/LessonPage.jsx'));
+const ArticlePage           = lazy(() => import('@features/learning/pages/ArticlePage.jsx'));
+const ResourcesPage         = lazy(() => import('@features/resources/pages/ResourcesPage.jsx'));
+const ResourceDetailPage     = lazy(() => import('@features/resources/pages/ResourceDetailPage.jsx'));
+const CommunityPage         = lazy(() => import('@features/communities/pages/CommunityPage.jsx'));
+const CommunityDetailPage   = lazy(() => import('@features/communities/pages/CommunityDetailPage.jsx'));
+const CreateCommunityPage   = lazy(() => import('@features/communities/pages/CreateCommunity.jsx'));
+const CommunitySettingsPage = lazy(() => import('@features/communities/pages/CommunitySettings.jsx'));
+const SessionsPage          = lazy(() => import('@features/sessions/pages/SessionsPage.jsx'));
+const SessionDetailPage    = lazy(() => import('@features/sessions/pages/SessionDetailPage.jsx'));
+const LiveSessionPage       = lazy(() => import('@features/sessions/pages/LiveSession.jsx'));
+const EventsPage            = lazy(() => import('@features/events/pages/EventsPage.jsx'));
+const EventDetailPage      = lazy(() => import('@features/events/pages/EventDetailPage.jsx'));
+const CodexPage             = lazy(() => import('@features/codex/pages/CodexPage.jsx'));
+const CreateWorkspacePage   = lazy(() => import('@features/codex/pages/CreateWorkspace.jsx'));
+const WorkspacePage         = lazy(() => import('@features/codex/pages/WorkspacePage.jsx'));
+const SandboxPage           = lazy(() => import('@features/sandbox/pages/SandboxPage.jsx'));
+const SandboxProjectPage   = lazy(() => import('@features/sandbox/pages/SandboxProjectPage.jsx'));
+const CloudWorkspaceView    = lazy(() => import('@features/workspace/pages/CloudWorkspaceView.jsx'));
+const WebIDEPage            = lazy(() => import('@features/ide/WebIDE.jsx'));
+const TestsPage             = lazy(() => import('@features/tests/pages/TestsPage.jsx'));
+const TestDetailPage       = lazy(() => import('@features/tests/pages/TestDetailPage.jsx'));
+const TestAttemptPage      = lazy(() => import('@features/tests/pages/TestAttemptPage.jsx'));
+const TestResultsPage      = lazy(() => import('@features/tests/pages/TestResultsPage.jsx'));
+const ProfilePage           = lazy(() => import('@features/profile/pages/ProfilePage.jsx'));
+const PublicProfilePage     = lazy(() => import('@features/profile/pages/PublicProfilePage.jsx'));
+const NotificationsPage     = lazy(() => import('@features/notifications/pages/NotificationsPage.jsx'));
+const SubscriptionPage      = lazy(() => import('@features/subscription/pages/SubscriptionPage.jsx'));
+const BillingPage           = lazy(() => import('@features/subscription/pages/BillingPage.jsx'));
+const SettingsPage          = lazy(() => import('@features/settings/pages/SettingsPage.jsx'));
 
-// ─── DSA Learning Path pages ──────────────────────────────────────────────────
-import {
-  DSARoadmapPage,
-  DSATopicPage,
-  DSAProblemPage,
-  DSAProgressPage,
-  DSARevisionPage,
-  DSABookmarksPage,
-  DSASearchPage,
-  DSAPatternPage,
-  DSAAchievementsPage,
-} from '@features/dsa';
+// ─── DSA Learning Path pages (Lazily loaded) ──────────────────────────────────
+const DSARoadmapPage      = lazy(() => import('@features/dsa/pages/DSARoadmapPage.jsx'));
+const DSATopicPage        = lazy(() => import('@features/dsa/pages/DSATopicPage.jsx'));
+const DSAProblemPage      = lazy(() => import('@features/dsa/pages/DSAProblemPage.jsx'));
+const DSAProgressPage     = lazy(() => import('@features/dsa/pages/DSAProgressPage.jsx'));
+const DSARevisionPage     = lazy(() => import('@features/dsa/pages/DSARevisionPage.jsx'));
+const DSABookmarksPage    = lazy(() => import('@features/dsa/pages/DSABookmarksPage.jsx'));
+const DSASearchPage       = lazy(() => import('@features/dsa/pages/DSASearchPage.jsx'));
+const DSAPatternPage      = lazy(() => import('@features/dsa/pages/DSAPatternPage.jsx'));
+const DSAAchievementsPage = lazy(() => import('@features/dsa/pages/DSAAchievementsPage.jsx'));
 
 const InstructorApplyPage= lazy(() => import('@features/instructor/pages/InstructorApply.jsx'));
 

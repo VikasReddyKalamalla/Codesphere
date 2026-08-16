@@ -83,8 +83,15 @@ app.use(helmet({
   crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
 }));
 
-// Compression
-app.use(compression());
+// Compression with optimized level and threshold
+app.use(compression({
+  level: 6,
+  threshold: 1024,
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  }
+}));
 
 // Performance monitoring
 app.use(performanceMonitoring);
@@ -110,10 +117,11 @@ app.use(cors({
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
 
-// ─── Static Uploads ──────────────────────────────────────────────────────────// Static folders
-app.use('/uploads', express.static('uploads'));
-app.use('/preview', express.static(require('path').join(__dirname, 'uploads/workspaces')));
-app.use('/mock-resources-proxy', express.static(require('path').join(__dirname, '../notes(resources)')));
+// ─── Static Uploads ──────────────────────────────────────────────────────────
+const staticOptions = { maxAge: '1d', etag: true };
+app.use('/uploads', express.static('uploads', staticOptions));
+app.use('/preview', express.static(require('path').join(__dirname, 'uploads/workspaces'), staticOptions));
+app.use('/mock-resources-proxy', express.static(require('path').join(__dirname, '../notes(resources)'), staticOptions));
 
 // ─── API Routes ──────────────────────────────────────────────────────────────
 app.use('/api/auth',          authRoutes);
