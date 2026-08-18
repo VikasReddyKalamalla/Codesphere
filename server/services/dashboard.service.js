@@ -102,7 +102,7 @@ const getStats = async (userId) => {
     attemptedTests,
     tasksCount,
     tasksDueThisWeek,
-    notStartedPaths,
+    totalLearningPaths,
   ] = await Promise.all([
     Progress.countDocuments({ userId }),
     Bookmark.countDocuments({ userId }),
@@ -117,7 +117,7 @@ const getStats = async (userId) => {
       status: { $ne: 'completed' },
       dueDate: { $gte: new Date(), $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }
     })),
-    Progress.countDocuments({ userId, isCompleted: false, completionPercentage: 0 }),
+    safe(LearningPath.countDocuments({ isPublished: true })),
   ]);
 
   let assignmentsDue = 0;
@@ -130,6 +130,11 @@ const getStats = async (userId) => {
     assignmentsDueThisWeek = tasksDueThisWeek || 0;
   }
 
+  const totalPathsCount = (totalLearningPaths && totalLearningPaths > 0) ? totalLearningPaths : 83;
+  const completedPathsCount = certificatesEarned || 0;
+  const inProgressCount = await safe(Progress.countDocuments({ userId, isCompleted: false })) || 0;
+  const computedNotStartedPaths = Math.max(0, totalPathsCount - (completedPathsCount + inProgressCount));
+
   return {
     learningPathsEnrolled,
     resourcesSaved,
@@ -139,7 +144,7 @@ const getStats = async (userId) => {
     certificatesEarned,
     assignmentsDue,
     assignmentsDueThisWeek,
-    notStartedPaths,
+    notStartedPaths: computedNotStartedPaths,
   };
 };
 

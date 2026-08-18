@@ -224,11 +224,11 @@ export const DashboardHome = () => {
         {/* ── Key Metrics Overview Cards ── */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           {[
-            { label: 'Courses Enrolled', value: String(dbData?.stats?.learningPathsEnrolled ?? 83), sub: `${dbData?.continueLearning?.length ?? 1} in progress`, color: 'emerald', icon: GraduationCap },
+            { label: 'Courses Enrolled', value: String(dbData?.stats?.learningPathsEnrolled ?? 0), sub: `${dbData?.continueLearning?.length ?? 0} in progress`, color: 'emerald', icon: GraduationCap },
             { label: 'Assignments Due', value: String(dbData?.stats?.assignmentsDue ?? 0), sub: `${dbData?.stats?.assignmentsDueThisWeek ?? 0} due this week`, color: 'amber', icon: ClipboardList },
             { label: 'Sessions Joined', value: String(dbData?.stats?.sessionsJoined ?? 0), sub: 'Live learning slots', color: 'blue', icon: ShieldCheck },
-            { label: 'Communities Joined', value: String(dbData?.stats?.communitiesJoined ?? 4), sub: 'Active tech circles', color: 'purple', icon: Briefcase },
-            { label: 'Resources Saved', value: String(dbData?.stats?.resourcesSaved ?? 12), sub: 'Saved articles & tools', color: 'rose', icon: User },
+            { label: 'Communities Joined', value: String(dbData?.stats?.communitiesJoined ?? 0), sub: 'Active tech circles', color: 'purple', icon: Briefcase },
+            { label: 'Resources Saved', value: String(dbData?.stats?.resourcesSaved ?? 0), sub: 'Saved articles & tools', color: 'rose', icon: User },
           ].map(({ label, value, sub, color, icon: Icon }) => {
             const colorStyles = {
               emerald: 'bg-emerald-500/10 border-emerald-500/20 text-[#04AA6D] dark:text-emerald-400',
@@ -264,7 +264,7 @@ export const DashboardHome = () => {
                   percentage={
                     dbData?.continueLearning?.length 
                       ? Math.round(dbData.continueLearning.reduce((acc, curr) => acc + (curr.completionPercentage || 0), 0) / dbData.continueLearning.length) 
-                      : 35
+                      : 0
                   } 
                   color="#04AA6D" 
                 />
@@ -280,14 +280,14 @@ export const DashboardHome = () => {
                     <span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
                     <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 font-mono-origin">In Progress</span>
                     <span className="text-[11px] font-extrabold text-slate-900 dark:text-white ml-auto font-mono-origin">
-                      {dbData?.continueLearning?.length ?? 1}
+                      {dbData?.continueLearning?.length ?? 0}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
                     <span className="text-[11px] font-bold text-slate-600 dark:text-slate-300 font-mono-origin">Not Started</span>
                     <span className="text-[11px] font-extrabold text-slate-900 dark:text-white ml-auto font-mono-origin">
-                      {dbData?.stats?.notStartedPaths ?? 82}
+                      {dbData?.stats?.notStartedPaths ?? 83}
                     </span>
                   </div>
                 </div>
