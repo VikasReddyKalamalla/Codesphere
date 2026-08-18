@@ -64,8 +64,13 @@ export const Codex = () => {
 
   // Templates seeding trigger
   const handleLaunchTemplate = async (templateName, lang, framework) => {
-    // Prevent duplicate workspaces for the user
-    const existing = workspaces.find(w => w.name === `${templateName} Sandbox`);
+    if (!templateName) return;
+
+    // Check if a workspace already exists for this template
+    const targetName = `${templateName} Sandbox`;
+    const existing = workspaces.find(
+      w => w.name === targetName || w.name === templateName || w.name?.toLowerCase() === targetName.toLowerCase()
+    );
     if (existing) {
       toast.success(`Opening existing ${templateName} workspace!`);
       navigate(`/codex/${existing._id || existing.id}`);
@@ -73,7 +78,7 @@ export const Codex = () => {
     }
 
     const payload = {
-      name: `${templateName} Sandbox`,
+      name: targetName,
       description: `Collaborative workspace template for ${templateName} projects.`,
       technologyStack: [lang],
       framework,
@@ -88,15 +93,18 @@ export const Codex = () => {
       const res = await createWorkspaceAPI(payload);
       const wsData = res?.data || res;
       const createdId = wsData?._id || wsData?.id || (typeof wsData === 'string' ? wsData : null);
+      
       if (createdId) {
         toast.success(`Launched ${templateName} template!`);
+        loadData();
         navigate(`/codex/${createdId}`);
       } else {
         toast.error(res?.message || 'Failed to launch template');
       }
     } catch (err) {
       console.error('Launch template error:', err);
-      toast.error(err?.response?.data?.message || 'Failed to launch template');
+      const errMsg = err?.data?.message || err?.message || err?.response?.data?.message || 'Failed to launch template';
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
