@@ -35,27 +35,31 @@ const deletePath = asyncHandler(async (req, res) => {
 
 // POST /api/learning/progress
 const markProgress = asyncHandler(async (req, res) => {
-  const { lessonId, unmark } = req.body;
-  const data = await progressService.markLessonComplete(req.user._id, lessonId, unmark);
+  const userId = req.user?._id || req.user?.id;
+  const { lessonId, unmark, pathId, learningPathId } = req.body;
+  const data = await progressService.markLessonComplete(userId, lessonId, unmark, pathId || learningPathId);
   const msg = unmark ? 'Lesson marked as incomplete' : 'Lesson marked as completed';
   return successResponse(res, 200, msg, data);
 });
 
 // GET /api/learning/progress/:learningPathId
 const getProgress = asyncHandler(async (req, res) => {
-  const data = await progressService.getProgress(req.user._id, req.params.learningPathId);
+  const userId = req.user?._id || req.user?.id;
+  const data = await progressService.getProgress(userId, req.params.learningPathId);
   return successResponse(res, 200, 'Progress fetched successfully', data);
 });
 
 // GET /api/learning/progress
 const getAllProgress = asyncHandler(async (req, res) => {
-  const data = await progressService.getAllProgress(req.user._id);
+  const userId = req.user?._id || req.user?.id;
+  const data = await progressService.getAllProgress(userId);
   return successResponse(res, 200, 'All progress fetched successfully', data);
 });
 
 // POST /api/learning/:id/enroll — enrol user in a learning path
 const enroll = asyncHandler(async (req, res) => {
-  const data = await progressService.enroll(req.user._id, req.params.id);
+  const userId = req.user?._id || req.user?.id;
+  const data = await progressService.enroll(userId, req.params.id);
   return successResponse(res, 200, 'Enrolled successfully', data);
 });
 

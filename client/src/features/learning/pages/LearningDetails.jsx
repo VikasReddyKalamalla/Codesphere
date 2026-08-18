@@ -48,11 +48,13 @@ export const LearningDetails = () => {
 
   const handleMarkComplete = async (lessonId, unmark = false) => {
     try {
-      const res = await markLessonCompleteAPI(lessonId, unmark);
+      const res = await markLessonCompleteAPI(lessonId, unmark, courseId);
       if (res?.data) setProgress(res.data);
       toast.success(unmark ? 'Lesson marked incomplete' : 'Lesson completed! ✓');
-    } catch {
-      toast.error('Could not update lesson progress');
+    } catch (err) {
+      console.error('Lesson completion error:', err);
+      const msg = err?.data?.message || err?.message || 'Could not update lesson progress';
+      toast.error(msg);
     }
   };
 

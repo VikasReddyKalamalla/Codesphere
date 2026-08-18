@@ -14,8 +14,7 @@ const progressSchema = new mongoose.Schema(
     },
     completedLessons: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref:  'Lesson',
+        type: mongoose.Schema.Types.Mixed,
       },
     ],
     completionPercentage: { type: Number, default: 0, min: 0, max: 100 },
