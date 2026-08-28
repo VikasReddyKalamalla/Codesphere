@@ -10,6 +10,7 @@ export const WorkspaceVoiceBar = ({ socket, workspaceId, currentUser, onlineUser
   
   const localStreamRef = useRef(null);
   const peerConnections = useRef({}); // userId -> RTCPeerConnection
+  const pendingCandidates = useRef([]); // queued ICE candidates
 
   const STUN_SERVERS = {
     iceServers: [{ urls: ['stun:stun.l.google.com:19302', 'stun:stun1.l.google.com:19302'] }]
@@ -18,12 +19,20 @@ export const WorkspaceVoiceBar = ({ socket, workspaceId, currentUser, onlineUser
   useEffect(() => {
     if (!socket) return;
 
+    const handleConnect = () => {
+      if (isConnected) {
+        socket.emit('voice_join', { workspaceId });
+      }
+    };
+
+    socket.on('connect', handleConnect);
+
     // Listen for WebRTC Signaling Events
     socket.on('voice_user_joined', async ({ userId, fullName }) => {
       toast.success(`${fullName} joined voice channel`);
       setActiveVoiceUsers(prev => [...prev.filter(u => u.userId !== userId), { userId, fullName, isMuted: false }]);
       if (isConnected) {
-        initiatePeerConnection(userId, true);
+        initiatePeerConnection(userId);
       }
     });
 
@@ -43,19 +52,38 @@ export const WorkspaceVoiceBar = ({ socket, workspaceId, currentUser, onlineUser
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
       socket.emit('voice_answer', { workspaceId, targetUserId: senderId, sdp: answer });
+
+      // Flush queued candidates for this peer
+      if (pendingCandidates.current[senderId]) {
+        for (const cand of pendingCandidates.current[senderId]) {
+          await pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+        }
+        delete pendingCandidates.current[senderId];
+      }
     });
 
     socket.on('voice_answer', async ({ senderId, sdp }) => {
       const pc = peerConnections.current[senderId];
       if (pc) {
         await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+        if (pendingCandidates.current[senderId]) {
+          for (const cand of pendingCandidates.current[senderId]) {
+            await pc.addIceCandidate(new RTCIceCandidate(cand)).catch(() => {});
+          }
+          delete pendingCandidates.current[senderId];
+        }
       }
     });
 
     socket.on('voice_ice_candidate', async ({ senderId, candidate }) => {
       const pc = peerConnections.current[senderId];
       if (pc && candidate) {
-        await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+        if (pc.remoteDescription && pc.remoteDescription.type) {
+          await pc.addIceCandidate(new RTCIceCandidate(candidate)).catch(() => {});
+        } else {
+          if (!pendingCandidates.current[senderId]) pendingCandidates.current[senderId] = [];
+          pendingCandidates.current[senderId].push(candidate);
+        }
       }
     });
 
@@ -64,12 +92,19 @@ export const WorkspaceVoiceBar = ({ socket, workspaceId, currentUser, onlineUser
     });
 
     return () => {
+      socket.off('connect', handleConnect);
       socket.off('voice_user_joined');
       socket.off('voice_user_left');
       socket.off('voice_offer');
       socket.off('voice_answer');
       socket.off('voice_ice_candidate');
       socket.off('voice_state_changed');
+
+      // Cleanup local media tracks on unmount
+      if (localStreamRef.current) {
+        localStreamRef.current.getTracks().forEach(t => t.stop());
+      }
+      Object.values(peerConnections.current).forEach(pc => pc.close());
     };
   }, [socket, isConnected, workspaceId]);
 
