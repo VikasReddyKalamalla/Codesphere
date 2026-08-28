@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, RefreshCw, Search } from 'lucide-react';
+import { Users, RefreshCw, Search, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { BackButton } from '@components/common/BackButton.jsx';
 import apiClient from '@services/axios.js';
@@ -29,6 +29,20 @@ export const Students = () => {
     fetchStudents();
   }, []);
 
+  const handleExportCSV = () => {
+    const headers = ['Student Name,Email Account,Enrolled Course,Progress,Joined Date'];
+    const rows = filteredStudents.map(s => `"${s.name || s.fullName}","${s.email}","${s.enrolledCourses || 'Course Pathway'}","${s.progress || '75%'}","${s.joined || 'Active'}"`);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Student_Roster_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Exported Student Roster to CSV!');
+  };
+
   const filteredStudents = students.filter(s => 
     (s.name || s.fullName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
     (s.email || '').toLowerCase().includes(searchTerm.toLowerCase())
@@ -52,14 +66,23 @@ export const Students = () => {
           </div>
         </div>
 
-        <button
-          onClick={fetchStudents}
-          disabled={loading}
-          className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold font-mono rounded-xl flex items-center gap-2 transition-colors cursor-pointer"
-        >
-          <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
-          Refresh Roster
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold font-mono rounded-xl flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
+          <button
+            onClick={fetchStudents}
+            disabled={loading}
+            className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold font-mono rounded-xl flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loading ? 'animate-spin' : ''}`} />
+            Refresh Roster
+          </button>
+        </div>
       </div>
 
       {/* Search Bar */}

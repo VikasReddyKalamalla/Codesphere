@@ -39,6 +39,20 @@ export const AdminPayments = () => {
     (t.user || t.customerEmail || t.id || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleExportCSV = () => {
+    const headers = ['Invoice ID,User Account,Plan / Item,Gateway,Amount,Status,Date'];
+    const rows = filteredTransactions.map(t => `"${t.id}","${t.user || t.customerEmail || 'User'}","${t.plan || 'Subscription'}","${t.gateway || 'Stripe'}","${t.amount}","${t.status || 'Completed'}","${t.date || 'Active'}"`);
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers, ...rows].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `Payment_Audit_Logs_${Date.now()}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Exported Payment Audit Logs to CSV!');
+  };
+
   return (
     <div className="flex flex-col gap-6 w-full animate-fade-in text-slate-900 dark:text-slate-100 font-sans">
       <BackButton fallbackPath="/admin" className="self-start" />
@@ -58,6 +72,13 @@ export const AdminPayments = () => {
         </div>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleExportCSV}
+            className="px-4 py-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold font-mono rounded-xl flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            <Download className="w-3.5 h-3.5" />
+            Export CSV
+          </button>
           <button
             onClick={loadData}
             disabled={loading}

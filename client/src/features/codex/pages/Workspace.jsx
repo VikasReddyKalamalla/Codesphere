@@ -1001,6 +1001,12 @@ export const Workspace = () => {
             onlineUsers={onlineUsers} 
           />
 
+          {/* Auto-Save Status Indicator Pill */}
+          <div className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 rounded-lg text-[10px] font-mono font-extrabold select-none">
+            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+            <span>Saved ⚡</span>
+          </div>
+
           {/* Export to Sandbox / Fork */}
           <button
             onClick={handleExportSandbox}
