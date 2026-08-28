@@ -86,13 +86,19 @@ const DSAAchievementsPage = lazy(() => import('@features/dsa/pages/DSAAchievemen
 const InstructorApplyPage= lazy(() => import('@features/instructor/pages/InstructorApply.jsx'));
 
 // ─── Instructor pages ─────────────────────────────────────────────────────────
-const InstructorDashboard    = lazy(() => import('@features/instructor/pages/InstructorDashboard.jsx'));
-const InstructorCourses      = lazy(() => import('@features/instructor/pages/InstructorCourses.jsx'));
-const InstructorSandbox      = lazy(() => import('@features/instructor/pages/InstructorSandbox.jsx'));
-const InstructorStudents     = lazy(() => import('@features/instructor/pages/InstructorStudents.jsx'));
-const InstructorSessions     = lazy(() => import('@features/instructor/pages/InstructorSessions.jsx'));
-const InstructorAnalytics    = lazy(() => import('@features/instructor/pages/InstructorAnalytics.jsx'));
-const InstructorCertificates = lazy(() => import('@features/instructor/pages/InstructorCertificates.jsx'));
+const InstructorDashboard     = lazy(() => import('@features/instructor/pages/InstructorDashboard.jsx'));
+const InstructorCourses       = lazy(() => import('@features/instructor/pages/InstructorCourses.jsx'));
+const InstructorLearningPaths = lazy(() => import('@features/instructor/pages/InstructorLearningPaths.jsx'));
+const InstructorSandbox       = lazy(() => import('@features/instructor/pages/InstructorSandbox.jsx'));
+const InstructorStudents      = lazy(() => import('@features/instructor/pages/InstructorStudents.jsx'));
+const InstructorSessions      = lazy(() => import('@features/instructor/pages/InstructorSessions.jsx'));
+const InstructorAssignments   = lazy(() => import('@features/instructor/pages/InstructorAssignments.jsx'));
+const InstructorAssessments   = lazy(() => import('@features/instructor/pages/InstructorAssessments.jsx'));
+const InstructorCertificates  = lazy(() => import('@features/instructor/pages/InstructorCertificates.jsx'));
+const InstructorCommunities   = lazy(() => import('@features/instructor/pages/InstructorCommunities.jsx'));
+const InstructorAnalytics     = lazy(() => import('@features/instructor/pages/InstructorAnalytics.jsx'));
+const InstructorResources     = lazy(() => import('@features/instructor/pages/InstructorResources.jsx'));
+const InstructorSettings      = lazy(() => import('@features/instructor/pages/InstructorSettings.jsx'));
 const InstructorModulePlaceholder = lazy(() => import('@features/instructor/pages/InstructorModulePlaceholder.jsx'));
 
 // ─── Admin pages ──────────────────────────────────────────────────────────────
@@ -102,6 +108,10 @@ const AdminUserDetail    = lazy(() => import('@features/admin/pages/AdminUserDet
 const AdminInstructors   = lazy(() => import('@features/admin/pages/AdminInstructors.jsx'));
 const AdminContent       = lazy(() => import('@features/admin/pages/AdminContent.jsx'));
 const AdminLearning      = lazy(() => import('@features/admin/pages/AdminLearning.jsx'));
+const AdminSandbox       = lazy(() => import('@features/admin/pages/AdminSandbox.jsx'));
+const AdminCodex         = lazy(() => import('@features/admin/pages/AdminCodex.jsx'));
+const AdminSubscriptions = lazy(() => import('@features/admin/pages/AdminSubscriptions.jsx'));
+const AdminPayments      = lazy(() => import('@features/admin/pages/AdminPayments.jsx'));
 const AdminReports       = lazy(() => import('@features/admin/pages/AdminReports.jsx'));
 const AdminModeration    = lazy(() => import('@features/admin/pages/AdminModeration.jsx'));
 const AdminSettings      = lazy(() => import('@features/admin/pages/AdminSettings.jsx'));
@@ -111,10 +121,10 @@ const AdminAnnouncements = lazy(() => import('@features/admin/pages/AdminAnnounc
 const AdminFeatures      = lazy(() => import('@features/admin/pages/AdminFeatures.jsx'));
 const AdminHealth        = lazy(() => import('@features/admin/pages/AdminHealth.jsx'));
 const AdminSessions      = lazy(() => import('@features/admin/pages/AdminSessions.jsx'));
-const AdminTests              = lazy(() => import('@features/admin/pages/AdminTests.jsx'));
-const AdminResources          = lazy(() => import('@features/admin/pages/AdminResources.jsx'));
-const AdminCommunities        = lazy(() => import('@features/admin/pages/AdminCommunities.jsx'));
-const AdminEvents             = lazy(() => import('@features/admin/pages/AdminEvents.jsx'));
+const AdminTests         = lazy(() => import('@features/admin/pages/AdminTests.jsx'));
+const AdminResources     = lazy(() => import('@features/admin/pages/AdminResources.jsx'));
+const AdminCommunities   = lazy(() => import('@features/admin/pages/AdminCommunities.jsx'));
+const AdminEvents        = lazy(() => import('@features/admin/pages/AdminEvents.jsx'));
 const AdminModulePlaceholder = lazy(() => import('@features/admin/pages/AdminModulePlaceholder.jsx'));
 
 // ─── Error pages ──────────────────────────────────────────────────────────────
@@ -270,17 +280,17 @@ const AppRoutes = () => {
       >
         <Route path={ROUTES.INSTRUCTOR_DASHBOARD}      element={<W><InstructorDashboard /></W>} />
         <Route path={ROUTES.INSTRUCTOR_COURSES}        element={<W><InstructorCourses /></W>} />
-        <Route path={ROUTES.INSTRUCTOR_LEARNING_PATHS} element={<W><InstructorModulePlaceholder section="learning-paths" /></W>} />
+        <Route path={ROUTES.INSTRUCTOR_LEARNING_PATHS} element={<W><InstructorLearningPaths /></W>} />
         <Route path={ROUTES.INSTRUCTOR_SANDBOX}        element={<W><InstructorSandbox /></W>} />
         <Route path={ROUTES.INSTRUCTOR_STUDENTS}       element={<W><InstructorStudents /></W>} />
         <Route path={ROUTES.INSTRUCTOR_SESSIONS}       element={<W><InstructorSessions /></W>} />
-        <Route path={ROUTES.INSTRUCTOR_ASSIGNMENTS}    element={<W><InstructorModulePlaceholder section="assignments" /></W>} />
-        <Route path={ROUTES.INSTRUCTOR_ASSESSMENTS}    element={<W><InstructorModulePlaceholder section="assessments" /></W>} />
+        <Route path={ROUTES.INSTRUCTOR_ASSIGNMENTS}    element={<W><InstructorAssignments /></W>} />
+        <Route path={ROUTES.INSTRUCTOR_ASSESSMENTS}    element={<W><InstructorAssessments /></W>} />
         <Route path={ROUTES.INSTRUCTOR_CERTIFICATES}   element={<W><InstructorCertificates /></W>} />
-        <Route path={ROUTES.INSTRUCTOR_COMMUNITIES}    element={<W><InstructorModulePlaceholder section="communities" /></W>} />
+        <Route path={ROUTES.INSTRUCTOR_COMMUNITIES}    element={<W><InstructorCommunities /></W>} />
         <Route path={ROUTES.INSTRUCTOR_ANALYTICS}      element={<W><InstructorAnalytics /></W>} />
-        <Route path={ROUTES.INSTRUCTOR_RESOURCES}      element={<W><InstructorModulePlaceholder section="resources" /></W>} />
-        <Route path={ROUTES.INSTRUCTOR_SETTINGS}       element={<W><InstructorModulePlaceholder section="settings" /></W>} />
+        <Route path={ROUTES.INSTRUCTOR_RESOURCES}      element={<W><InstructorResources /></W>} />
+        <Route path={ROUTES.INSTRUCTOR_SETTINGS}       element={<W><InstructorSettings /></W>} />
       </Route>
 
       {/* ── Admin Panel ───────────────────────────────────────────────────── */}
@@ -303,11 +313,11 @@ const AppRoutes = () => {
         <Route path={ROUTES.ADMIN_COMMUNITIES}   element={<W><AdminCommunities /></W>} />
         <Route path={ROUTES.ADMIN_SESSIONS}      element={<W><AdminSessions /></W>} />
         <Route path={ROUTES.ADMIN_EVENTS}        element={<W><AdminEvents /></W>} />
-        <Route path={ROUTES.ADMIN_SANDBOX}       element={<W><AdminModulePlaceholder section="sandbox" /></W>} />
-        <Route path={ROUTES.ADMIN_CODEX}         element={<W><AdminModulePlaceholder section="codex" /></W>} />
+        <Route path={ROUTES.ADMIN_SANDBOX}       element={<W><AdminSandbox /></W>} />
+        <Route path={ROUTES.ADMIN_CODEX}         element={<W><AdminCodex /></W>} />
         <Route path={ROUTES.ADMIN_TESTS}         element={<W><AdminTests /></W>} />
-        <Route path={ROUTES.ADMIN_SUBSCRIPTIONS} element={<W><AdminModulePlaceholder section="subscriptions" /></W>} />
-        <Route path={ROUTES.ADMIN_PAYMENTS}      element={<W><AdminModulePlaceholder section="payments" /></W>} />
+        <Route path={ROUTES.ADMIN_SUBSCRIPTIONS} element={<W><AdminSubscriptions /></W>} />
+        <Route path={ROUTES.ADMIN_PAYMENTS}      element={<W><AdminPayments /></W>} />
         <Route path={ROUTES.ADMIN_REPORTS}       element={<W><AdminReports /></W>} />
         <Route path={ROUTES.ADMIN_MODERATION}    element={<W><AdminModeration /></W>} />
         <Route path={ROUTES.ADMIN_SETTINGS}      element={<W><AdminSettings /></W>} />
