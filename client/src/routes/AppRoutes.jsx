@@ -99,7 +99,6 @@ const InstructorCommunities   = lazy(() => import('@features/instructor/pages/In
 const InstructorAnalytics     = lazy(() => import('@features/instructor/pages/InstructorAnalytics.jsx'));
 const InstructorResources     = lazy(() => import('@features/instructor/pages/InstructorResources.jsx'));
 const InstructorSettings      = lazy(() => import('@features/instructor/pages/InstructorSettings.jsx'));
-const InstructorModulePlaceholder = lazy(() => import('@features/instructor/pages/InstructorModulePlaceholder.jsx'));
 
 // ─── Admin pages ──────────────────────────────────────────────────────────────
 const AdminDashboard     = lazy(() => import('@features/admin/pages/AdminDashboard.jsx'));
@@ -125,7 +124,6 @@ const AdminTests         = lazy(() => import('@features/admin/pages/AdminTests.j
 const AdminResources     = lazy(() => import('@features/admin/pages/AdminResources.jsx'));
 const AdminCommunities   = lazy(() => import('@features/admin/pages/AdminCommunities.jsx'));
 const AdminEvents        = lazy(() => import('@features/admin/pages/AdminEvents.jsx'));
-const AdminModulePlaceholder = lazy(() => import('@features/admin/pages/AdminModulePlaceholder.jsx'));
 
 // ─── Error pages ──────────────────────────────────────────────────────────────
 const NotFoundPage   = lazy(() => import('@features/landing/pages/NotFoundPage.jsx'));

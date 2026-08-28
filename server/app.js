@@ -202,11 +202,8 @@ app.use('/api/notification-templates',  templateRoutes);
 app.use('/api/notification-preferences',preferenceRoutes);
 app.use('/api/announcements',           announcementRoutes);
 app.use('/api/notification-logs',       logRoutes);
-app.use('/api/instructor/certificates', instructorCertificateRoutes);
-app.use('/api/cloud-workspaces', cloudWorkspaceRoutes);
-app.use('/api/dsa', dsaRoutes);
-app.use('/api/network', networkRoutes);
-app.use('/api/settings',                settingsRoutes);
+app.use('/api/network',                  networkRoutes);
+app.use('/api/settings',                 settingsRoutes);
 
 // ─── Basic Route ───────────────────────────────────────────────────────────────
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
