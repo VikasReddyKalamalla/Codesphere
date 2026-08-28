@@ -22,6 +22,7 @@ import {
 import { SessionManagerModal } from '../../../components/SessionManagerModal.jsx';
 import toast from 'react-hot-toast';
 import { socket } from '../../../socket/socket.js';
+import { WorkspaceVoiceBar } from '../../codex/components/WorkspaceVoiceBar.jsx';
 
 // ─── Default Problem Statements & Flashcards Catalog ──────────────────────────
 const FEATURED_PROBLEM_STATEMENTS = [
@@ -421,6 +422,11 @@ export const SandboxProject = () => {
 
         {/* Action Buttons: Session Manager & Launch VS Code */}
         <div className="flex items-center gap-3 shrink-0">
+          <WorkspaceVoiceBar 
+            socket={socket} 
+            workspaceId={id || 'sandbox_global'} 
+          />
+
           <button
             onClick={() => {
               setSessionModalMode('end');

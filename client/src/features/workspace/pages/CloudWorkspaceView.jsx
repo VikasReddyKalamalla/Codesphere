@@ -46,6 +46,8 @@ import { WorkspaceAnalyticsModal } from '../components/WorkspaceAnalyticsModal';
 import { ExamModeHeader } from '../components/ExamModeHeader';
 import apiClient from '@services/axios.js';
 import toast from 'react-hot-toast';
+import { socket } from '../../../socket/socket.js';
+import { WorkspaceVoiceBar } from '../../codex/components/WorkspaceVoiceBar.jsx';
 
 export const CloudWorkspaceView = () => {
   const { workspaceId: paramWorkspaceId, courseId, lessonId } = useParams();
@@ -588,6 +590,12 @@ export const CloudWorkspaceView = () => {
 
         {/* RIGHT ZONE: Primary Action Buttons & Tools */}
         <div className="flex items-center gap-1.5 md:gap-2">
+          {/* WEBRTC VOICE CHANNEL BAR */}
+          <WorkspaceVoiceBar 
+            socket={socket} 
+            workspaceId={workspaceId || 'cloud_workspace_global'} 
+          />
+
           {/* RUN CODE BUTTON */}
           {activeTab === 'monaco' && (
             <button
