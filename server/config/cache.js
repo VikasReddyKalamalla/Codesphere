@@ -47,6 +47,13 @@ const initCache = async () => {
   }
 };
 
+let stats = {
+  hits: 0,
+  misses: 0,
+  sets: 0,
+  deletes: 0,
+};
+
 /**
  * Get value from cache
  */
@@ -54,9 +61,15 @@ const get = async (key) => {
   try {
     if (!redisClient) return null;
     const value = await redisClient.get(key);
-    return value ? JSON.parse(value) : null;
+    if (value) {
+      stats.hits++;
+      return JSON.parse(value);
+    }
+    stats.misses++;
+    return null;
   } catch (error) {
     logger.error(`Cache get error: ${error.message}`);
+    stats.misses++;
     return null;
   }
 };
@@ -68,6 +81,7 @@ const set = async (key, value, ttl = 3600) => {
   try {
     if (!redisClient) return false;
     await redisClient.setEx(key, ttl, JSON.stringify(value));
+    stats.sets++;
     return true;
   } catch (error) {
     logger.error(`Cache set error: ${error.message}`);
@@ -82,6 +96,7 @@ const del = async (key) => {
   try {
     if (!redisClient) return false;
     await redisClient.del(key);
+    stats.deletes++;
     return true;
   } catch (error) {
     logger.error(`Cache delete error: ${error.message}`);
@@ -98,12 +113,40 @@ const delByPattern = async (pattern) => {
     const keys = await redisClient.keys(pattern);
     if (keys && keys.length > 0) {
       await redisClient.del(keys);
+      stats.deletes += keys.length;
     }
     return true;
   } catch (error) {
     logger.error(`Cache delByPattern error: ${error.message}`);
     return false;
   }
+};
+
+/**
+ * Invalidate route caches matching patterns
+ */
+const invalidateRoutes = async (patterns = ['route:*']) => {
+  let count = 0;
+  for (const pattern of patterns) {
+    await delByPattern(pattern);
+    count++;
+  }
+  return count;
+};
+
+/**
+ * Get real-time cache statistics
+ */
+const getCacheStats = () => {
+  const total = stats.hits + stats.misses;
+  const hitRatio = total > 0 ? ((stats.hits / total) * 100).toFixed(2) : '0.00';
+  return {
+    ...stats,
+    totalRequests: total,
+    hitRatioPercent: `${hitRatio}%`,
+    isConnected: !!(redisClient && redisClient.isOpen),
+    clientType: redisClient ? 'Redis' : 'MemoryFallback',
+  };
 };
 
 // In-memory locks map to prevent Thundering Herd on single node
@@ -159,13 +202,21 @@ const clear = async () => {
 const createMemoryCache = () => {
   const cache = new Map();
   return {
-    get: async (key) => cache.get(key) || null,
+    get: async (key) => {
+      const val = cache.get(key);
+      if (val) stats.hits++; else stats.misses++;
+      return val || null;
+    },
     set: async (key, value, ttl = 3600) => {
       cache.set(key, value);
+      stats.sets++;
       setTimeout(() => cache.delete(key), ttl * 1000);
       return true;
     },
-    del: async (key) => cache.delete(key),
+    del: async (key) => {
+      stats.deletes++;
+      return cache.delete(key);
+    },
     flushAll: async () => cache.clear(),
   };
 };
@@ -209,6 +260,9 @@ const cacheKeys = {
   USER_NOTIFICATIONS: (userId) => `notifications:${userId}`,
   LANGUAGES: 'languages:all',
   LEADERBOARD: 'leaderboard:global',
+  DSA_TOPICS: 'dsa:topics:all',
+  DSA_ROADMAP: 'dsa:roadmap:striver',
+  TECH_ROADMAPS: 'roadmaps:all',
 };
 
 module.exports = {
@@ -217,6 +271,8 @@ module.exports = {
   set,
   del,
   delByPattern,
+  invalidateRoutes,
+  getCacheStats,
   getOrSetWithLock,
   clear,
   cacheMiddleware,

@@ -16,7 +16,7 @@ export const PDFViewerPage = () => {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-black text-slate-900 dark:text-white">{title}</h2>
       </div>
-      <PDFViewer fileUrl={fileUrl} />
+      <PDFViewer fileUrl={fileUrl} title={title} />
     </div>
   );
 };
