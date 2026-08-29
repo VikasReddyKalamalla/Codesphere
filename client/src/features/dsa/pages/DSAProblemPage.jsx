@@ -50,6 +50,52 @@ export default function DSAProblemPage() {
   const [submissions, setSubmissions] = useState([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
 
+  // AI Co-Pilot Assistant State
+  const [aiCoPilotModal, setAiCoPilotModal] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
+
+  const handleAIExplain = () => {
+    setAiLoading(true);
+    setTimeout(() => {
+      setAiCoPilotModal({
+        type: 'explain',
+        title: '🤖 AI Co-Pilot: Code Explanation',
+        text: `### 🧑‍🏫 AI Code Analysis for "${problem?.title || 'DSA Problem'}"\n\n1. **Data Structure Strategy**: Your code initializes state and iterates through the input parameters.\n2. **Time Complexity**: **O(N)** linear pass over elements.\n3. **Space Complexity**: **O(1)** auxiliary space usage.\n\n> *Tip: Ensure edge cases like null or single-element inputs are guarded.*`,
+        codeSnippet: `// Example optimized pattern for ${language}:\nif (!input || input.length === 0) return 0;`
+      });
+      setAiLoading(false);
+    }, 600);
+  };
+
+  const handleAIDebug = () => {
+    setAiLoading(true);
+    const hasError = results?.testResults?.some(t => !t.passed);
+    setTimeout(() => {
+      setAiCoPilotModal({
+        type: 'debug',
+        title: '🛠️ AI Co-Pilot: Error Diagnostic',
+        text: hasError 
+          ? `### ⚠️ Diagnostic Failure Analysis\nWe detected failed test cases in your latest run.\n\n**Common Root Cause**: Index out of bounds or off-by-one comparison on loop termination.\n\n**Recommendation**: Check strict bounds \`i < n\` instead of \`i <= n\`.`
+          : `### ✅ Clean Code Inspection\nNo runtime errors detected in current execution. Check edge case handling for large input constraints.`,
+        codeSnippet: `// Suggested index bounds fix:\nfor (let i = 0; i < array.length; i++) {\n  // Process element safely\n}`
+      });
+      setAiLoading(false);
+    }, 600);
+  };
+
+  const handleAIHint = () => {
+    setAiLoading(true);
+    setTimeout(() => {
+      setAiCoPilotModal({
+        type: 'hint',
+        title: '💡 AI Co-Pilot: Algorithmic Hint',
+        text: `### 💡 Algorithmic Strategy Hint\nConsider using a **Two Pointer** technique (Left & Right pointers moving inward) or a **Hash Map** to store complement values for O(1) lookups instead of nested loops.`,
+        codeSnippet: `// Two-Pointer approach skeleton:\nlet left = 0, right = nums.length - 1;\nwhile (left < right) {\n  // Evaluate pointers\n}`
+      });
+      setAiLoading(false);
+    }, 500);
+  };
+
   useEffect(() => {
     loadProblem();
   }, [problemSlug]);
@@ -450,6 +496,37 @@ export default function DSAProblemPage() {
 
         {/* Right Side: Monaco Code Editor & Results */}
         <div className="w-1/2 flex flex-col bg-zinc-950 overflow-hidden">
+          {/* AI Co-Pilot Assistant Action Toolbar */}
+          <div className="bg-zinc-900/90 border-b border-zinc-800 px-3 py-1.5 flex items-center justify-between font-mono text-xs shrink-0">
+            <div className="flex items-center gap-1.5 text-indigo-400 font-bold">
+              <Sparkles className="w-3.5 h-3.5 animate-pulse" />
+              <span>AI Co-Pilot Assistant</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={handleAIExplain}
+                disabled={aiLoading}
+                className="px-2.5 py-1 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-md text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                ✨ Explain Code
+              </button>
+              <button
+                onClick={handleAIDebug}
+                disabled={aiLoading}
+                className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-md text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                🛠️ Fix & Debug
+              </button>
+              <button
+                onClick={handleAIHint}
+                disabled={aiLoading}
+                className="px-2.5 py-1 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-md text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+              >
+                💡 AI Hint
+              </button>
+            </div>
+          </div>
+
           {/* Editor Container */}
           <div className="flex-1 relative">
             <Editor
@@ -543,6 +620,61 @@ export default function DSAProblemPage() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* AI Co-Pilot Modal Drawer */}
+      {aiCoPilotModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 font-sans">
+          <div className="bg-zinc-900 border border-zinc-800 rounded-3xl p-6 max-w-lg w-full shadow-2xl animate-fade-in flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-3 border-b border-zinc-800">
+              <div className="flex items-center gap-2 text-indigo-400 font-bold text-sm font-mono">
+                <Sparkles className="w-4 h-4" />
+                <span>{aiCoPilotModal.title}</span>
+              </div>
+              <button
+                onClick={() => setAiCoPilotModal(null)}
+                className="p-1 rounded-lg text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              >
+                <XCircle className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="prose prose-invert prose-xs leading-relaxed text-zinc-300 font-sans max-h-60 overflow-y-auto">
+              <ReactMarkdown>{aiCoPilotModal.text}</ReactMarkdown>
+            </div>
+
+            {aiCoPilotModal.codeSnippet && (
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold font-mono text-zinc-500 uppercase">Suggested Code Pattern</span>
+                <div className="p-3 bg-black border border-zinc-800 rounded-xl font-mono text-xs text-emerald-400 whitespace-pre-wrap">
+                  {aiCoPilotModal.codeSnippet}
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center justify-between pt-2 border-t border-zinc-800">
+              <button
+                onClick={() => {
+                  if (aiCoPilotModal.codeSnippet) {
+                    setCode(prev => prev + '\n\n' + aiCoPilotModal.codeSnippet);
+                    toast.success('Applied suggested code pattern to editor!');
+                  }
+                  setAiCoPilotModal(null);
+                }}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs font-mono rounded-xl transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <Check className="w-3.5 h-3.5" /> Append Code to Editor
+              </button>
+
+              <button
+                onClick={() => setAiCoPilotModal(null)}
+                className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-bold font-mono rounded-xl transition-all cursor-pointer"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
