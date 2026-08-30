@@ -6,6 +6,7 @@ import {
   GraduationCap, Code2
 } from 'lucide-react';
 import { useAdmin } from '../hooks/useAdmin.js';
+import { InfrastructureTopologyMap } from '../components/InfrastructureTopologyMap.jsx';
 
 // User Analytics double curved line chart
 const UserAnalyticsChart = ({ registrationStats }) => {
@@ -180,6 +181,9 @@ export default function AdminDashboard() {
           );
         })}
       </div>
+
+      {/* Infrastructure Topology & Health Map Visualizer */}
+      <InfrastructureTopologyMap healthData={health} />
 
       {/* Grid Row 1 (User Analytics, User Distribution, System Health) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
