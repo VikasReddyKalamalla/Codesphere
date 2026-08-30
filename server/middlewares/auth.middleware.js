@@ -16,7 +16,14 @@ const protect = async (req, res, next) => {
 
     const token = authHeader.split(' ')[1];
 
-    // 2. Verify token using consistent secret fallback
+    // 2. Check if token is blacklisted in Redis/Cache (Revocation Check)
+    const cache = require('../config/cache');
+    const isRevoked = await cache.get(`token:revoked:${token}`);
+    if (isRevoked) {
+      return errorResponse(res, 401, 'Session has been logged out or revoked. Please log in again.');
+    }
+
+    // 3. Verify token using consistent secret fallback
     const secret = process.env.JWT_SECRET || 'codesphere_secret_key_2025';
     const decoded = jwt.verify(token, secret);
 

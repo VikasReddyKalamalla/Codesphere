@@ -114,8 +114,13 @@ app.use(cors({
   },
   credentials: true
 }));
+const { sanitizeNoSQL, sanitizeXSS, securityHeaders } = require('./middlewares/security.middleware');
+
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(securityHeaders);
+app.use(sanitizeNoSQL);
+app.use(sanitizeXSS);
 
 // ─── Static Uploads ──────────────────────────────────────────────────────────
 const staticOptions = { maxAge: '1d', etag: true };

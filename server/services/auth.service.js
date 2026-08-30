@@ -332,16 +332,20 @@ const resetPasswordWithToken = async (resetToken, newPassword) => {
 };
 
 const revokedTokens = new Set();
+const cache = require('../config/cache');
 
 const revokeToken = async (token) => {
   if (!token) return false;
   revokedTokens.add(token);
+  await cache.set(`token:revoked:${token}`, true, 86400).catch(() => {});
   return true;
 };
 
 const isTokenRevoked = async (token) => {
   if (!token) return false;
-  return revokedTokens.has(token);
+  if (revokedTokens.has(token)) return true;
+  const inCache = await cache.get(`token:revoked:${token}`);
+  return !!inCache;
 };
 
 module.exports = {
