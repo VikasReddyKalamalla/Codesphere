@@ -63,10 +63,23 @@ export const SocialLogin = () => {
         const result = await signInWithPopup(auth, googleProvider);
         firebaseUser = result.user;
       } catch (popupErr) {
-        if (popupErr.code === 'auth/popup-blocked') {
-          toast('Popup blocked — redirecting to Google sign-in...');
-          await signInWithRedirect(auth, googleProvider);
-          return; // page will reload after redirect
+        const code = popupErr?.code || '';
+        console.warn('[Google Auth Popup Warn]:', code, popupErr);
+
+        if (code === 'auth/popup-closed-by-user' || code === 'auth/cancelled-popup-request') {
+          setLoading(false);
+          return;
+        }
+
+        if (code === 'auth/popup-blocked' || code === 'auth/internal-error') {
+          try {
+            toast('Popup issue detected — redirecting to Google sign-in...');
+            await signInWithRedirect(auth, googleProvider);
+            return; // page will reload after redirect
+          } catch (redirectErr) {
+            console.error('[Google Auth Redirect Error]:', redirectErr);
+            throw redirectErr;
+          }
         }
         throw popupErr;
       }
@@ -89,6 +102,8 @@ export const SocialLogin = () => {
         // User closed popup — silently ignore
       } else if (code === 'auth/unauthorized-domain') {
         toast.error('Localhost is not in your Firebase Authorized Domains. Add it in the Firebase console.');
+      } else if (code === 'auth/internal-error') {
+        toast.error('Firebase Auth internal error. Please check browser popups/cookies settings or try again.');
       } else {
         toast.error(err.message || 'Google sign-in failed. Please try again.');
       }

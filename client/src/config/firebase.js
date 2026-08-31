@@ -2,8 +2,10 @@ import { initializeApp, getApps, getApp } from 'firebase/app';
 import {
   getAuth,
   initializeAuth,
-  inMemoryPersistence,
+  indexedDBLocalPersistence,
+  browserLocalPersistence,
   browserSessionPersistence,
+  inMemoryPersistence,
   browserPopupRedirectResolver,
   GoogleAuthProvider,
   signInWithEmailAndPassword,
@@ -32,13 +34,11 @@ export const isFirebaseConfigured = () =>
 // Initialize Firebase App (singleton-safe across Vite HMR reloads)
 const appInstance = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// initializeAuth with:
-//   - browserSessionPersistence/inMemoryPersistence → bypass IndexedDB (no "Database closing" error)
-//   - browserPopupRedirectResolver → required for signInWithPopup to work
+// initializeAuth with full persistence stack and popup resolver
 let auth;
 try {
   auth = initializeAuth(appInstance, {
-    persistence: [browserSessionPersistence, inMemoryPersistence],
+    persistence: [indexedDBLocalPersistence, browserLocalPersistence, browserSessionPersistence, inMemoryPersistence],
     popupRedirectResolver: browserPopupRedirectResolver,
   });
 } catch (_e) {
