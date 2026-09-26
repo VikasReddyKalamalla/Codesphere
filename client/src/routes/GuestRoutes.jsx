@@ -6,11 +6,11 @@ import RouteLoader from './RouteLoader.jsx';
 import { AuthLayout } from '@layouts';
 import GuestGuard from './GuestGuard.jsx';
 
-const LoginPage          = lazy(() => import('@features/auth/pages/LoginPage.jsx'));
-const RegisterPage       = lazy(() => import('@features/auth/pages/RegisterPage.jsx'));
-const ForgotPasswordPage = lazy(() => import('@features/auth/pages/ForgotPasswordPage.jsx'));
-const ResetPasswordPage  = lazy(() => import('@features/auth/pages/ResetPasswordPage.jsx'));
-const VerifyEmailPage    = lazy(() => import('@features/auth/pages/VerifyEmailPage.jsx'));
+import LoginPage          from '@features/auth/pages/Login.jsx';
+import RegisterPage       from '@features/auth/pages/Register.jsx';
+import ForgotPasswordPage from '@features/auth/pages/ForgotPassword.jsx';
+import ResetPasswordPage  from '@features/auth/pages/ResetPassword.jsx';
+import VerifyEmailPage    from '@features/auth/pages/VerifyEmail.jsx';
 
 export const GuestRoutes = ({ isAuthenticated = false, user = null }) => (
   <Route
