@@ -1,18 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const WorkspaceCloud = require('../models/WorkspaceCloud');
-const containerManager = require('../../services/workspace-service/src/services/containerManager');
-const templateService = require('../../services/workspace-service/src/services/templateService');
-const snapshotService = require('../../services/workspace-service/src/services/snapshotService');
-const gitService = require('../../services/workspace-service/src/services/gitService');
-const envManager = require('../../services/workspace-service/src/services/envManager');
-const telemetryService = require('../../services/workspace-service/src/services/telemetryService');
-const extensionMarketplaceService = require('../../services/workspace-service/src/services/extensionMarketplaceService');
-const aiTutorEngine = require('../../services/workspace-service/src/services/aiTutorContextEngine');
-const analyticsTracker = require('../../services/workspace-service/src/services/analyticsTracker');
-const eventBus = require('../../services/workspace-service/src/services/workspaceEventBus');
-const workspaceAgent = require('../../services/workspace-service/src/services/workspaceAgent');
 const path = require('path');
+const loadService = (relPath) => {
+  const candidates = [
+    path.resolve(__dirname, '../services/workspace-service/src/services', relPath),
+    path.resolve(__dirname, '../../services/workspace-service/src/services', relPath),
+    path.resolve('/services/workspace-service/src/services', relPath),
+  ];
+  for (const c of candidates) {
+    try {
+      return require(c);
+    } catch (e) {
+      if (e.code !== 'MODULE_NOT_FOUND') throw e;
+    }
+  }
+  return require(candidates[0]);
+};
+
+const containerManager = loadService('containerManager');
+const templateService = loadService('templateService');
+const snapshotService = loadService('snapshotService');
+const gitService = loadService('gitService');
+const envManager = loadService('envManager');
+const telemetryService = loadService('telemetryService');
+const extensionMarketplaceService = loadService('extensionMarketplaceService');
+const aiTutorEngine = loadService('aiTutorContextEngine');
+const analyticsTracker = loadService('analyticsTracker');
+const eventBus = loadService('workspaceEventBus');
+const workspaceAgent = loadService('workspaceAgent');
+
 
 /**
  * Fast DB Query Helper to prevent Mongoose buffering timeouts when offline

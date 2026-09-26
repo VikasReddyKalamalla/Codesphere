@@ -5,7 +5,23 @@ try {
 } catch (e) {
   createProxyMiddleware = null;
 }
-const containerManager = require('../../services/workspace-service/src/services/containerManager');
+const path = require('path');
+const loadService = (relPath) => {
+  const candidates = [
+    path.resolve(__dirname, '../services/workspace-service/src/services', relPath),
+    path.resolve(__dirname, '../../services/workspace-service/src/services', relPath),
+    path.resolve('/services/workspace-service/src/services', relPath),
+  ];
+  for (const c of candidates) {
+    try {
+      return require(c);
+    } catch (e) {
+      if (e.code !== 'MODULE_NOT_FOUND') throw e;
+    }
+  }
+  return require(candidates[0]);
+};
+const containerManager = loadService('containerManager');
 
 /**
  * Reverse proxy middleware for routing /workspace-proxy/:workspaceId/* to the student container
