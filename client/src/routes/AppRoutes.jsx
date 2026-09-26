@@ -26,9 +26,9 @@ import RegisterPage       from '@features/auth/pages/Register.jsx';
 import ForgotPasswordPage from '@features/auth/pages/ForgotPassword.jsx';
 import ResetPasswordPage  from '@features/auth/pages/ResetPassword.jsx';
 import VerifyEmailPage    from '@features/auth/pages/VerifyEmail.jsx';
+import LandingPage        from '@features/landing/pages/LandingPage.jsx';
 
 // ─── Landing / public pages ───────────────────────────────────────────────────
-const LandingPage   = lazy(() => import('@features/landing/pages/LandingPage.jsx'));
 const AboutPage     = lazy(() => import('@features/landing/pages/AboutPage.jsx'));
 const PricingPage   = lazy(() => import('@features/landing/pages/PricingPage.jsx'));
 const FeaturesPage  = lazy(() => import('@features/landing/pages/FeaturesPage.jsx'));
@@ -164,7 +164,7 @@ const AppRoutes = () => {
 
       {/* ── Public / Landing ─────────────────────────────────────────────── */}
       <Route element={<PublicLayout />}>
-        <Route path={ROUTES.HOME}           element={<W><LandingPage /></W>} />
+        <Route path={ROUTES.HOME}           element={<LandingPage />} />
         <Route path={ROUTES.ABOUT}          element={<W><AboutPage /></W>} />
         <Route path={ROUTES.PRICING}        element={<W><PricingPage /></W>} />
         <Route path={ROUTES.FEATURES}       element={<W><FeaturesPage /></W>} />

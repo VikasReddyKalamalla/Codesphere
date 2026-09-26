@@ -43,6 +43,22 @@ export default defineConfig({
       },
     },
   },
+  optimizeDeps: {
+    include: [
+      'react',
+      'react-dom',
+      'react-router-dom',
+      'react-redux',
+      '@reduxjs/toolkit',
+      'framer-motion',
+      'lucide-react',
+      'clsx',
+      'axios',
+      'dayjs',
+      'react-hot-toast',
+      'react-intersection-observer',
+    ],
+  },
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {
