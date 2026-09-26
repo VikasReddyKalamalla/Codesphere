@@ -1,1 +1,4 @@
-export { ForgotPassword as default } from './ForgotPassword.jsx';
+import ForgotPassword from './ForgotPassword.jsx';
+
+export { ForgotPassword };
+export default ForgotPassword;

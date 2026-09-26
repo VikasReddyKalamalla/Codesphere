@@ -1,1 +1,4 @@
-export { Register as default } from './Register.jsx';
+import Register from './Register.jsx';
+
+export { Register };
+export default Register;

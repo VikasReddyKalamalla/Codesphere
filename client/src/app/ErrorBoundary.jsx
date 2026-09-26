@@ -47,7 +47,12 @@ export class ErrorBoundary extends Component {
             </pre>
           )}
           <button
-            onClick={() => window.location.reload()}
+            onClick={() => {
+              sessionStorage.removeItem('cs_last_dynamic_reload');
+              sessionStorage.removeItem('cs_lazy_retry_reload');
+              sessionStorage.removeItem('chunk_failed_reload');
+              window.location.reload();
+            }}
             className="mt-5 px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-indigo-600/20"
           >
             Reload Application

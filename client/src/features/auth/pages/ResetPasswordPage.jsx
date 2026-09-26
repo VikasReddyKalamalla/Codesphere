@@ -1,1 +1,4 @@
-export { ResetPassword as default } from './ResetPassword.jsx';
+import ResetPassword from './ResetPassword.jsx';
+
+export { ResetPassword };
+export default ResetPassword;

@@ -1,4 +1,5 @@
-import React, { lazy } from 'react';
+import React from 'react';
+import lazy from '@utils/lazyWithRetry.js';
 import { Route } from 'react-router-dom';
 import ROUTES from './RouteConstants.js';
 import LoadingRoute from './LoadingRoute.jsx';

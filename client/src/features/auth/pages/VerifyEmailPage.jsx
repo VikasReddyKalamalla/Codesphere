@@ -1,1 +1,4 @@
-export { VerifyEmail as default } from './VerifyEmail.jsx';
+import VerifyEmail from './VerifyEmail.jsx';
+
+export { VerifyEmail };
+export default VerifyEmail;
