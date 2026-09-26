@@ -918,7 +918,8 @@ export const Workspace = () => {
     );
   }
 
-  const defaultPreviewUrl = `http://localhost:5000/preview/${workspaceId}/index.html?cb=${previewCacheBuster}`;
+  const backendBase = (import.meta.env?.VITE_SOCKET_URL || 'http://localhost:5001').replace(/\/$/, '');
+  const defaultPreviewUrl = `${backendBase}/preview/${workspaceId}/index.html?cb=${previewCacheBuster}`;
   const activePreviewUrl = customPreviewUrl || defaultPreviewUrl;
 
   return (

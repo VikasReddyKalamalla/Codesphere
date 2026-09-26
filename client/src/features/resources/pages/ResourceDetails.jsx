@@ -109,7 +109,7 @@ export const ResourceDetails = () => {
       // Analytics tracking fallback
     }
 
-    const backendBase = (import.meta.env?.VITE_SOCKET_URL || 'http://localhost:5000').replace(/\/$/, '');
+    const backendBase = (import.meta.env?.VITE_SOCKET_URL || 'http://localhost:5001').replace(/\/$/, '');
     const fullUrl = targetUrl.startsWith('http') || targetUrl.startsWith('data:')
       ? targetUrl
       : `${backendBase}${targetUrl.startsWith('/') ? '' : '/'}${targetUrl}`;
@@ -190,7 +190,7 @@ export const ResourceDetails = () => {
 
   // Construct absolute file URL
   const rawUrl = resource.fileUrl || resource.externalUrl || resource.url || '';
-  const backendBase = (import.meta.env?.VITE_SOCKET_URL || 'http://localhost:5000').replace(/\/$/, '');
+  const backendBase = (import.meta.env?.VITE_SOCKET_URL || 'http://localhost:5001').replace(/\/$/, '');
   const fullFileUrl = rawUrl.startsWith('http') || rawUrl.startsWith('data:')
     ? rawUrl
     : `${backendBase}${rawUrl.startsWith('/') ? '' : '/'}${rawUrl}`;

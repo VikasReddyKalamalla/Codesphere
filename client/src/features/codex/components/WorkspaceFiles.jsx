@@ -180,7 +180,7 @@ export const WorkspaceFiles = ({
                 </button>
                 <a 
                   title="Download" 
-                  href={`http://localhost:5000/api/workspaces/${node.path}/files/${node._id}/download`}
+                  href={`${import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5001/api'}/workspaces/${node.path}/files/${node._id}/download`}
                   onClick={(e) => e.stopPropagation()} 
                   download 
                   className="hover:text-green-500"

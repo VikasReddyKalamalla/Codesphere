@@ -42,7 +42,7 @@ export const InfrastructureTopologyMap = ({ healthData }) => {
       type: 'App Middleware',
       status: 'HEALTHY',
       ping: '18ms',
-      port: '5000',
+      port: '5001',
       color: 'from-indigo-500 to-purple-600',
       borderColor: 'border-indigo-500/30',
       bgGlow: 'bg-indigo-500/10',

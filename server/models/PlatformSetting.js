@@ -83,7 +83,7 @@ const platformSettingSchema = new mongoose.Schema(
       corsAllowedOrigins: { type: String, default: '*' },
     },
     infrastructure: {
-      webSocketPort: { type: Number, default: 5000 },
+      webSocketPort: { type: Number, default: 5001 },
       compileMemoryLimitMB: { type: Number, default: 512 },
       cacheTtlSeconds: { type: Number, default: 3600 },
       autoBackupEnabled: { type: Boolean, default: true },

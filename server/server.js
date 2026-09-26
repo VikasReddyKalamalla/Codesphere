@@ -7,7 +7,7 @@ const { initSocket } = require('./socket/socket');
 const { attachWsProxy } = require('./middlewares/vscodeProxy.middleware');
 const { initBackupCron } = require('./cron/backupCron');
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5001;
 
 const server = http.createServer(app);
 

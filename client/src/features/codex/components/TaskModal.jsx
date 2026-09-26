@@ -270,7 +270,7 @@ export const TaskModal = ({
                         <div key={idx} className="flex items-center justify-between bg-slate-50 dark:bg-slate-955/40 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-850">
                           <span className="text-[10px] text-slate-600 dark:text-slate-355 truncate max-w-[155px] font-mono">{att.fileName}</span>
                           <a 
-                            href={`http://localhost:5000/api/attachments/${att._id}/download`} 
+                            href={`${import.meta.env?.VITE_API_BASE_URL || 'http://localhost:5001/api'}/attachments/${att._id}/download`} 
                             download 
                             className="text-[9px] text-[#6366f1] hover:underline font-bold font-mono"
                           >

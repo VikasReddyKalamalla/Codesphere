@@ -65,7 +65,7 @@ export const SettingsPanel = () => {
     },
 
     infrastructure: {
-      webSocketPort: 5000,
+      webSocketPort: 5001,
       compileMemoryLimitMB: 512,
       cacheTtlSeconds: 3600,
       autoBackupEnabled: true,
@@ -751,7 +751,7 @@ export const SettingsPanel = () => {
                 <label className="text-xs font-bold text-slate-700 dark:text-slate-300">WebSocket Service Port</label>
                 <input
                   type="number"
-                  value={settings.infrastructure?.webSocketPort || 5000}
+                  value={settings.infrastructure?.webSocketPort || 5001}
                   onChange={e => setSettings({
                     ...settings,
                     infrastructure: { ...settings.infrastructure, webSocketPort: Number(e.target.value) }

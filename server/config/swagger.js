@@ -24,7 +24,7 @@ const options = {
       {
         url: process.env.NODE_ENV === 'production' 
           ? 'https://api.codesphere.dev/api'
-          : 'http://localhost:5000/api',
+          : `http://localhost:${process.env.PORT || 5001}/api`,
         description: process.env.NODE_ENV === 'production' ? 'Production' : 'Development',
       },
     ],

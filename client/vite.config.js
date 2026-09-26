@@ -18,25 +18,25 @@ export default defineConfig({
     },
     proxy: {
       '/workspace-proxy': {
-        target: 'http://127.0.0.1:5000',
+        target: 'http://127.0.0.1:5001',
         ws: true,
         changeOrigin: true,
       },
       '/vscode-web': {
-        target: 'http://127.0.0.1:5000',
+        target: 'http://127.0.0.1:5001',
         ws: true,
         changeOrigin: true,
       },
       '/api': {
-        target: 'http://127.0.0.1:5000',
+        target: 'http://127.0.0.1:5001',
         changeOrigin: true,
       },
       '/uploads': {
-        target: 'http://127.0.0.1:5000',
+        target: 'http://127.0.0.1:5001',
         changeOrigin: true,
       },
       '/preview': {
-        target: 'http://127.0.0.1:5000',
+        target: 'http://127.0.0.1:5001',
         changeOrigin: true,
       },
     },

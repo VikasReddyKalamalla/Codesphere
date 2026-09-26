@@ -5,12 +5,12 @@ module.exports = {
   google: {
     clientId: process.env.GOOGLE_CLIENT_ID || 'mock-google-client-id.apps.googleusercontent.com',
     clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'mock-google-client-secret',
-    callbackUrl: process.env.GOOGLE_CALLBACK_URL || 'http://localhost:5000/api/auth/google/callback',
+    callbackUrl: process.env.GOOGLE_CALLBACK_URL || `http://localhost:${process.env.PORT || 5001}/api/auth/google/callback`,
   },
   github: {
     clientId: process.env.GITHUB_CLIENT_ID || 'mock-github-client-id',
     clientSecret: process.env.GITHUB_CLIENT_SECRET || 'mock-github-client-secret',
-    callbackUrl: process.env.GITHUB_CALLBACK_URL || 'http://localhost:5000/api/auth/github/callback',
+    callbackUrl: process.env.GITHUB_CALLBACK_URL || `http://localhost:${process.env.PORT || 5001}/api/auth/github/callback`,
   },
   smtp: {
     host: process.env.SMTP_HOST || 'smtp.sendgrid.net',

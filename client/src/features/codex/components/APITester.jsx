@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 
 export const APITester = () => {
   const [method, setMethod] = useState('GET');
-  const [url, setUrl] = useState('http://127.0.0.1:5000/api/health');
+  const [url, setUrl] = useState(import.meta.env?.VITE_API_BASE_URL ? `${import.meta.env.VITE_API_BASE_URL}/health` : 'http://127.0.0.1:5001/api/health');
   const [activeTab, setActiveTab] = useState('headers'); // 'headers' | 'params' | 'body' | 'auth'
   
   // Headers state
@@ -160,7 +160,7 @@ export const APITester = () => {
           type="text"
           value={url}
           onChange={(e) => setUrl(e.target.value)}
-          placeholder="Enter request URL (e.g. http://127.0.0.1:5000/api/health)..."
+          placeholder="Enter request URL (e.g. http://127.0.0.1:5001/api/health)..."
           className="flex-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-lg px-3 py-1.5 text-xs font-mono text-slate-800 dark:text-slate-200 outline-none focus:border-[#04AA6D]"
         />
 
