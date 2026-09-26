@@ -17,7 +17,7 @@ export const lazyWithRetry = (componentImport, retries = 2, interval = 400) =>
           errorMsg.includes('Failed to fetch dynamically imported module') ||
           errorMsg.includes('Importing a module script failed') ||
           errorMsg.includes('error loading dynamically imported module') ||
-          error?.name === 'TypeError';
+          (error?.name === 'TypeError' && (errorMsg.includes('Failed to fetch') || errorMsg.includes('import') || errorMsg.includes('dynamically')));
 
         if (attempt < retries && isDynamicImportError) {
           // Wait before retrying with progressive delay

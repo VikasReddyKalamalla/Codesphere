@@ -10,6 +10,8 @@ const __dirname = dirname(__filename);
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   server: {
+    host: '0.0.0.0',
+    port: 5173,
     headers: {
       // Allow Firebase Auth popup to communicate back to parent window.
       // 'same-origin' (Chrome default in some configs) blocks window.closed polling.

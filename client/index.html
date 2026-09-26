@@ -40,6 +40,8 @@
     </style>
     <script>
       window.__codesphere_init_error = null;
+      window.__codesphere_app_mounted = false;
+
       window.addEventListener('error', function(e) {
         window.__codesphere_init_error = e.error || e.message || 'Script execution error';
         renderFatalError(window.__codesphere_init_error);
@@ -68,29 +70,52 @@
       window.renderFatalError = renderFatalError;
 
       function resetAndReload() {
-        try { localStorage.clear(); } catch(e){}
         try { sessionStorage.clear(); } catch(e){}
         window.location.reload();
       }
       window.resetAndReload = resetAndReload;
 
-      setTimeout(function() {
+      window.markAppMounted = function() {
+        window.__codesphere_app_mounted = true;
         var loader = document.getElementById('cs-initial-loader');
         if (loader) {
-          var notice = document.getElementById('cs-loader-stuck');
-          if (notice) notice.style.display = 'block';
+          loader.style.transition = 'opacity 0.2s ease';
+          loader.style.opacity = '0';
+          setTimeout(function() {
+            if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
+          }, 200);
         }
-      }, 4000);
+      };
+
+      // Progressive status updates for first-time cold compiles
+      setTimeout(function() {
+        if (window.__codesphere_app_mounted) return;
+        var status = document.getElementById('cs-loader-text');
+        if (status) status.innerText = 'Initializing CodeSphere environment...';
+      }, 3500);
+
+      setTimeout(function() {
+        if (window.__codesphere_app_mounted) return;
+        var status = document.getElementById('cs-loader-text');
+        if (status) status.innerText = 'Preparing workspace modules...';
+      }, 7000);
+
+      // Only display manual reload prompt after 20 seconds of inactivity
+      setTimeout(function() {
+        if (window.__codesphere_app_mounted) return;
+        var notice = document.getElementById('cs-loader-stuck');
+        if (notice) notice.style.display = 'block';
+      }, 20000);
     </script>
   </head>
   <body>
     <div id="root">
       <div id="cs-initial-loader">
         <div class="cs-spinner"></div>
-        <p style="margin-top: 16px; font-size: 13px; letter-spacing: 0.05em; color: #94a3b8;">Loading CodeSphere...</p>
+        <p id="cs-loader-text" style="margin-top: 16px; font-size: 13px; letter-spacing: 0.05em; color: #94a3b8;">Loading CodeSphere...</p>
         <div id="cs-loader-stuck" style="display:none; margin-top: 24px; text-align: center;">
-          <p style="font-size: 12px; color: #ef4444; margin-bottom: 10px;">Startup is taking longer than expected.</p>
-          <button onclick="resetAndReload()" style="padding:8px 14px;background:#04AA6D;color:white;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">Reset Cache & Reload</button>
+          <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">Startup is taking longer than usual.</p>
+          <button onclick="resetAndReload()" style="padding:8px 16px;background:#04AA6D;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Reload Application</button>
         </div>
       </div>
     </div>
