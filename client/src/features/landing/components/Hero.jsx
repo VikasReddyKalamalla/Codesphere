@@ -24,7 +24,10 @@ export const Hero = () => {
   const navigate = useNavigate();
 
   const handleRestrictedClick = (e, path) => {
-    const isLoggedIn = !!localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token');
+    let isLoggedIn = false;
+    try {
+      isLoggedIn = !!(localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token') || localStorage.getItem('token'));
+    } catch (_) {}
     if (!isLoggedIn) {
       e.preventDefault();
       navigate('/login', { state: { from: { pathname: path } } });

@@ -15,9 +15,10 @@ const RouteGuard = ({
   const location = useLocation();
 
   // Also check localStorage directly as a fallback for first-load rehydration
-  const tokenInStorage = !!localStorage.getItem(
-    import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token'
-  );
+  let tokenInStorage = false;
+  try {
+    tokenInStorage = !!(localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token') || localStorage.getItem('token'));
+  } catch (_) {}
 
   const allowed = isAuthenticated || tokenInStorage;
 

@@ -4,12 +4,21 @@ import { STORAGE_KEYS } from '../config/constants.js';
 export const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(localStorage.getItem(STORAGE_KEYS.THEME) || 'light');
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem(STORAGE_KEYS.THEME) || localStorage.getItem('theme') || 'light';
+    } catch (_) {
+      return 'light';
+    }
+  });
 
   const toggleTheme = () => {
     const next = theme === 'light' ? 'dark' : 'light';
     setTheme(next);
-    localStorage.setItem(STORAGE_KEYS.THEME, next);
+    try {
+      localStorage.setItem(STORAGE_KEYS.THEME, next);
+      localStorage.setItem('theme', next);
+    } catch (_) {}
   };
 
   useEffect(() => {

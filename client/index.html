@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" class="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -8,9 +8,92 @@
     <meta name="description" content="CodeSphere is an interactive cloud workspace, DSA practice environment, and web IDE for developers." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #030712;
+        color: #f8fafc;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      }
+      #cs-initial-loader {
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: #030712;
+        color: #f8fafc;
+        user-select: none;
+      }
+      .cs-spinner {
+        width: 44px;
+        height: 44px;
+        border: 3px solid rgba(4, 170, 109, 0.15);
+        border-top-color: #04AA6D;
+        border-radius: 50%;
+        animation: cs-spin 0.8s linear infinite;
+      }
+      @keyframes cs-spin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+    <script>
+      window.__codesphere_init_error = null;
+      window.addEventListener('error', function(e) {
+        window.__codesphere_init_error = e.error || e.message || 'Script execution error';
+        renderFatalError(window.__codesphere_init_error);
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        window.__codesphere_init_error = e.reason || 'Unhandled promise rejection';
+        renderFatalError(window.__codesphere_init_error);
+      });
+
+      function renderFatalError(err) {
+        var root = document.getElementById('root');
+        if (!root) return;
+        var errStr = (err && (err.stack || err.message)) ? (err.stack || err.message) : String(err);
+        root.innerHTML = '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;background:#030712;color:#f8fafc;padding:24px;font-family:monospace;text-align:center;">' +
+          '<div style="max-width:540px;background:#0f172a;border:1px solid #dc2626;border-radius:12px;padding:24px;box-shadow:0 10px 25px rgba(0,0,0,0.5);">' +
+          '<h2 style="color:#ef4444;font-size:18px;margin-bottom:12px;font-weight:bold;">CodeSphere Startup Error</h2>' +
+          '<p style="font-size:12px;color:#94a3b8;margin-bottom:16px;">The application encountered a problem during startup:</p>' +
+          '<pre style="font-size:11px;background:#1e293b;padding:12px;border-radius:8px;color:#fca5a5;overflow-x:auto;text-align:left;max-height:180px;white-space:pre-wrap;">' +
+          errStr.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
+          '</pre>' +
+          '<div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">' +
+          '<button onclick="resetAndReload()" style="padding:10px 18px;background:#04AA6D;color:white;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;">Clear Storage & Reload</button>' +
+          '<button onclick="window.location.reload()" style="padding:10px 18px;background:#334155;color:white;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;">Normal Reload</button>' +
+          '</div></div></div>';
+      }
+      window.renderFatalError = renderFatalError;
+
+      function resetAndReload() {
+        try { localStorage.clear(); } catch(e){}
+        try { sessionStorage.clear(); } catch(e){}
+        window.location.reload();
+      }
+      window.resetAndReload = resetAndReload;
+
+      setTimeout(function() {
+        var loader = document.getElementById('cs-initial-loader');
+        if (loader) {
+          var notice = document.getElementById('cs-loader-stuck');
+          if (notice) notice.style.display = 'block';
+        }
+      }, 4000);
+    </script>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="cs-initial-loader">
+        <div class="cs-spinner"></div>
+        <p style="margin-top: 16px; font-size: 13px; letter-spacing: 0.05em; color: #94a3b8;">Loading CodeSphere...</p>
+        <div id="cs-loader-stuck" style="display:none; margin-top: 24px; text-align: center;">
+          <p style="font-size: 12px; color: #ef4444; margin-bottom: 10px;">Startup is taking longer than expected.</p>
+          <button onclick="resetAndReload()" style="padding:8px 14px;background:#04AA6D;color:white;border:none;border-radius:6px;font-size:12px;font-weight:bold;cursor:pointer;">Reset Cache & Reload</button>
+        </div>
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

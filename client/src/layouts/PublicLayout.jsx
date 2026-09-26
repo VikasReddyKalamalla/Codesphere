@@ -42,8 +42,13 @@ const footerCols = [
   },
 ];
 
-const isLoggedIn = () =>
-  !!localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token');
+const isLoggedIn = () => {
+  try {
+    return !!(localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token') || localStorage.getItem('token'));
+  } catch (_) {
+    return false;
+  }
+};
 
 const PublicLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);

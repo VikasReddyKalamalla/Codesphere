@@ -7,9 +7,10 @@ import ROUTES from './RouteConstants.js';
  * Checks both Redux state and localStorage for consistency.
  */
 const GuestGuard = ({ isAuthenticated, user, children }) => {
-  const tokenInStorage = !!localStorage.getItem(
-    import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token'
-  );
+  let tokenInStorage = false;
+  try {
+    tokenInStorage = !!(localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token') || localStorage.getItem('token'));
+  } catch (_) {}
 
   const loggedIn = isAuthenticated || tokenInStorage;
 
