@@ -15,42 +15,11 @@
         padding: 0;
         background-color: #030712;
         color: #f8fafc;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      }
-      #cs-initial-loader {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        background: #030712;
-        color: #f8fafc;
-        user-select: none;
-      }
-      .cs-spinner {
-        width: 44px;
-        height: 44px;
-        border: 3px solid rgba(4, 170, 109, 0.15);
-        border-top-color: #04AA6D;
-        border-radius: 50%;
-        animation: cs-spin 0.8s linear infinite;
-      }
-      @keyframes cs-spin {
-        to { transform: rotate(360deg); }
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
     </style>
     <script>
       window.__codesphere_init_error = null;
-      window.__codesphere_app_mounted = false;
-
-      window.addEventListener('error', function(e) {
-        window.__codesphere_init_error = e.error || e.message || 'Script execution error';
-        renderFatalError(window.__codesphere_init_error);
-      });
-      window.addEventListener('unhandledrejection', function(e) {
-        window.__codesphere_init_error = e.reason || 'Unhandled promise rejection';
-        renderFatalError(window.__codesphere_init_error);
-      });
 
       function renderFatalError(err) {
         var root = document.getElementById('root');
@@ -64,62 +33,31 @@
           errStr.replace(/</g, '&lt;').replace(/>/g, '&gt;') +
           '</pre>' +
           '<div style="margin-top:20px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap;">' +
-          '<button onclick="resetAndReload()" style="padding:10px 18px;background:#04AA6D;color:white;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;">Clear Storage & Reload</button>' +
+          '<button onclick="localStorage.clear();sessionStorage.clear();window.location.reload();" style="padding:10px 18px;background:#04AA6D;color:white;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;">Clear Storage & Reload</button>' +
           '<button onclick="window.location.reload()" style="padding:10px 18px;background:#334155;color:white;border:none;border-radius:8px;font-size:13px;font-weight:bold;cursor:pointer;">Normal Reload</button>' +
           '</div></div></div>';
       }
       window.renderFatalError = renderFatalError;
 
-      function resetAndReload() {
-        try { sessionStorage.clear(); } catch(e){}
-        window.location.reload();
-      }
-      window.resetAndReload = resetAndReload;
-
-      window.markAppMounted = function() {
-        window.__codesphere_app_mounted = true;
-        var loader = document.getElementById('cs-initial-loader');
-        if (loader) {
-          loader.style.transition = 'opacity 0.2s ease';
-          loader.style.opacity = '0';
-          setTimeout(function() {
-            if (loader && loader.parentNode) loader.parentNode.removeChild(loader);
-          }, 200);
+      window.addEventListener('error', function(e) {
+        var err = e.error || e.message;
+        if (err) {
+          window.__codesphere_init_error = err;
+          renderFatalError(err);
         }
-      };
+      }, true);
 
-      // Progressive status updates for first-time cold compiles
-      setTimeout(function() {
-        if (window.__codesphere_app_mounted) return;
-        var status = document.getElementById('cs-loader-text');
-        if (status) status.innerText = 'Initializing CodeSphere environment...';
-      }, 3500);
-
-      setTimeout(function() {
-        if (window.__codesphere_app_mounted) return;
-        var status = document.getElementById('cs-loader-text');
-        if (status) status.innerText = 'Preparing workspace modules...';
-      }, 7000);
-
-      // Only display manual reload prompt after 20 seconds of inactivity
-      setTimeout(function() {
-        if (window.__codesphere_app_mounted) return;
-        var notice = document.getElementById('cs-loader-stuck');
-        if (notice) notice.style.display = 'block';
-      }, 20000);
+      window.addEventListener('unhandledrejection', function(e) {
+        var reason = e.reason;
+        if (reason) {
+          window.__codesphere_init_error = reason;
+          renderFatalError(reason);
+        }
+      });
     </script>
   </head>
   <body>
-    <div id="root">
-      <div id="cs-initial-loader">
-        <div class="cs-spinner"></div>
-        <p id="cs-loader-text" style="margin-top: 16px; font-size: 13px; letter-spacing: 0.05em; color: #94a3b8;">Loading CodeSphere...</p>
-        <div id="cs-loader-stuck" style="display:none; margin-top: 24px; text-align: center;">
-          <p style="font-size: 12px; color: #94a3b8; margin-bottom: 10px;">Startup is taking longer than usual.</p>
-          <button onclick="resetAndReload()" style="padding:8px 16px;background:#04AA6D;color:white;border:none;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">Reload Application</button>
-        </div>
-      </div>
-    </div>
+    <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -16,10 +16,6 @@ if (rootEl) {
         </AppProviders>
       </React.StrictMode>
     );
-
-    if (typeof window !== 'undefined' && typeof window.markAppMounted === 'function') {
-      window.markAppMounted();
-    }
   } catch (err) {
     console.error('Fatal CodeSphere bootstrap error:', err);
     if (window.renderFatalError) {

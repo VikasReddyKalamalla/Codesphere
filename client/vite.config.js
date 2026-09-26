@@ -13,6 +13,7 @@ export default defineConfig({
     host: '0.0.0.0',
     port: 5173,
     headers: {
+      'Cache-Control': 'no-store',
       // Allow Firebase Auth popup to communicate back to parent window.
       // 'same-origin' (Chrome default in some configs) blocks window.closed polling.
       'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',

@@ -16,7 +16,6 @@ import {
   signOut,
 } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
-import { getAnalytics, isSupported } from 'firebase/analytics';
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY            || "AIzaSyCtzvS19slrAH1Ns6x5BL6fLrJ5OuAczKE",
@@ -48,12 +47,8 @@ try {
 
 const db = getFirestore(appInstance);
 
-let analytics = null;
-if (typeof window !== 'undefined') {
-  isSupported()
-    .then((ok) => { if (ok) analytics = getAnalytics(appInstance); })
-    .catch(() => {});
-}
+// Analytics is disabled to prevent browser ad blockers from triggering ERR_BLOCKED_BY_CLIENT
+const analytics = null;
 
 export const googleProvider = new GoogleAuthProvider();
 googleProvider.setCustomParameters({ prompt: 'select_account' });
