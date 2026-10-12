@@ -11,6 +11,8 @@ import { ResourceSidebar } from '../components/ResourceSidebar.jsx';
 import { ResourceRightSidebar } from '../components/ResourceRightSidebar.jsx';
 import { ResourceCard } from '../components/ResourceCard.jsx';
 import { CreateResourceModal } from '../components/CreateResourceModal.jsx';
+import toast from 'react-hot-toast';
+import apiClient from '@services/axios.js';
 
 import { socket } from '../../../socket/socket.js';
 

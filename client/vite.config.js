@@ -14,9 +14,8 @@ export default defineConfig({
     port: 5173,
     headers: {
       'Cache-Control': 'no-store',
-      // Allow Firebase Auth popup to communicate back to parent window.
-      // 'same-origin' (Chrome default in some configs) blocks window.closed polling.
-      'Cross-Origin-Opener-Policy': 'same-origin-allow-popups',
+      // Allow Firebase Auth and external registration popups to communicate without COOP restrictions
+      'Cross-Origin-Opener-Policy': 'unsafe-none',
       'Cross-Origin-Embedder-Policy': 'unsafe-none',
     },
     proxy: {

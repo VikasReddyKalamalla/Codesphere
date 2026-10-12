@@ -31,7 +31,8 @@ const DEFAULT_PDF_URLS = {
 const autoSeedResources = async () => {
   // Auto-seeding disabled completely so database stores only admin-created resources
   return;
-};
+
+  try {
 
     // 1. Get or create uploader admin user
     let admin = await User.findOne({ role: { $in: ['admin', 'instructor'] } });

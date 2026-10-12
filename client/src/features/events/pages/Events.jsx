@@ -13,6 +13,7 @@ import { EventDetailModal } from '../components/EventDetailModal.jsx';
 import { EventCalendarView } from '../components/EventCalendarView.jsx';
 import { EventAnalyticsDashboard } from '../components/EventAnalyticsDashboard.jsx';
 import { CreateEventModal } from '../components/CreateEventModal.jsx';
+import toast from 'react-hot-toast';
 
 import { socket } from '../../../socket/socket.js';
 

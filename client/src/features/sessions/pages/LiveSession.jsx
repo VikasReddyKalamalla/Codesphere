@@ -4,7 +4,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import {
   Video, VideoOff, Mic, MicOff, Monitor, Hand, HelpCircle, Send, Users,
   Award, Pin, Plus, Trash, Download, FileCode, CheckCircle, Flame, Edit,
-  Maximize2, Volume2, UserCheck, Play, Pause, X, Smile, ListCollapse
+  Maximize2, Volume2, UserCheck, Play, Pause, X, Smile, ListCollapse, Sparkles
 } from 'lucide-react';
 import MonacoEditor from '@monaco-editor/react';
 import { selectCurrentUser } from '@features/auth/redux/authSelectors.js';

@@ -126,13 +126,6 @@ export const EventDetailModal = ({ event, onClose, isRegistered, isBookmarked, o
 
                 <button
                   onClick={() => {
-                    if (targetRegUrl && typeof targetRegUrl === 'string' && targetRegUrl.trim()) {
-                      const trimmed = targetRegUrl.trim();
-                      const formattedUrl = /^https?:\/\//i.test(trimmed) ? trimmed : `https://${trimmed}`;
-                      const sourceName = (event.registrationSource || event.source || 'official').toUpperCase();
-                      toast.success(`Opening ${sourceName} registration page...`);
-                      window.open(formattedUrl, '_blank', 'noopener,noreferrer');
-                    }
                     if (onRegister) {
                       onRegister(event);
                     }

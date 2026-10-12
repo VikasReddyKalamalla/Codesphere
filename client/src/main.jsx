@@ -16,6 +16,7 @@ if (rootEl) {
         </AppProviders>
       </React.StrictMode>
     );
+    window.__codesphere_mounted = true;
   } catch (err) {
     console.error('Fatal CodeSphere bootstrap error:', err);
     if (window.renderFatalError) {

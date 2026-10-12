@@ -40,6 +40,7 @@
       window.renderFatalError = renderFatalError;
 
       window.addEventListener('error', function(e) {
+        if (window.__codesphere_mounted) return;
         var err = e.error || e.message;
         if (err) {
           window.__codesphere_init_error = err;
@@ -48,6 +49,7 @@
       }, true);
 
       window.addEventListener('unhandledrejection', function(e) {
+        if (window.__codesphere_mounted) return;
         var reason = e.reason;
         if (reason) {
           window.__codesphere_init_error = reason;
