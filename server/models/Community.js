@@ -10,6 +10,12 @@ const communitySchema = new mongoose.Schema(
       unique:    true,
       maxlength: [100, 'Name cannot exceed 100 characters'],
     },
+    slug: {
+      type:      String,
+      trim:      true,
+      lowercase: true,
+      index:     true,
+    },
     description: {
       type:      String,
       default:   '',
@@ -19,6 +25,7 @@ const communitySchema = new mongoose.Schema(
       type:    String,
       default: 'General',
       trim:    true,
+      index:   true,
     },
     rules: {
       type:    String,
@@ -35,9 +42,20 @@ const communitySchema = new mongoose.Schema(
       type:     mongoose.Schema.Types.ObjectId,
       ref:      'User',
       required: [true, 'Owner is required'],
+      index:    true,
     },
     moderators: [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
     members:    [{ type: mongoose.Schema.Types.ObjectId, ref: 'User' }],
+
+    // ─── Channels (Enterprise Community Architecture) ────────────────────────
+    channels: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Channel' }],
+    defaultChannel: { type: mongoose.Schema.Types.ObjectId, ref: 'Channel' },
+    channelCategories: [
+      {
+        name:  { type: String, trim: true },
+        order: { type: Number, default: 0 },
+      },
+    ],
 
     // ─── Content References ───────────────────────────────────────────────────
     posts:       [{ type: mongoose.Schema.Types.ObjectId, ref: 'Post' }],
@@ -56,12 +74,27 @@ const communitySchema = new mongoose.Schema(
       type:    String,
       enum:    ['active', 'archived'],
       default: 'active',
+      index:   true,
+    },
+
+    // ─── Enterprise Settings & Invites ────────────────────────────────────────
+    inviteCode: {
+      type:    String,
+      trim:    true,
+      unique:  true,
+      sparse:  true,
+    },
+    settings: {
+      allowMemberInvites: { type: Boolean, default: true },
+      defaultMemberRole:  { type: String, default: 'member' },
+      slowModeSeconds:    { type: Number, default: 0 },
     },
 
     // ─── Statistics ───────────────────────────────────────────────────────────
-    memberCount: { type: Number, default: 0 },
-    postCount:   { type: Number, default: 0 },
-    viewCount:   { type: Number, default: 0 },
+    memberCount:  { type: Number, default: 0 },
+    postCount:    { type: Number, default: 0 },
+    viewCount:    { type: Number, default: 0 },
+    messageCount: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

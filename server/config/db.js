@@ -1,14 +1,14 @@
 const mongoose = require('mongoose');
 
 const connectDB = async () => {
-  const localUri = 'mongodb://127.0.0.1:27017/codesphere';
   const primaryUri = process.env.MONGO_URI;
+  const localUri = 'mongodb://root:rootpassword@127.0.0.1:27017/codesphere?authSource=admin';
   const fallbackUris = [
-    'mongodb://root:rootpassword@localhost:27017/codesphere?authSource=admin',
+    'mongodb://127.0.0.1:27017/codesphere',
     process.env.MONGO_URI_ATLAS
   ].filter(Boolean);
 
-  const urisToTry = Array.from(new Set([localUri, primaryUri, ...fallbackUris])).filter(Boolean);
+  const urisToTry = Array.from(new Set([primaryUri, localUri, ...fallbackUris])).filter(Boolean);
 
   for (const uri of urisToTry) {
     try {

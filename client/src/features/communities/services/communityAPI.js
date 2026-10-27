@@ -51,6 +51,74 @@ export const removeModeratorAPI = async (communityId, userId) => {
   return res.data;
 };
 
+// ─── Channels API ─────────────────────────────────────────────────────────────
+export const fetchCommunityChannelsAPI = async (communityId) => {
+  const res = await apiClient.get(`/community/${communityId}/channels`);
+  return res.data;
+};
+
+export const createChannelAPI = async (communityId, payload) => {
+  const res = await apiClient.post(`/community/${communityId}/channels`, payload);
+  return res.data;
+};
+
+export const updateChannelAPI = async (channelId, payload) => {
+  const res = await apiClient.put(`/community/channels/${channelId}`, payload);
+  return res.data;
+};
+
+export const deleteChannelAPI = async (channelId) => {
+  const res = await apiClient.delete(`/community/channels/${channelId}`);
+  return res.data;
+};
+
+export const fetchChannelMessagesAPI = async (channelId, params = {}) => {
+  const res = await apiClient.get(`/community/channels/${channelId}/messages`, { params });
+  return res.data;
+};
+
+// ─── Direct WhatsApp Messaging API ────────────────────────────────────────────
+export const fetchDirectChatsAPI = async () => {
+  const res = await apiClient.get('/community/direct/chats');
+  return res.data;
+};
+
+export const openDirectChatAPI = async (targetUserId) => {
+  const res = await apiClient.post('/community/direct/chats', { targetUserId });
+  return res.data;
+};
+
+export const createGroupChatAPI = async (payload) => {
+  const res = await apiClient.post('/community/direct/groups', payload);
+  return res.data;
+};
+
+export const fetchDirectChatMessagesAPI = async (chatId, params = {}) => {
+  const res = await apiClient.get(`/community/direct/chats/${chatId}/messages`, { params });
+  return res.data;
+};
+
+// ─── Search & Starred & Invites ───────────────────────────────────────────────
+export const searchCommunityMessagesAPI = async (communityId, query) => {
+  const res = await apiClient.get(`/community/${communityId}/search`, { params: { q: query } });
+  return res.data;
+};
+
+export const fetchStarredMessagesAPI = async () => {
+  const res = await apiClient.get('/community/messages/starred');
+  return res.data;
+};
+
+export const generateInviteCodeAPI = async (communityId) => {
+  const res = await apiClient.post(`/community/${communityId}/invite-code`);
+  return res.data;
+};
+
+export const joinByInviteCodeAPI = async (code) => {
+  const res = await apiClient.post(`/community/join-by-code/${code}`);
+  return res.data;
+};
+
 // ─── Posts API ────────────────────────────────────────────────────────────────
 export const fetchPostsAPI = async (communityId, params = {}) => {
   const res = await apiClient.get(`/posts/${communityId}`, { params });

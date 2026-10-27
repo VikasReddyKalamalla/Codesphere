@@ -209,7 +209,7 @@ export const CommunityDetails = () => {
               onClick={() => setActiveTab('chat')}
               className={`px-5 py-3 border-b-2 transition-all shrink-0 ${activeTab === 'chat' ? 'border-[#04AA6D] text-[#04AA6D] dark:text-emerald-400 bg-emerald-50/50 dark:bg-emerald-950/10 font-bold' : 'border-transparent text-slate-500 hover:text-slate-800 dark:hover:text-slate-300'}`}
             >
-              Live Rocket.Chat
+              Live Chat & Channels
             </button>
 
             <button 
