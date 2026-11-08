@@ -1,26 +1,25 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectIsAuthenticated, selectCurrentUser } from '@features/auth/redux/authSelectors.js';
+import { isAuthValid } from '@features/auth/utils/authHelpers.js';
 import ROUTES from './RouteConstants.js';
 
 /**
  * RouteGuard — redirects unauthenticated users to /login.
- * Checks both Redux state (prop) and localStorage as a fallback
- * so the guard works even before Redux rehydration completes.
+ * Strictly verifies Redux auth state, current user profile,
+ * and valid non-expired JWT storage session.
  */
 const RouteGuard = ({
-  isAuthenticated,
+  isAuthenticated: propIsAuth,
   children,
   redirectTo = ROUTES.LOGIN,
 }) => {
   const location = useLocation();
+  const reduxIsAuth = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectCurrentUser);
 
-  // Also check localStorage directly as a fallback for first-load rehydration
-  let tokenInStorage = false;
-  try {
-    tokenInStorage = !!(localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token') || localStorage.getItem('token'));
-  } catch (_) {}
-
-  const allowed = isAuthenticated || tokenInStorage;
+  const allowed = (propIsAuth !== undefined ? propIsAuth : reduxIsAuth) && !!user && isAuthValid();
 
   if (!allowed) {
     return (

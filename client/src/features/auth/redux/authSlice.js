@@ -1,10 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { getUser, getToken, saveUser, removeToken, removeUser } from '../utils/authHelpers.js';
+import { getUser, getToken, saveUser, removeToken, removeUser, isAuthValid } from '../utils/authHelpers.js';
 
+const initialValid = isAuthValid();
 const initialState = {
-  user: getUser(),
-  token: getToken(),
-  isAuthenticated: !!getToken(),
+  user: initialValid ? getUser() : null,
+  token: initialValid ? getToken() : null,
+  isAuthenticated: initialValid,
   status: 'idle',
   error: null,
 };

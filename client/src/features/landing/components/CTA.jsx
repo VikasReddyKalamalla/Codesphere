@@ -1,18 +1,21 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { ArrowRight } from 'lucide-react';
+import { selectIsAuthenticated, selectCurrentUser } from '@features/auth/redux/authSelectors.js';
+import { isAuthValid } from '@features/auth/utils/authHelpers.js';
 
 export const CTA = () => {
   const { ref, inView } = useInView({ triggerOnce: true, threshold: 0.1 });
   const navigate = useNavigate();
 
+  const reduxIsAuth = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectCurrentUser);
+  const isLoggedIn = Boolean(reduxIsAuth && user && isAuthValid());
+
   const handleRestrictedClick = (e, path) => {
-    let isLoggedIn = false;
-    try {
-      isLoggedIn = !!(localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token') || localStorage.getItem('token'));
-    } catch (_) {}
     if (!isLoggedIn) {
       e.preventDefault();
       navigate('/login', { state: { from: { pathname: path } } });
@@ -47,15 +50,16 @@ export const CTA = () => {
           <div className="flex flex-wrap items-center gap-4 shrink-0">
             <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Link
-                to="/register"
+                to={isLoggedIn ? '/dashboard' : '/register'}
                 className="font-mono-origin inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-[#04AA6D] hover:bg-[#03935e] text-white text-xs font-bold shadow-lg hover:shadow-green-500/10 transition-all duration-200"
               >
-                Get Started <ArrowRight className="w-3.5 h-3.5" />
+                {isLoggedIn ? 'Go to Dashboard' : 'Get Started'} <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </motion.div>
           <motion.div whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}>
               <Link
-                to="/pricing"
+                to={isLoggedIn ? '/pricing' : '/login'}
+                state={isLoggedIn ? undefined : { from: { pathname: '/pricing' } }}
                 onClick={(e) => handleRestrictedClick(e, '/pricing')}
                 className="font-mono-origin inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-bold transition-all duration-200"
               >

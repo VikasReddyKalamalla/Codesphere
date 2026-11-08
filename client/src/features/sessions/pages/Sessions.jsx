@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import { duplicateSessionAPI, archiveSessionAPI } from '../services/sessionAPI.js';
 import { SessionRequestModal } from '../components/SessionRequestModal.jsx';
 import { uploadCertificateAPI } from '../../profile/services/profileAPI.js';
+import { socket } from '../../../socket/socket.js';
 
 export const Sessions = () => {
   const navigate = useNavigate();
@@ -46,16 +47,12 @@ export const Sessions = () => {
       }
     };
 
-    import('../../../socket/socket.js').then((m) => {
-      m.socket.on('admin:data_changed', handleSessionChanged);
-      m.socket.on('session:changed', handleSessionChanged);
-    });
+    socket.on('admin:data_changed', handleSessionChanged);
+    socket.on('session:changed', handleSessionChanged);
 
     return () => {
-      import('../../../socket/socket.js').then((m) => {
-        m.socket.off('admin:data_changed', handleSessionChanged);
-        m.socket.off('session:changed', handleSessionChanged);
-      });
+      socket.off('admin:data_changed', handleSessionChanged);
+      socket.off('session:changed', handleSessionChanged);
     };
   }, [dispatch]);
 

@@ -38,16 +38,15 @@ apiClient.interceptors.response.use(
 
     if (status === 401) {
       console.warn('[ApiClient 401 Unauthorized]:', error.config?.url, message);
-      if (
-        message.includes('no longer exists') || 
-        message.includes('Session expired') || 
-        message.includes('Access denied') ||
-        message.includes('Invalid token')
-      ) {
+      try {
         localStorage.removeItem(API_CONFIG.TOKEN_KEY);
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
+        localStorage.removeItem(API_CONFIG.USER_KEY);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+      } catch (_) {}
+      const publicPaths = ['/login', '/register', '/forgot-password', '/reset-password', '/verify-email', '/'];
+      if (!publicPaths.includes(window.location.pathname)) {
+        window.location.href = '/login';
       }
     }
 

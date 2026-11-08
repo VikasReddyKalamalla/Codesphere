@@ -23,6 +23,7 @@ export const Login = () => {
         question="Don't have an account?"
         actionLabel="Sign Up"
         actionPath="/register"
+        state={location.state}
       />
     </div>
   );

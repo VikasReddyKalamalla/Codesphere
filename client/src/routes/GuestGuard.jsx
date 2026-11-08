@@ -1,18 +1,22 @@
 import React from 'react';
 import { Navigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+import { selectIsAuthenticated, selectCurrentUser } from '@features/auth/redux/authSelectors.js';
+import { isAuthValid } from '@features/auth/utils/authHelpers.js';
 import ROUTES from './RouteConstants.js';
 
 /**
  * GuestGuard — prevents authenticated users from accessing guest-only pages.
- * Checks both Redux state and localStorage for consistency.
+ * Validates active session state and redirects logged-in users to their dashboard.
  */
-const GuestGuard = ({ isAuthenticated, user, children }) => {
-  let tokenInStorage = false;
-  try {
-    tokenInStorage = !!(localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token') || localStorage.getItem('token'));
-  } catch (_) {}
+const GuestGuard = ({ isAuthenticated: propIsAuth, user: propUser, children }) => {
+  const reduxIsAuth = useSelector(selectIsAuthenticated);
+  const reduxUser = useSelector(selectCurrentUser);
 
-  const loggedIn = isAuthenticated || tokenInStorage;
+  const isAuth = (propIsAuth !== undefined ? propIsAuth : reduxIsAuth);
+  const user = propUser || reduxUser;
+
+  const loggedIn = Boolean(isAuth && user && isAuthValid());
 
   if (loggedIn) {
     const destination =

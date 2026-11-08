@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Sparkles, ChevronDown, Play, Users, Terminal, BookOpen, Layers } from 'lucide-react';
+import { selectIsAuthenticated, selectCurrentUser } from '@features/auth/redux/authSelectors.js';
+import { isAuthValid } from '@features/auth/utils/authHelpers.js';
 
 const stats = [
   { label: 'Lines compiled', value: '14.2M+' },
@@ -21,11 +24,11 @@ export const Hero = () => {
   const [quoteIndex, setQuoteIndex] = useState(0);
   const navigate = useNavigate();
 
+  const reduxIsAuth = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectCurrentUser);
+  const isLoggedIn = Boolean(reduxIsAuth && user && isAuthValid());
+
   const handleRestrictedClick = (e, path) => {
-    let isLoggedIn = false;
-    try {
-      isLoggedIn = !!(localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token') || localStorage.getItem('token'));
-    } catch (_) {}
     if (!isLoggedIn) {
       e.preventDefault();
       navigate('/login', { state: { from: { pathname: path } } });
@@ -81,7 +84,8 @@ export const Hero = () => {
         className="mt-8 flex flex-wrap items-center justify-center gap-4 relative z-10"
       >
         <Link
-          to="/sandbox"
+          to={isLoggedIn ? '/sandbox' : '/login'}
+          state={isLoggedIn ? undefined : { from: { pathname: '/sandbox' } }}
           onClick={(e) => handleRestrictedClick(e, '/sandbox')}
           className="flex items-center gap-2 px-6 py-3.5 bg-[#04AA6D] hover:bg-emerald-600 text-white font-mono-origin font-bold text-xs rounded-xl shadow-lg shadow-emerald-500/10 transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
         >
@@ -89,7 +93,8 @@ export const Hero = () => {
           <Play size={13} className="fill-white" />
         </Link>
         <Link
-          to="/codex"
+          to={isLoggedIn ? '/codex' : '/login'}
+          state={isLoggedIn ? undefined : { from: { pathname: '/codex' } }}
           onClick={(e) => handleRestrictedClick(e, '/codex')}
           className="flex items-center gap-2 px-6 py-3.5 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700 text-slate-800 dark:text-slate-200 font-mono-origin font-semibold text-xs rounded-xl shadow-xs transition-all hover:-translate-y-0.5 active:translate-y-0 cursor-pointer"
         >

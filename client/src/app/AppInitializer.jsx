@@ -1,13 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { authSuccess } from '@features/auth/redux/authSlice.js';
-import { getToken, getUser } from '@features/auth/utils/authHelpers.js';
+import { getToken, getUser, isAuthValid, removeToken, removeUser } from '@features/auth/utils/authHelpers.js';
 
 export const AppInitializer = ({ children }) => {
   const dispatch = useDispatch();
-  // Synchronously check if we have a stored session.
-  // This avoids the 400ms flash where guards see isAuthenticated=false.
+  // Synchronously check if we have a valid stored session.
   const [initialized] = useState(() => {
+    if (!isAuthValid()) {
+      removeToken();
+      removeUser();
+      return { ready: true, token: null, user: null };
+    }
     const token = getToken();
     const user = getUser();
     return { ready: true, token, user };

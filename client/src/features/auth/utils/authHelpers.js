@@ -56,3 +56,35 @@ export const removeUser = () => {
   } catch (_) {}
 };
 
+export const isTokenExpired = (token) => {
+  if (!token) return true;
+  try {
+    const parts = token.split('.');
+    if (parts.length !== 3) return false;
+    const base64 = parts[1].replace(/-/g, '+').replace(/_/g, '/');
+    const jsonStr = decodeURIComponent(
+      atob(base64)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    const payload = JSON.parse(jsonStr);
+    if (!payload.exp) return false;
+    return payload.exp * 1000 < Date.now();
+  } catch (_) {
+    return false;
+  }
+};
+
+export const isAuthValid = () => {
+  const token = getToken();
+  const user = getUser();
+  if (!token || !user) return false;
+  if (isTokenExpired(token)) {
+    removeToken();
+    removeUser();
+    return false;
+  }
+  return true;
+};
+

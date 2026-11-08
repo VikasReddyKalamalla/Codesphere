@@ -1,10 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export const AuthFooter = ({ question, actionLabel, actionPath }) => (
+export const AuthFooter = ({ question, actionLabel, actionPath, state }) => (
   <p className="text-center text-xs font-sans-origin text-slate-500 dark:text-slate-400">
     {question}{' '}
-    <Link to={actionPath} className="font-bold text-[#04AA6D] hover:text-[#03935e] transition-colors ml-1">
+    <Link to={actionPath} state={state} className="font-bold text-[#04AA6D] hover:text-[#03935e] transition-colors ml-1">
       {actionLabel}
     </Link>
   </p>

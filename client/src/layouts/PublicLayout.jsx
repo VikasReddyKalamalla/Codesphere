@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { Menu, X, Sun, Moon } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import clsx from 'clsx';
 import Logo from '../components/Logo.jsx';
 import { ThemeContext } from '../providers/ThemeProvider.jsx';
+import { selectIsAuthenticated, selectCurrentUser } from '@features/auth/redux/authSelectors.js';
+import { isAuthValid } from '@features/auth/utils/authHelpers.js';
 
 const navLinks = [
   { label: 'Features', href: '/features', public: true  },
@@ -42,20 +45,16 @@ const footerCols = [
   },
 ];
 
-const isLoggedIn = () => {
-  try {
-    return !!(localStorage.getItem(import.meta.env.VITE_JWT_STORAGE_KEY || 'codesphere_token') || localStorage.getItem('token'));
-  } catch (_) {
-    return false;
-  }
-};
-
 const PublicLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled]     = useState(false);
   const { theme, toggleTheme }     = useContext(ThemeContext) || {};
   const location  = useLocation();
   const navigate  = useNavigate();
+
+  const reduxIsAuth = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectCurrentUser);
+  const loggedIn = Boolean(reduxIsAuth && user && isAuthValid());
 
   useEffect(() => {
     const h = () => setScrolled(window.scrollY > 8);
@@ -66,7 +65,7 @@ const PublicLayout = () => {
   useEffect(() => setMobileOpen(false), [location.pathname]);
 
   const handleNavClick = (e, link) => {
-    if (!link.public && !isLoggedIn()) {
+    if (!link.public && !loggedIn) {
       e.preventDefault();
       navigate('/login', { state: { from: { pathname: link.href } } });
     }
@@ -118,18 +117,29 @@ const PublicLayout = () => {
               </button>
             )}
 
-            <Link
-              to="/login"
-              className="hidden md:inline text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-[#04AA6D] dark:hover:text-[#04AA6D] px-3 py-1.5 transition-colors uppercase tracking-wider"
-            >
-              Sign in
-            </Link>
-            <Link
-              to="/register"
-              className="hidden md:inline text-xs font-bold px-4 py-2 rounded-xl bg-[#04AA6D] hover:bg-emerald-600 text-white transition-colors uppercase tracking-wider shadow-md shadow-emerald-500/20"
-            >
-              Get started
-            </Link>
+            {loggedIn ? (
+              <Link
+                to={user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'instructor' ? '/instructor/dashboard' : '/dashboard'}
+                className="hidden md:inline text-xs font-bold px-4 py-2 rounded-xl bg-[#04AA6D] hover:bg-emerald-600 text-white transition-colors uppercase tracking-wider shadow-md shadow-emerald-500/20"
+              >
+                Go to Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  to="/login"
+                  className="hidden md:inline text-xs font-bold text-slate-600 dark:text-slate-300 hover:text-[#04AA6D] dark:hover:text-[#04AA6D] px-3 py-1.5 transition-colors uppercase tracking-wider"
+                >
+                  Sign in
+                </Link>
+                <Link
+                  to="/register"
+                  className="hidden md:inline text-xs font-bold px-4 py-2 rounded-xl bg-[#04AA6D] hover:bg-emerald-600 text-white transition-colors uppercase tracking-wider shadow-md shadow-emerald-500/20"
+                >
+                  Get started
+                </Link>
+              </>
+            )}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
               className="md:hidden p-2 rounded-xl text-slate-600 dark:text-slate-400 hover:text-[#04AA6D] hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
@@ -163,8 +173,19 @@ const PublicLayout = () => {
                   </Link>
                 ))}
                 <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex flex-col gap-2">
-                  <Link to="/login" className="px-3 py-2.5 text-sm font-bold font-mono text-slate-600 dark:text-slate-300 hover:text-[#04AA6D] text-center rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Sign in</Link>
-                  <Link to="/register" className="px-3 py-2.5 text-sm font-bold font-mono bg-[#04AA6D] hover:bg-emerald-600 text-white text-center rounded-xl transition-colors">Get started</Link>
+                  {loggedIn ? (
+                    <Link
+                      to={user?.role === 'admin' ? '/admin/dashboard' : user?.role === 'instructor' ? '/instructor/dashboard' : '/dashboard'}
+                      className="px-3 py-2.5 text-sm font-bold font-mono bg-[#04AA6D] hover:bg-emerald-600 text-white text-center rounded-xl transition-colors"
+                    >
+                      Go to Dashboard
+                    </Link>
+                  ) : (
+                    <>
+                      <Link to="/login" className="px-3 py-2.5 text-sm font-bold font-mono text-slate-600 dark:text-slate-300 hover:text-[#04AA6D] text-center rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">Sign in</Link>
+                      <Link to="/register" className="px-3 py-2.5 text-sm font-bold font-mono bg-[#04AA6D] hover:bg-emerald-600 text-white text-center rounded-xl transition-colors">Get started</Link>
+                    </>
+                  )}
                 </div>
               </div>
             </motion.div>

@@ -1,15 +1,32 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import { motion } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import { 
   Code2, Users, GraduationCap, Play, 
   Terminal, User, CheckCircle2, ChevronRight 
 } from 'lucide-react';
+import { selectIsAuthenticated, selectCurrentUser } from '@features/auth/redux/authSelectors.js';
+import { isAuthValid } from '@features/auth/utils/authHelpers.js';
 
 export const Features = () => {
   const { ref: ref1, inView: inView1 } = useInView({ triggerOnce: true, threshold: 0.1 });
   const { ref: ref2, inView: inView2 } = useInView({ triggerOnce: true, threshold: 0.1 });
   const { ref: ref3, inView: inView3 } = useInView({ triggerOnce: true, threshold: 0.1 });
+  const navigate = useNavigate();
+
+  const reduxIsAuth = useSelector(selectIsAuthenticated);
+  const user = useSelector(selectCurrentUser);
+  const isLoggedIn = Boolean(reduxIsAuth && user && isAuthValid());
+
+  const handleFeatureClick = (path) => {
+    if (isLoggedIn) {
+      navigate(path);
+    } else {
+      navigate('/login', { state: { from: { pathname: path } } });
+    }
+  };
 
   return (
     <section className="px-6 py-24 bg-transparent flex flex-col gap-32 z-10 relative">
@@ -53,6 +70,7 @@ export const Features = () => {
           <motion.div 
             whileHover={{ y: -6, scale: 1.01, boxShadow: '0 20px 40px -15px rgba(4, 170, 109, 0.15)' }}
             transition={{ duration: 0.3 }}
+            onClick={() => handleFeatureClick('/sandbox')}
             className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-lg p-5 font-mono-origin relative group cursor-pointer"
           >
             {/* Top Bar */}
@@ -107,6 +125,7 @@ export const Features = () => {
           <motion.div 
             whileHover={{ y: -6, scale: 1.01, boxShadow: '0 20px 40px -15px rgba(59, 130, 246, 0.15)' }}
             transition={{ duration: 0.3 }}
+            onClick={() => handleFeatureClick('/codex')}
             className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-lg p-5 font-mono-origin relative cursor-pointer"
           >
             {/* Header */}
@@ -227,6 +246,7 @@ export const Features = () => {
           <motion.div 
             whileHover={{ y: -6, scale: 1.01, boxShadow: '0 20px 40px -15px rgba(4, 170, 109, 0.15)' }}
             transition={{ duration: 0.3 }}
+            onClick={() => handleFeatureClick('/learning')}
             className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-lg p-6 font-sans-origin relative cursor-pointer"
           >
             <div className="flex justify-between items-center pb-4 border-b border-slate-200 dark:border-slate-800 mb-5 select-none">

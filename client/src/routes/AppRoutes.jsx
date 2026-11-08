@@ -31,6 +31,7 @@ import DashboardPage      from '@features/dashboard/pages/DashboardPage.jsx';
 import LeaderboardPage    from '@features/leaderboard/pages/LeaderboardPage.jsx';
 import LearningPage       from '@features/learning/pages/Learning.jsx';
 import SandboxPage        from '@features/sandbox/pages/Sandbox.jsx';
+import SandboxProjectPage from '@features/sandbox/pages/SandboxProject.jsx';
 import CodexPage          from '@features/codex/pages/CodexPage.jsx';
 import CommunityPage      from '@features/communities/pages/Communities.jsx';
 import SessionsPage       from '@features/sessions/pages/Sessions.jsx';
@@ -66,7 +67,6 @@ const LiveSessionPage       = lazy(() => import('@features/sessions/pages/LiveSe
 const EventDetailPage      = lazy(() => import('@features/events/pages/EventDetails.jsx'));
 const CreateWorkspacePage   = lazy(() => import('@features/codex/pages/CreateWorkspace.jsx'));
 const WorkspacePage         = lazy(() => import('@features/codex/pages/WorkspacePage.jsx'));
-const SandboxProjectPage   = lazy(() => import('@features/sandbox/pages/SandboxProject.jsx'));
 const CloudWorkspaceView    = lazy(() => import('@features/workspace/pages/CloudWorkspaceView.jsx'));
 const WebIDEPage            = lazy(() => import('@features/ide/WebIDE.jsx'));
 const TestDetailPage       = lazy(() => import('@features/tests/pages/TestDetails.jsx'));
