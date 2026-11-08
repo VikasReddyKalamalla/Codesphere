@@ -10,7 +10,6 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-codesphere_admin}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-rootpassword}
       MONGO_INITDB_DATABASE: codesphere
-    # Fix 2: WiredTiger cache lowered to 1.0 GB to give room for Mongo indexes & buffer stacks within 3 GB container limit
     command: mongod --wiredTigerCacheSizeGB 1.0 --bind_ip_all
     volumes:
       - mongo_prod_data:/data/db
@@ -64,6 +63,25 @@ services:
           cpus: '2.0'
           memory: 2048M
 
+  # ─── CodeSphere Codex Microservice (Port 4000) ─────────────────────────────
+  codex:
+    build:
+      context: ./Codesphere-Codex
+      dockerfile: Dockerfile
+    container_name: codesphere-prod-codex
+    restart: always
+    environment:
+      NODE_ENV: production
+      PORT: 4000
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+    networks:
+      - codesphere-prod-net
+    deploy:
+      resources:
+        limits:
+          cpus: '1.5'
+          memory: 1536M
+
   # ─── Self-Hosted Judge0 Code Execution Server ─────────────────────────────
   judge0-server:
     image: judge0/judge0:1.13.1
@@ -78,7 +96,6 @@ services:
       REDIS_PASSWORD: ${REDIS_PASSWORD:-redispassword}
     privileged: true
     volumes:
-      # Fix 1: Mount Docker daemon socket so Judge0 can spawn sub-container execution sandboxes
       - /var/run/docker.sock:/var/run/docker.sock
     networks:
       - codesphere-prod-net
@@ -88,7 +105,7 @@ services:
           cpus: '4.0'
           memory: 4096M
 
-  # ─── Nginx Edge Reverse Proxy ──────────────────────────────────────────────
+  # ─── Nginx Edge Reverse Proxy & Static Asset Server ────────────────────────
   nginx:
     image: nginx:alpine
     container_name: codesphere-prod-nginx
@@ -98,9 +115,11 @@ services:
       - "443:443"
     volumes:
       - ./nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./client/dist:/usr/share/nginx/html:ro
       - /etc/letsencrypt:/etc/letsencrypt:ro
     depends_on:
       - server
+      - codex
     networks:
       - codesphere-prod-net
 
