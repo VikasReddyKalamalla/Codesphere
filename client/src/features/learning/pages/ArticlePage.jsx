@@ -41,7 +41,7 @@ const ArticlePage = () => {
   // Mark lesson as complete
   const markComplete = useCallback(async () => {
     if (isCompleted || isLoading) return;
-    
+
     setIsLoading(true);
     try {
       await apiClient.post('/learning/progress', { lessonId });
@@ -80,11 +80,10 @@ const ArticlePage = () => {
       case 'heading':
         const HeadingTag = `h${section.level}`;
         return (
-          <HeadingTag 
-            key={index} 
-            className={`font-bold text-slate-800 dark:text-white mt-8 mb-4 ${
-              section.level === 2 ? 'text-2xl' : 'text-xl'
-            }`}
+          <HeadingTag
+            key={index}
+            className={`font-bold text-slate-800 dark:text-white mt-8 mb-4 ${section.level === 2 ? 'text-2xl' : 'text-xl'
+              }`}
           >
             {section.content}
           </HeadingTag>
@@ -195,7 +194,7 @@ const ArticlePage = () => {
                   <span>Completed</span>
                 </div>
               )}
-              <Link 
+              <Link
                 to={`/learning/${courseId}`}
                 className="flex items-center gap-2 text-sm text-slate-600 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors"
               >

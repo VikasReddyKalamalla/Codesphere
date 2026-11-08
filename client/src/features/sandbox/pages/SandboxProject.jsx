@@ -284,19 +284,6 @@ export const SandboxProject = () => {
     };
   }, []);
 
-  // Warn user before closing tab only when an active workspace session is running
-  useEffect(() => {
-    if (!activeWorkspace) return;
-    const handleBeforeUnload = (e) => {
-      const msg = 'You have an active coding session! Make sure to push your code to your GitHub repository before closing this tab.';
-      e.preventDefault();
-      e.returnValue = msg;
-      return msg;
-    };
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [activeWorkspace]);
-
   // Filtered problem statements
   const filteredProblems = useMemo(() => {
     return problems.filter((item) => {
