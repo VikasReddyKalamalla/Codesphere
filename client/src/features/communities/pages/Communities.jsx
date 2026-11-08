@@ -202,7 +202,7 @@ export const Communities = () => {
               </div>
             ) : filteredCommunities.length === 0 ? (
               <div className="text-center py-20 flex flex-col items-center justify-center gap-2 border border-dashed border-slate-200 dark:border-slate-800 rounded-3xl bg-white dark:bg-[#0b0f19]">
-                <Compass className="w-8 h-8 text-slate-400 dark:text-slate-600 animate-spin" />
+                <Compass className="w-8 h-8 text-slate-400 dark:text-slate-600" />
                 <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest font-mono font-bold">
                   {viewFilter === 'joined' ? 'You have not joined any spaces yet' : 'No communities matched filters'}
                 </p>

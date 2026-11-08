@@ -1,22 +1,17 @@
 import React, { Suspense } from 'react';
 
-import { Sparkles } from 'lucide-react';
-
 /**
- * LoadingRoute — Suspense wrapper for lazily loaded route components.
- * Wraps every lazy() import with a consistent full-page spinner.
+ * LoadingRoute — Lightweight Suspense wrapper for lazy route components.
+ * Uses a sleek, non-intrusive top progress bar with zero full-page blocking or text.
  */
-const PageSpinner = () => (
-  <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-    <div className="flex flex-col items-center gap-4 text-slate-500 font-mono text-xs">
-      <Sparkles className="w-8 h-8 text-[#04AA6D] animate-spin" />
-      <span>Loading CodeSphere Environment...</span>
-    </div>
+const TopLoadingBar = () => (
+  <div className="w-full fixed top-0 left-0 right-0 z-50 h-0.5 bg-transparent overflow-hidden pointer-events-none">
+    <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
   </div>
 );
 
 const LoadingRoute = ({ children }) => (
-  <Suspense fallback={<PageSpinner />}>
+  <Suspense fallback={<TopLoadingBar />}>
     {children}
   </Suspense>
 );

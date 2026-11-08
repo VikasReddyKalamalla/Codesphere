@@ -7,26 +7,25 @@ import toast from 'react-hot-toast';
 
 export default function DSAProgressPage() {
   const navigate = useNavigate();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('cs_dsa_dash');
+      return cached ? JSON.parse(cached) : null;
+    } catch (_) {
+      return null;
+    }
+  });
 
   useEffect(() => {
     dsaAPI.getDashboard().then(res => {
       setData(res.data);
-      setLoading(false);
+      try {
+        sessionStorage.setItem('cs_dsa_dash', JSON.stringify(res.data));
+      } catch (_) {}
     }).catch(err => {
-      toast.error('Failed to load dashboard');
-      setLoading(false);
+      console.error('Failed to load dashboard:', err);
     });
   }, []);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <Zap className="w-8 h-8 text-indigo-500 animate-spin" />
-      </div>
-    );
-  }
 
   const stats = data?.stats || {};
 

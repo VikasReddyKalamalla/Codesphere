@@ -25,3 +25,5 @@ export const TestDetails = () => {
     </div>
   );
 };
+
+export default TestDetails;

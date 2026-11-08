@@ -4,8 +4,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 import toast from 'react-hot-toast';
 import { Loader2, Mail, ShieldAlert, CheckCircle2, X } from 'lucide-react';
-import { signInWithPopup, signInWithRedirect, getRedirectResult } from 'firebase/auth';
-import { auth, googleProvider, isFirebaseConfigured } from '@config/firebase.js';
 import { googleAuthThunk } from '../redux/authThunk.js';
 
 const GoogleIcon = () => (
@@ -36,18 +34,26 @@ export const SocialLogin = () => {
   const [fallbackErrorReason, setFallbackErrorReason] = useState('');
   const from = location.state?.from?.pathname || '/dashboard';
 
-  // Handle redirect result (when popup was blocked and redirect was used)
+  // Handle redirect result ONLY when returning from a redirect attempt
   useEffect(() => {
-    if (!auth) return;
-    getRedirectResult(auth)
-      .then(async (result) => {
-        if (result?.user) {
-          const outcome = await dispatch(googleAuthThunk(result.user));
-          if (outcome?.token && outcome?.user) {
-            toast.success(`Signed in as ${result.user.displayName || result.user.email}!`);
-            navigateAfterLogin(outcome.user, from, navigate);
+    if (!sessionStorage.getItem('cs_google_redirect')) return;
+    sessionStorage.removeItem('cs_google_redirect');
+
+    Promise.all([
+      import('firebase/auth'),
+      import('@config/firebase.js'),
+    ])
+      .then(([{ getRedirectResult }, { auth }]) => {
+        if (!auth) return;
+        return getRedirectResult(auth).then(async (result) => {
+          if (result?.user) {
+            const outcome = await dispatch(googleAuthThunk(result.user));
+            if (outcome?.token && outcome?.user) {
+              toast.success(`Signed in as ${result.user.displayName || result.user.email}!`);
+              navigateAfterLogin(outcome.user, from, navigate);
+            }
           }
-        }
+        });
       })
       .catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -57,6 +63,12 @@ export const SocialLogin = () => {
     setFallbackErrorReason('');
 
     try {
+      // Dynamic import to avoid loading Firebase on initial page render
+      const [{ signInWithPopup, signInWithRedirect }, { auth, googleProvider, isFirebaseConfigured }] = await Promise.all([
+        import('firebase/auth'),
+        import('@config/firebase.js'),
+      ]);
+
       if (!isFirebaseConfigured() || !auth) {
         throw new Error('Firebase configuration missing or uninitialized.');
       }
@@ -68,6 +80,7 @@ export const SocialLogin = () => {
         firebaseUser = result.user;
       } catch (popupErr) {
         if (popupErr.code === 'auth/popup-blocked') {
+          sessionStorage.setItem('cs_google_redirect', '1');
           toast('Popup blocked — redirecting to Google sign-in...');
           await signInWithRedirect(auth, googleProvider);
           return;
@@ -268,4 +281,3 @@ export const SocialLogin = () => {
     </div>
   );
 };
-

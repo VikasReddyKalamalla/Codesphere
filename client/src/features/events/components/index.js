@@ -3,7 +3,6 @@ export * from './EventHeader.jsx';
 export * from './EventDetails.jsx';
 export * from './EventTimeline.jsx';
 export * from './EventMap.jsx';
-export * from './GlobeView.jsx';
 export * from './EventFilters.jsx';
 export * from './RegisterButton.jsx';
 export * from './CountdownTimer.jsx';

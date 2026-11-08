@@ -2,14 +2,22 @@ import { lazy } from 'react';
 
 /**
  * Resilient lazy-load wrapper that handles network hiccups, Vite HMR dev-server reloads,
- * and chunk caching issues by automatically retrying failed dynamic imports before erroring out.
+ * chunk caching issues, and automatically resolves named or default exports to prevent blank screens.
  */
 export const lazyWithRetry = (componentImport, retries = 2, interval = 400) =>
   lazy(async () => {
     for (let attempt = 0; attempt <= retries; attempt++) {
       try {
         const module = await componentImport();
-        // If default export exists or module is itself a component
+        // Guarantee that React receives a valid default component export
+        if (module && !module.default) {
+          const component = Object.values(module).find(
+            (v) => typeof v === 'function' || (typeof v === 'object' && v !== null && v.$$typeof)
+          );
+          if (component) {
+            return { default: component };
+          }
+        }
         return module;
       } catch (error) {
         const errorMsg = error?.message || String(error);
@@ -20,12 +28,10 @@ export const lazyWithRetry = (componentImport, retries = 2, interval = 400) =>
           (error?.name === 'TypeError' && (errorMsg.includes('Failed to fetch') || errorMsg.includes('import') || errorMsg.includes('dynamically')));
 
         if (attempt < retries && isDynamicImportError) {
-          // Wait before retrying with progressive delay
           await new Promise((resolve) => setTimeout(resolve, interval * (attempt + 1)));
           continue;
         }
 
-        // If all retries fail during an active session, trigger one clean page reload to refresh Vite module graph
         if (typeof window !== 'undefined' && isDynamicImportError) {
           const lastReload = Number(sessionStorage.getItem('cs_lazy_retry_reload') || 0);
           if (Date.now() - lastReload > 5000) {

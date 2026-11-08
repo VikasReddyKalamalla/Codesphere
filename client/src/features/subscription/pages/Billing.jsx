@@ -4,3 +4,5 @@ import { Subscription } from './Subscription.jsx';
 export const Billing = () => {
   return <Subscription />;
 };
+
+export default Billing;

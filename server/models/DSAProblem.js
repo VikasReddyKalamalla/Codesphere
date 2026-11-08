@@ -112,7 +112,6 @@ dsaProblemSchema.pre('save', function () {
 });
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
-dsaProblemSchema.index({ slug: 1 }, { unique: true });
 dsaProblemSchema.index({ topicId: 1, order: 1 });
 dsaProblemSchema.index({ sectionId: 1 });
 dsaProblemSchema.index({ difficulty: 1 });

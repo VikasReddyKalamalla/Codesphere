@@ -1,0 +1,110 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --brand-primary: #04AA6D;
+    --brand-secondary: #059669;
+    --brand-accent: #0d9488;
+    --bg-deep: #030712;
+    --bg-dark: #070a13;
+    --surface-900: #0f172a;
+    --surface-800: #1e293b;
+    --surface-border: #334155;
+    --surface-950: #020617;
+    --text-primary: #f8fafc;
+    --text-muted: #94a3b8;
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+  }
+
+  .light {
+    --brand-primary: #04AA6D;
+    --brand-secondary: #059669;
+    --brand-accent: #0d9488;
+    --bg-deep: #f8fafc;
+    --bg-dark: #f1f5f9;
+    --surface-900: #ffffff;
+    --surface-800: #f1f5f9;
+    --surface-border: #e2e8f0;
+    --surface-950: #ffffff;
+    --text-primary: #0f172a;
+    --text-muted: #64748b;
+  }
+
+  code, pre, .font-mono {
+    font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  }
+}
+
+/* Custom radial background glow */
+.codex-bg-glow {
+  background-image: 
+    radial-gradient(ellipse 60% 40% at 50% -10%, rgba(4, 170, 109, 0.12), transparent),
+    radial-gradient(ellipse 40% 30% at 100% 100%, rgba(13, 148, 136, 0.08), transparent);
+}
+
+.light .codex-bg-glow {
+  background-image: 
+    radial-gradient(ellipse 60% 40% at 50% -10%, rgba(4, 170, 109, 0.08), transparent);
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+.light ::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+}
+.light ::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Voice pulse animation */
+@keyframes pulse-ring {
+  0% { transform: scale(0.95); opacity: 0.8; }
+  50% { transform: scale(1.15); opacity: 0.3; }
+  100% { transform: scale(0.95); opacity: 0.8; }
+}
+
+.animate-voice-pulse {
+  animation: pulse-ring 1.8s infinite ease-in-out;
+}
+
+/* Cursors and active animations */
+@keyframes blink-cursor {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
+.animate-blink {
+  animation: blink-cursor 1s infinite;
+}
+
+/* Live Git Commit & Authorship Comments in Code */
+.monaco-git-blame-ghost-comment {
+  color: #64748b !important;
+  font-style: italic !important;
+  font-size: 11px !important;
+  opacity: 0.72 !important;
+  user-select: none !important;
+  pointer-events: none !important;
+  letter-spacing: -0.01em;
+  font-family: 'JetBrains Mono', monospace !important;
+}
+
+.light .monaco-git-blame-ghost-comment {
+  color: #94a3b8 !important;
+  opacity: 0.85 !important;
+}
+

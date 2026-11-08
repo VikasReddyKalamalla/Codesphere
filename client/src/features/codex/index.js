@@ -1,10 +1,9 @@
-export * from './components/index.js';
-export * from './pages/Codex.jsx';
-export * from './pages/Workspace.jsx';
+export { default as CodexApp } from './App.tsx';
+export * from './pages/CodexPage.jsx';
+export * from './pages/WorkspacePage.jsx';
 export * from './pages/CreateWorkspace.jsx';
-export * from './pages/WorkspaceAnalytics.jsx';
-export * from './pages/WorkspaceMembers.jsx';
+export * from './store/workspaceStore.ts';
+export * from './services/codeRunner.ts';
+export * from './services/voiceMesh.ts';
+export * from './services/yjsCollab.ts';
 export * from './redux/index.js';
-export * from './hooks/useWorkspace.js';
-export * from './hooks/useTasks.js';
-export * from './hooks/useWorkspaceChat.js';

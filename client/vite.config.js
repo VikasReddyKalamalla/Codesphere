@@ -19,6 +19,27 @@ export default defineConfig({
       'Cross-Origin-Embedder-Policy': 'unsafe-none',
     },
     proxy: {
+      '/collab': {
+        target: 'http://localhost:4000',
+        ws: true,
+        changeOrigin: true,
+      },
+      '/api/ai': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/api/execute': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/api/proxy': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
+      '/api/git-proxy': {
+        target: 'http://localhost:4000',
+        changeOrigin: true,
+      },
       '/workspace-proxy': {
         target: 'http://127.0.0.1:5001',
         ws: true,
@@ -54,14 +75,17 @@ export default defineConfig({
       'lucide-react',
       'clsx',
       'axios',
-      'dayjs',
       'react-hot-toast',
       'react-intersection-observer',
     ],
+    exclude: ['y-monaco'],
   },
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {
+      'monaco-editor/esm/vs/editor/editor.api.js': resolve(__dirname, 'src/features/codex/services/monacoShim.ts'),
+      'monaco-editor/esm/vs/editor/editor.api': resolve(__dirname, 'src/features/codex/services/monacoShim.ts'),
+      'monaco-editor': resolve(__dirname, 'src/features/codex/services/monacoShim.ts'),
       'react': resolve(__dirname, 'node_modules/react'),
       'react-dom': resolve(__dirname, 'node_modules/react-dom'),
       '@': resolve(__dirname, 'src'),
@@ -85,7 +109,6 @@ export default defineConfig({
       '@data': resolve(__dirname, 'src/data'),
       '@helpers': resolve(__dirname, 'src/helpers'),
       '@types': resolve(__dirname, 'src/types'),
-      '@guards': resolve(__dirname, 'src/guards'),
       '@providers': resolve(__dirname, 'src/providers'),
       '@pages': resolve(__dirname, 'src/pages'),
     },
@@ -113,7 +136,7 @@ export default defineConfig({
             if (id.includes('lucide-react') || id.includes('react-icons')) {
               return 'vendor-icons';
             }
-            if (id.includes('framer-motion') || id.includes('lottie-react')) {
+            if (id.includes('framer-motion')) {
               return 'vendor-animation';
             }
             if (id.includes('react-pdf') || id.includes('pdfjs-dist')) {
@@ -125,7 +148,7 @@ export default defineConfig({
             if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/react-router-dom/')) {
               return 'vendor-react';
             }
-            if (id.includes('@reduxjs/toolkit') || id.includes('react-redux') || id.includes('redux-persist')) {
+            if (id.includes('@reduxjs/toolkit') || id.includes('react-redux')) {
               return 'vendor-redux';
             }
           }

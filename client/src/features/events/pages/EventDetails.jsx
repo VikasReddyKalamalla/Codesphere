@@ -43,10 +43,10 @@ export const EventDetails = () => {
     toast.success(isBookmarked ? 'Bookmark removed' : 'Event bookmarked!');
   };
 
-  if (loading) {
+  if (loading && !event) {
     return (
-      <div className="flex justify-center items-center h-64 text-[#04AA6D] font-mono text-xs">
-        Loading Event Details...
+      <div className="w-full h-0.5 bg-emerald-500/20 overflow-hidden">
+        <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
       </div>
     );
   }

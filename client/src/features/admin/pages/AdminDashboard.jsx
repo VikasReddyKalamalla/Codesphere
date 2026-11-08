@@ -98,10 +98,10 @@ export default function AdminDashboard() {
   const { stats, status, error, refetch } = useAdmin();
   const cardClass = "bg-white border border-slate-100 rounded-2xl p-5 shadow-[0_1px_3px_0_rgba(0,0,0,0.02)] flex flex-col justify-between";
 
-  if (status === 'loading' || status === 'idle') {
+  if (!stats && (status === 'loading' || status === 'idle')) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-sm font-bold text-slate-500 animate-pulse font-mono">Loading Admin Dashboard Data...</div>
+      <div className="w-full h-1 bg-emerald-500/10 overflow-hidden rounded-full my-6">
+        <div className="h-full bg-emerald-500 animate-pulse w-1/3" />
       </div>
     );
   }

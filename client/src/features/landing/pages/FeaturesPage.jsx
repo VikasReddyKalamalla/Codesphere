@@ -7,7 +7,6 @@ import {
   Terminal, Users, Video, ClipboardList, Award, BookOpen,
   Calendar, MessageSquare, GraduationCap, BarChart2, Shield, Zap,
 } from 'lucide-react';
-import ScrollingCodeBackground from '../components/ScrollingCodeBackground.jsx';
 
 const sections = [
   {
@@ -182,8 +181,6 @@ export default function FeaturesPage() {
 
   return (
     <div className="w-full relative bg-slate-50 dark:bg-slate-950 overflow-hidden text-slate-900 dark:text-slate-100 transition-colors">
-      <ScrollingCodeBackground />
-
       {/* Hero */}
       <section className="px-6 py-20 max-w-6xl mx-auto w-full flex flex-col items-center text-center relative z-10">
         <motion.div 

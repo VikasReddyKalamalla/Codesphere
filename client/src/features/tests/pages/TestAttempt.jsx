@@ -185,8 +185,12 @@ export const TestAttempt = () => {
     }
   };
 
-  if (loading) {
-    return <div className="text-center py-12 text-slate-500 dark:text-slate-400 font-medium">Loading Assessment...</div>;
+  if (loading && !test) {
+    return (
+      <div className="w-full h-0.5 bg-emerald-500/20 overflow-hidden">
+        <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
+      </div>
+    );
   }
 
   if (!test || !questions || questions.length === 0) {
@@ -303,3 +307,5 @@ export const TestAttempt = () => {
     </div>
   );
 };
+
+export default TestAttempt;

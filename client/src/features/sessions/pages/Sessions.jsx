@@ -338,10 +338,9 @@ export const Sessions = () => {
 
         {/* Sessions list */}
         <div className="xl:col-span-3">
-          {loading ? (
-            <div className="flex flex-col items-center justify-center py-20 gap-4">
-              <RefreshCcw className="w-8 h-8 text-[#04AA6D] dark:text-emerald-400 animate-spin" />
-              <p className="text-xs text-slate-500 dark:text-slate-500 font-mono">Querying database...</p>
+          {loading && sessions.length === 0 ? (
+            <div className="w-full h-1 bg-emerald-500/10 overflow-hidden rounded-full my-6">
+              <div className="h-full bg-emerald-500 animate-pulse w-1/3" />
             </div>
           ) : activeTab === 'certificates' ? (
             <div className="flex flex-col gap-6">
@@ -540,3 +539,5 @@ export const Sessions = () => {
     </div>
   );
 };
+
+export default Sessions;

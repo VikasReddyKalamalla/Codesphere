@@ -39,8 +39,12 @@ export const AdminSessions = () => {
     }
   };
 
-  if (loading) {
-    return <div className="flex justify-center p-10"><div className="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div></div>;
+  if (loading && requests.length === 0) {
+    return (
+      <div className="w-full h-0.5 bg-emerald-500/20 overflow-hidden">
+        <div className="h-full bg-emerald-500 animate-pulse w-full" />
+      </div>
+    );
   }
 
   return (
@@ -127,3 +131,5 @@ export const AdminSessions = () => {
     </div>
   );
 };
+
+export default AdminSessions;

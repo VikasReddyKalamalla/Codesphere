@@ -10,3 +10,5 @@ export const PlatformSettings = () => {
     </div>
   );
 };
+
+export default PlatformSettings;

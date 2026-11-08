@@ -71,11 +71,10 @@ export default function AdminUserDetail() {
     }
   };
 
-  if (loading) {
+  if (loading && !profile) {
     return (
-      <div className="py-32 flex flex-col items-center justify-center gap-3">
-        <RefreshCw className="animate-spin text-emerald-600" size={36} />
-        <span className="text-xs text-slate-450 font-bold font-mono-origin">Compiling detailed profile metrics...</span>
+      <div className="w-full h-0.5 bg-emerald-500/20 overflow-hidden">
+        <div className="h-full bg-emerald-500 animate-pulse w-full" />
       </div>
     );
   }

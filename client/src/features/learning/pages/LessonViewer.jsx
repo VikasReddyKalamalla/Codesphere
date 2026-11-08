@@ -7,13 +7,22 @@ import { QuizLesson } from '../components/QuizLesson.jsx';
 import { BackButton } from '@components/common/BackButton.jsx';
 import { fetchCourseDetailsAPI } from '../services/learningAPI.js';
 import apiClient from '@services/axios.js';
+import { NATIVE_ROADMAPS } from '../data/nativeRoadmapsData.js';
 
 export const LessonViewer = () => {
   const { courseId, lessonId } = useParams();
   const navigate = useNavigate();
-  const [course, setCourse] = useState(null);
+  const cleanId = (courseId || '').toLowerCase().trim();
+  const nativeMatch = NATIVE_ROADMAPS.find(r => 
+    r.id?.toLowerCase() === cleanId || 
+    (r._id && r._id.toString().toLowerCase() === cleanId) ||
+    (r.slug && r.slug.toLowerCase() === cleanId) ||
+    r.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').includes(cleanId)
+  );
+
+  const [course, setCourse] = useState(() => nativeMatch || null);
   const [activeLesson, setActiveLesson] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     fetchCourseDetailsAPI(courseId)
@@ -22,8 +31,7 @@ export const LessonViewer = () => {
           setCourse(res.data);
         }
       })
-      .catch((err) => console.error(err))
-      .finally(() => setLoading(false));
+      .catch((err) => console.error(err));
   }, [courseId]);
 
   useEffect(() => {
@@ -59,8 +67,12 @@ export const LessonViewer = () => {
     navigate(`/learning/${courseId}/module/${mId}/lesson/${lId}`);
   };
 
-  if (loading) {
-    return <div className="text-center py-10 text-slate-500 dark:text-slate-400 font-medium">Loading Course curriculum...</div>;
+  if (loading && !course) {
+    return (
+      <div className="w-full h-0.5 bg-emerald-500/20 overflow-hidden">
+        <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
+      </div>
+    );
   }
 
   return (
@@ -102,3 +114,5 @@ export const LessonViewer = () => {
     </div>
   );
 };
+
+export default LessonViewer;

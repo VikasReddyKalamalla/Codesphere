@@ -10,3 +10,5 @@ export const Moderation = () => {
     </div>
   );
 };
+
+export default Moderation;

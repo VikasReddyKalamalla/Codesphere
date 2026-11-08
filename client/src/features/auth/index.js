@@ -4,7 +4,5 @@ export * from './pages/Register.jsx';
 export * from './pages/ForgotPassword.jsx';
 export * from './pages/ResetPassword.jsx';
 export * from './pages/VerifyEmail.jsx';
-export * from './pages/BecomeInstructor.jsx';
 export * from './redux/index.js';
 export * from './hooks/useAuth.js';
-export * from './hooks/useCurrentUser.js';

@@ -77,7 +77,6 @@ dsaTopicSchema.pre('save', function () {
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
 dsaTopicSchema.index({ order: 1 });
-dsaTopicSchema.index({ slug: 1 }, { unique: true });
 dsaTopicSchema.index({ title: 'text', description: 'text' });
 
 module.exports = mongoose.model('DSATopic', dsaTopicSchema);

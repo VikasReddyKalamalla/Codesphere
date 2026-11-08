@@ -59,8 +59,12 @@ export const TestResults = () => {
     }
   };
 
-  if (loading) {
-    return <div className="text-center py-12 text-slate-500 dark:text-slate-400 font-medium">Loading Results...</div>;
+  if (loading && !attempt) {
+    return (
+      <div className="w-full h-0.5 bg-emerald-500/20 overflow-hidden">
+        <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
+      </div>
+    );
   }
 
   if (!attempt) {

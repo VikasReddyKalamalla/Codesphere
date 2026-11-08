@@ -3,21 +3,29 @@ import { Trophy, Flame, Star, Crown, Medal, Sparkles, User, Zap } from 'lucide-r
 import apiClient from '@services/axios.js';
 
 export const LeaderboardPage = () => {
-  const [leaders, setLeaders] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [leaders, setLeaders] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('cs_leaderboard_cache');
+      return cached ? JSON.parse(cached) : [];
+    } catch (_) {
+      return [];
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [filter, setFilter] = useState('all'); // all, weekly, monthly
 
   useEffect(() => {
     const fetchLeaderboard = async () => {
-      setLoading(true);
       try {
         const res = await apiClient.get('/tests/leaderboard');
         const data = res.data?.data || res.data || res;
-        setLeaders(Array.isArray(data) ? data : []);
+        const list = Array.isArray(data) ? data : [];
+        setLeaders(list);
+        try {
+          sessionStorage.setItem('cs_leaderboard_cache', JSON.stringify(list));
+        } catch (_) {}
       } catch (err) {
         console.error('Failed to fetch leaderboard:', err);
-      } finally {
-        setLoading(false);
       }
     };
     fetchLeaderboard();
@@ -96,9 +104,9 @@ export const LeaderboardPage = () => {
           </div>
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <div className="w-8 h-8 rounded-full border-4 border-[#04AA6D] border-t-transparent animate-spin" />
+        {loading && leaders.length === 0 ? (
+          <div className="w-full h-1 bg-emerald-500/10 overflow-hidden rounded-full my-6">
+            <div className="h-full bg-emerald-500 animate-pulse w-1/3" />
           </div>
         ) : (
           <div className="flex flex-col gap-3">

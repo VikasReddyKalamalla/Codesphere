@@ -34,7 +34,6 @@ const dsaUserStatsSchema = new mongoose.Schema(
 );
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
-dsaUserStatsSchema.index({ userId: 1 }, { unique: true });
 dsaUserStatsSchema.index({ totalSolved: -1 });
 
 module.exports = mongoose.model('DSAUserStats', dsaUserStatsSchema);

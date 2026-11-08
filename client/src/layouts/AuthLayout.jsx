@@ -1,9 +1,7 @@
 import React from 'react';
-import { Outlet, Link } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { Outlet } from 'react-router-dom';
 import { Terminal, Users, Video, Award } from 'lucide-react';
 import { Logo } from '../components/Logo.jsx';
-import { ScrollingCodeBackground } from '../features/landing/components/ScrollingCodeBackground.jsx';
 
 const highlights = [
   { icon: Terminal, text: 'Real-time compiler sandboxes' },
@@ -14,9 +12,6 @@ const highlights = [
 
 const AuthLayout = () => (
   <div className="min-h-screen flex relative overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-200">
-
-    {/* Animated scrolling code background */}
-    <ScrollingCodeBackground />
 
     {/* Left branding panel */}
     <div className="hidden lg:flex lg:w-[44%] shrink-0 flex-col relative bg-transparent">
@@ -34,42 +29,18 @@ const AuthLayout = () => (
           </div>
 
           <ul className="flex flex-col gap-3.5">
-            {highlights.map(({ icon: Icon, text }, idx) => (
-              <motion.li
+            {highlights.map(({ icon: Icon, text }) => (
+              <li
                 key={text}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: idx * 0.08, duration: 0.45 }}
                 className="flex items-center gap-3"
               >
                 <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm">
                   <Icon className="w-4 h-4 text-slate-700 dark:text-slate-300" />
                 </div>
                 <span className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider font-mono-origin">{text}</span>
-              </motion.li>
+              </li>
             ))}
           </ul>
-
-          {/* Code snippet */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4, duration: 0.5 }}
-            className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 shadow-md overflow-hidden text-left"
-          >
-            <div className="flex items-center gap-1.5 px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/80">
-              <span className="w-2 h-2 rounded-full bg-red-400" />
-              <span className="w-2 h-2 rounded-full bg-yellow-400" />
-              <span className="w-2 h-2 rounded-full bg-green-400" />
-              <span className="ml-2 text-[10px] font-mono text-slate-500 dark:text-slate-400">sandbox.py</span>
-            </div>
-            <div className="px-5 py-4 font-mono text-[11px] leading-6 bg-slate-50/50 dark:bg-slate-900/50">
-              <p><span className="text-blue-600 dark:text-blue-400 font-bold">def</span> <span className="text-slate-800 dark:text-slate-100 font-bold">greet</span><span className="text-slate-500 dark:text-slate-400">(name):</span></p>
-              <p className="pl-4"><span className="text-blue-600 dark:text-blue-400 font-bold">return</span> <span className="text-amber-800 dark:text-amber-300">f"Hello, {'{name}'}!"</span></p>
-              <p className="mt-1.5 text-slate-400 dark:text-slate-500">{'# → output'}</p>
-              <p className="text-emerald-600 dark:text-emerald-400 font-bold">{'> Hello, CodeSphere!  ✓  31ms'}</p>
-            </div>
-          </motion.div>
         </div>
 
         <p className="text-[10px] font-mono mt-4 text-slate-400 dark:text-slate-500">

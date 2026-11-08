@@ -6,4 +6,3 @@ export * from './SessionHistory.jsx';
 export * from './PublishCourse.jsx';
 export * from './DraftCourses.jsx';
 export * from './InstructorProfile.jsx';
-export * from './EarningsCard.jsx';

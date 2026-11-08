@@ -3,7 +3,6 @@ export * from './pages/Tests.jsx';
 export * from './pages/TestDetails.jsx';
 export * from './pages/TestAttempt.jsx';
 export * from './pages/TestResults.jsx';
-export * from './pages/Leaderboard.jsx';
 export * from './redux/index.js';
 export * from './hooks/useTests.js';
 export * from './hooks/useTimer.js';

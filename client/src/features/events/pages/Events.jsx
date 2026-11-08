@@ -6,7 +6,11 @@ import {
   Layers, MapPin, Users, Trophy, CheckCircle2, BarChart3, RefreshCw
 } from 'lucide-react';
 
-import { Event3DGlobe } from '../components/Event3DGlobe.jsx';
+const Event3DGlobe = React.lazy(() =>
+  import('../components/Event3DGlobe.jsx').then((module) => ({
+    default: module.Event3DGlobe || module.default,
+  }))
+);
 import { EventCard } from '../components/EventCard.jsx';
 import { EventFilterSidebar } from '../components/EventFilterSidebar.jsx';
 import { EventDetailModal } from '../components/EventDetailModal.jsx';
@@ -216,12 +220,22 @@ export const Events = () => {
       </div>
 
       {/* Tab Content Display */}
-      <div className={`flex flex-col gap-6 ${activeTab === 'globe' ? 'block' : 'hidden'}`}>
-        {/* Interactive Fixed-Center 3D Earth Globe */}
-        <Event3DGlobe
-          markers={globeMarkers}
-          onSelectEvent={handleSelectEvent}
-        />
+      {activeTab === 'globe' && (
+        <div className="flex flex-col gap-6">
+          {/* Interactive Fixed-Center 3D Earth Globe (Lazy Loaded) */}
+          <React.Suspense
+            fallback={
+              <div className="w-full h-[500px] flex items-center justify-center bg-slate-900/50 rounded-2xl border border-slate-800 text-slate-400">
+                <RefreshCw className="w-6 h-6 animate-spin mr-2 text-emerald-400" />
+                Loading 3D Earth Globe...
+              </div>
+            }
+          >
+            <Event3DGlobe
+              markers={globeMarkers}
+              onSelectEvent={handleSelectEvent}
+            />
+          </React.Suspense>
 
         {/* Featured Events Rail below Globe */}
         <div className="flex flex-col gap-4">
@@ -248,6 +262,7 @@ export const Events = () => {
           </div>
         </div>
       </div>
+    )}
 
       {activeTab === 'explore' && (
         <div className="flex flex-col lg:flex-row gap-6">

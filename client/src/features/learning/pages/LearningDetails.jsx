@@ -12,23 +12,22 @@ import { NATIVE_ROADMAPS } from '../data/nativeRoadmapsData.js';
 export const LearningDetails = () => {
   const params = useParams();
   const courseId = params.pathId || params.courseId;
-  const [course, setCourse] = useState(null);
+  const cleanId = (courseId || '').toLowerCase().trim();
+  const nativeMatch = NATIVE_ROADMAPS.find(r => 
+    r.id?.toLowerCase() === cleanId || 
+    (r._id && r._id.toString().toLowerCase() === cleanId) ||
+    (r.slug && r.slug.toLowerCase() === cleanId) ||
+    r.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').includes(cleanId)
+  );
+
+  const [course, setCourse] = useState(() => nativeMatch || null);
   const [progress, setProgress] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [viewMode, setViewMode] = useState('roadmap'); // 'roadmap' | 'list'
   const [enrolling, setEnrolling] = useState(false);
 
   useEffect(() => {
     if (!courseId) return;
-    setLoading(true);
-    
-    const cleanId = courseId.toLowerCase().trim();
-    const nativeMatch = NATIVE_ROADMAPS.find(r => 
-      r.id.toLowerCase() === cleanId || 
-      (r._id && r._id.toString().toLowerCase() === cleanId) ||
-      (r.slug && r.slug.toLowerCase() === cleanId) ||
-      r.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').includes(cleanId)
-    );
     
     Promise.allSettled([
       fetchCourseDetailsAPI(courseId),
@@ -44,8 +43,6 @@ export const LearningDetails = () => {
       }
     }).catch(() => {
       if (nativeMatch) setCourse(nativeMatch);
-    }).finally(() => {
-      setLoading(false);
     });
   }, [courseId]);
 
@@ -76,11 +73,10 @@ export const LearningDetails = () => {
     setEnrolling(false);
   };
 
-  if (loading) {
+  if (loading && !course) {
     return (
-      <div className="flex flex-col items-center justify-center py-24 gap-3 text-slate-500 font-mono text-xs select-none">
-        <div className="w-8 h-8 rounded-full border-2 border-[#04AA6D] border-t-transparent animate-spin" />
-        <p>Loading Dedicated Roadmap Canvas...</p>
+      <div className="w-full h-0.5 bg-emerald-500/20 overflow-hidden">
+        <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
       </div>
     );
   }
@@ -174,4 +170,4 @@ export const LearningDetails = () => {
   );
 };
 
-
+export default LearningDetails;

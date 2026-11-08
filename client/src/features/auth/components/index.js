@@ -8,4 +8,3 @@ export * from './OTPInput.jsx';
 export * from './SocialLogin.jsx';
 export * from './PasswordStrength.jsx';
 export * from './RememberMe.jsx';
-export * from './AuthIllustration.jsx';

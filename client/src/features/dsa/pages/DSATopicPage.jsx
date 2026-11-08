@@ -252,8 +252,15 @@ const FormattedMarkdownContent = ({ content }) => {
 export default function DSATopicPage() {
   const { topicSlug } = useParams();
   const navigate = useNavigate();
-  const [data, setData] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem(`cs_topic_${topicSlug}`);
+      return cached ? JSON.parse(cached) : null;
+    } catch (_) {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [expandedSections, setExpandedSections] = useState({});
   const [activeTab, setActiveTab] = useState('theory'); // Theory-First Default!
   const [theoryLearned, setTheoryLearned] = useState(false);
@@ -276,6 +283,9 @@ export default function DSATopicPage() {
     try {
       const res = await dsaAPI.getTopicBySlug(topicSlug);
       setData(res.data);
+      try {
+        sessionStorage.setItem(`cs_topic_${topicSlug}`, JSON.stringify(res.data));
+      } catch (_) {}
       const savedLearned = localStorage.getItem(`theory_learned_${topicSlug}`) === 'true';
       setTheoryLearned(savedLearned);
 
@@ -284,8 +294,6 @@ export default function DSATopicPage() {
       setExpandedSections(expanded);
     } catch (err) {
       toast.error('Failed to load topic details');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -303,18 +311,15 @@ export default function DSATopicPage() {
 
   const toggleSection = (id) => setExpandedSections(prev => ({ ...prev, [id]: !prev[id] }));
 
-  if (loading) {
+  if (!data) {
     return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-3">
-        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-          <Sparkles className="w-8 h-8 text-[#04AA6D]" />
-        </motion.div>
-        <p className="text-xs text-zinc-500 font-mono">Opening Theory Module...</p>
+      <div className="min-h-screen bg-black text-white flex flex-col">
+        <div className="h-0.5 bg-zinc-900 overflow-hidden">
+          <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
+        </div>
       </div>
     );
   }
-
-  if (!data) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Topic not found</div>;
 
   const { topic, sections, unsectionedProblems } = data;
 

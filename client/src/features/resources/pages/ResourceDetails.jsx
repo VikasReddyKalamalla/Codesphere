@@ -170,9 +170,8 @@ export const ResourceDetails = () => {
 
   if (isFetching && !resource?._id) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-slate-500 font-mono text-xs">
-        <Sparkles className="w-8 h-8 text-[#04AA6D] animate-spin" />
-        <span>Loading Knowledge Resource Details...</span>
+      <div className="w-full h-0.5 bg-emerald-500/20 overflow-hidden">
+        <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
       </div>
     );
   }

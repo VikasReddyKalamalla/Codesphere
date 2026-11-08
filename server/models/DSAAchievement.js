@@ -45,7 +45,6 @@ const dsaAchievementSchema = new mongoose.Schema(
 );
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
-dsaAchievementSchema.index({ key: 1 }, { unique: true });
 dsaAchievementSchema.index({ 'unlockedBy.userId': 1 });
 
 module.exports = mongoose.model('DSAAchievement', dsaAchievementSchema);

@@ -164,10 +164,10 @@ const ArticlePage = () => {
     }
   };
 
-  if (pageLoading) {
+  if (pageLoading && !article) {
     return (
-      <div className="min-h-screen bg-white dark:bg-slate-950 flex items-center justify-center">
-        <div className="text-slate-500 dark:text-slate-400 font-medium">Loading Article...</div>
+      <div className="w-full h-0.5 bg-emerald-500/20 overflow-hidden">
+        <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
       </div>
     );
   }

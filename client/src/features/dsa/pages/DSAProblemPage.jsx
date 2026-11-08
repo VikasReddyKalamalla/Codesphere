@@ -23,8 +23,15 @@ export default function DSAProblemPage() {
   const { problemSlug } = useParams();
   const navigate = useNavigate();
 
-  const [problem, setProblem] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [problem, setProblem] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem(`cs_prob_${problemSlug}`);
+      return cached ? JSON.parse(cached) : null;
+    } catch (_) {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('statement');
   const [language, setLanguage] = useState('python');
   const [code, setCode] = useState('');
@@ -102,10 +109,12 @@ export default function DSAProblemPage() {
 
   const loadProblem = async () => {
     try {
-      setLoading(true);
       const res = await dsaAPI.getProblemBySlug(problemSlug);
       const p = res.data.problem;
       setProblem(p);
+      try {
+        sessionStorage.setItem(`cs_prob_${problemSlug}`, JSON.stringify(p));
+      } catch (_) {}
       setNotes(p.personalNotes || '');
       setEditorial(p.editorial || null);
 
@@ -115,8 +124,6 @@ export default function DSAProblemPage() {
       setCode(p.starterCode?.[initialLang] || LANG_CONFIG[initialLang]?.defaultCode || '');
     } catch (err) {
       toast.error('Failed to load problem');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -200,17 +207,15 @@ export default function DSAProblemPage() {
     }
   };
 
-  if (loading) {
+  if (!problem) {
     return (
-      <div className="min-h-screen bg-black flex items-center justify-center">
-        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-          <Sparkles className="w-8 h-8 text-indigo-500" />
-        </motion.div>
+      <div className="h-screen bg-black text-white flex flex-col">
+        <div className="h-0.5 bg-zinc-900 overflow-hidden">
+          <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
+        </div>
       </div>
     );
   }
-
-  if (!problem) return <div className="min-h-screen bg-black text-white flex items-center justify-center">Problem not found</div>;
 
   return (
     <div className="h-screen bg-black text-white flex flex-col overflow-hidden">

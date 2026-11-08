@@ -2,6 +2,8 @@
 node_modules/
 client/node_modules/
 server/node_modules/
+Codesphere-Codex/node_modules/
+Codesphere-Codex/dist/
 
 # Environment and sensitive configuration files
 .env
@@ -51,3 +53,5 @@ workspaces/
 database/
 doncheck.md
 server/scratch/
+vscode/.git_disabled/
+

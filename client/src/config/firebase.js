@@ -15,7 +15,6 @@ import {
   getRedirectResult,
   signOut,
 } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY            || "AIzaSyCtzvS19slrAH1Ns6x5BL6fLrJ5OuAczKE",
@@ -45,8 +44,6 @@ try {
   auth = getAuth(appInstance);
 }
 
-const db = getFirestore(appInstance);
-
 // Analytics is disabled to prevent browser ad blockers from triggering ERR_BLOCKED_BY_CLIENT
 const analytics = null;
 
@@ -57,7 +54,6 @@ export const app = appInstance;
 
 export {
   auth,
-  db,
   analytics,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,

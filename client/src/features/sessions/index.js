@@ -3,7 +3,6 @@ export * from './pages/Sessions.jsx';
 export * from './pages/SessionDetails.jsx';
 export * from './pages/CreateSession.jsx';
 export * from './pages/LiveSession.jsx';
-export * from './pages/SessionHistory.jsx';
 export * from './redux/index.js';
 export * from './hooks/useSessions.js';
 export * from './hooks/useLiveSession.js';

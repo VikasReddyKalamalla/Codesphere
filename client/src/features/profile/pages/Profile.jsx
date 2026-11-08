@@ -21,8 +21,15 @@ export const Profile = () => {
   const navigate = useNavigate();
   const { user: authUser } = useSelector((s) => s.auth);
 
-  const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('cs_profile_cache');
+      return cached ? JSON.parse(cached) : authUser || null;
+    } catch (_) {
+      return authUser || null;
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -201,10 +208,10 @@ export const Profile = () => {
     { icon: MessageSquare, label: 'Communities Joined', count: profile?.communitiesCount || 0 },
   ];
 
-  if (loading) {
+  if (loading && !profile) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <div className="w-8 h-8 rounded-full border-4 border-[#04AA6D] border-t-transparent animate-spin" />
+      <div className="w-full h-0.5 bg-emerald-500/20 overflow-hidden">
+        <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
       </div>
     );
   }

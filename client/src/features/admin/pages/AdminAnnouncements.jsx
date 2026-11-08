@@ -187,10 +187,9 @@ export default function AdminAnnouncementsPage() {
           </div>
 
           {/* Announcement Feed List */}
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl">
-              <RefreshCw className="w-6 h-6 text-emerald-600 animate-spin mb-2" />
-              <p className="text-xs font-mono text-slate-400">Loading CodeSphere Announcement Feed...</p>
+          {isLoading && filteredAnnouncements.length === 0 ? (
+            <div className="w-full h-1 bg-emerald-500/10 overflow-hidden rounded-full my-4">
+              <div className="h-full bg-emerald-500 animate-pulse w-1/3" />
             </div>
           ) : filteredAnnouncements.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-center px-4">

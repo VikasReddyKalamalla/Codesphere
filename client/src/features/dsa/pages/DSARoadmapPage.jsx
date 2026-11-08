@@ -205,9 +205,23 @@ const GitHubStreakCard = () => {
 
 export default function DSARoadmapPage() {
   const navigate = useNavigate();
-  const [topics, setTopics] = useState([]);
-  const [dashboard, setDashboard] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [topics, setTopics] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('cs_dsa_topics');
+      return cached ? JSON.parse(cached) : [];
+    } catch (_) {
+      return [];
+    }
+  });
+  const [dashboard, setDashboard] = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('cs_dsa_dash');
+      return cached ? JSON.parse(cached) : null;
+    } catch (_) {
+      return null;
+    }
+  });
+  const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [filterDifficulty, setFilterDifficulty] = useState('all');
 
@@ -221,13 +235,16 @@ export default function DSARoadmapPage() {
         dsaAPI.getTopics(),
         dsaAPI.getDashboard(),
       ]);
-      setTopics(topicsRes.data?.topics || []);
-      setDashboard(dashRes.data || null);
+      const loadedTopics = topicsRes.data?.topics || [];
+      const loadedDash = dashRes.data || null;
+      setTopics(loadedTopics);
+      setDashboard(loadedDash);
+      try {
+        sessionStorage.setItem('cs_dsa_topics', JSON.stringify(loadedTopics));
+        sessionStorage.setItem('cs_dsa_dash', JSON.stringify(loadedDash));
+      } catch (_) {}
     } catch (err) {
       console.error('Failed to load DSA data:', err);
-      toast.error('Failed to load roadmap');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -239,17 +256,6 @@ export default function DSARoadmapPage() {
       return matchesSearch && matchesDiff;
     });
   }, [topics, searchQuery, filterDifficulty]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-black flex flex-col items-center justify-center gap-3">
-        <motion.div animate={{ rotate: 360 }} transition={{ repeat: Infinity, duration: 1, ease: 'linear' }}>
-          <Sparkles className="w-8 h-8 text-[#04AA6D]" />
-        </motion.div>
-        <p className="text-xs text-zinc-500 font-mono">Loading CodeSphere DSA Environment...</p>
-      </div>
-    );
-  }
 
   const stats = dashboard?.stats || {};
   const totalSolved = stats.totalSolved || 0;

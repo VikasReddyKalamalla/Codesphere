@@ -31,13 +31,32 @@ const DIFF = {
   advanced:     { bg: 'bg-rose-500/10 text-rose-500 border-rose-500/20', label: 'Advanced' },
 };
 
+const defaultNativePaths = NATIVE_ROADMAPS.map(r => ({
+  _id: r.id,
+  title: r.title,
+  description: r.description,
+  category: r.category,
+  difficulty: r.difficulty,
+  duration: r.duration,
+  modules: r.modules,
+  totalStudents: 1420,
+  createdBy: { fullName: 'CodeSphere Engineering' }
+}));
+
 export const Learning = () => {
   const { user } = useSelector((s) => s.auth);
 
   /* ── state ── */
-  const [paths,         setPaths]        = useState([]);
+  const [paths,         setPaths]        = useState(() => {
+    try {
+      const cached = sessionStorage.getItem('cs_learning_paths');
+      return cached ? JSON.parse(cached) : defaultNativePaths;
+    } catch (_) {
+      return defaultNativePaths;
+    }
+  });
   const [allProgress,   setAllProgress]  = useState([]);
-  const [loading,       setLoading]      = useState(true);
+  const [loading,       setLoading]      = useState(false);
   const [activeTab,     setActiveTab]    = useState('all');
   const [selectedCat,   setSelectedCat]  = useState('all');
   const [search,        setSearch]       = useState('');
@@ -47,7 +66,6 @@ export const Learning = () => {
 
   /* ── load dataset ── */
   const loadAll = useCallback(async () => {
-    setLoading(true);
     try {
       const [pr, pg] = await Promise.allSettled([
         fetchCoursesAPI({ limit: 150 }), 
@@ -55,42 +73,21 @@ export const Learning = () => {
       ]);
       const fetched = pr.status === 'fulfilled' ? (pr.value?.data?.paths || pr.value?.data || []) : [];
 
-      const nativeFormatted = NATIVE_ROADMAPS.map(r => ({
-        _id: r.id,
-        title: r.title,
-        description: r.description,
-        category: r.category,
-        difficulty: r.difficulty,
-        duration: r.duration,
-        modules: r.modules,
-        totalStudents: 1420 + Math.floor(Math.random() * 500),
-        createdBy: { fullName: 'CodeSphere Engineering' }
-      }));
-
       const merged = [...fetched];
-      nativeFormatted.forEach(n => {
+      defaultNativePaths.forEach(n => {
         if (!merged.some(m => (m._id && m._id === n._id) || m.title?.toLowerCase() === n.title.toLowerCase())) {
           merged.push(n);
         }
       });
 
       setPaths(merged);
+      try {
+        sessionStorage.setItem('cs_learning_paths', JSON.stringify(merged));
+      } catch (_) {}
       if (pg.status === 'fulfilled') setAllProgress(pg.value?.data || []);
     } catch {
-      const nativeFormatted = NATIVE_ROADMAPS.map(r => ({
-        _id: r.id,
-        title: r.title,
-        description: r.description,
-        category: r.category,
-        difficulty: r.difficulty,
-        duration: r.duration,
-        modules: r.modules,
-        totalStudents: 1420,
-        createdBy: { fullName: 'CodeSphere Engineering' }
-      }));
-      setPaths(nativeFormatted);
+      setPaths(defaultNativePaths);
     }
-    setLoading(false);
   }, []);
 
   useEffect(() => { loadAll(); }, [loadAll]);
@@ -362,12 +359,7 @@ export const Learning = () => {
           </span>
         </div>
 
-        {loading ? (
-          <div className="flex flex-col items-center py-24 gap-3 text-center">
-            <div className="w-8 h-8 rounded-full border-2 border-[#04AA6D] border-t-transparent animate-spin" />
-            <p className="text-xs font-mono text-slate-400">Loading catalog of 83 roadmaps...</p>
-          </div>
-        ) : sorted.length === 0 ? (
+        {sorted.length === 0 ? (
           <div className="flex flex-col items-center py-20 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-center">
             <BookOpen className="w-10 h-10 mb-3 text-slate-400" />
             <p className="text-xs font-mono text-slate-400">No learning paths match your filters</p>

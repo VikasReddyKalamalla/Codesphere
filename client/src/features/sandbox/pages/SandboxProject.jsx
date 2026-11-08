@@ -789,3 +789,5 @@ export const SandboxProject = () => {
     </div>
   );
 };
+
+export default SandboxProject;

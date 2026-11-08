@@ -101,8 +101,6 @@ const communitySchema = new mongoose.Schema(
 
 // ─── Indexes ──────────────────────────────────────────────────────────────────
 communitySchema.index({ name: 'text', description: 'text', tags: 'text' });
-communitySchema.index({ category: 1 });
-communitySchema.index({ owner: 1 });
 communitySchema.index({ createdAt: -1 });
 
 module.exports = mongoose.model('Community', communitySchema);

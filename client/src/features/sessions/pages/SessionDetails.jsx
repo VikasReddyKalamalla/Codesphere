@@ -49,8 +49,8 @@ export const SessionDetails = () => {
 
   if (!session) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh] text-slate-400">
-        Loading session particulars...
+      <div className="w-full h-0.5 bg-emerald-500/20 overflow-hidden">
+        <div className="h-full bg-[#04AA6D] animate-pulse w-full" />
       </div>
     );
   }
@@ -535,3 +535,5 @@ export const SessionDetails = () => {
     </div>
   );
 };
+
+export default SessionDetails;
