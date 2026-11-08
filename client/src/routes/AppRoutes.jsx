@@ -20,7 +20,7 @@ import {
 import GuestGuard from './GuestGuard.jsx';
 import PermissionGuard from './PermissionGuard.jsx';
 
-// ─── Core Pages (Statically imported for instant 0ms load and zero loading screen)
+// ─── Core Student Pages (Statically imported for instant 0ms load and zero loading screens)
 import LoginPage          from '@features/auth/pages/Login.jsx';
 import RegisterPage       from '@features/auth/pages/Register.jsx';
 import ForgotPasswordPage from '@features/auth/pages/ForgotPassword.jsx';
@@ -28,8 +28,23 @@ import ResetPasswordPage  from '@features/auth/pages/ResetPassword.jsx';
 import VerifyEmailPage    from '@features/auth/pages/VerifyEmail.jsx';
 import LandingPage        from '@features/landing/pages/Home.jsx';
 import DashboardPage      from '@features/dashboard/pages/DashboardPage.jsx';
+import LeaderboardPage    from '@features/leaderboard/pages/LeaderboardPage.jsx';
+import LearningPage       from '@features/learning/pages/Learning.jsx';
+import SandboxPage        from '@features/sandbox/pages/Sandbox.jsx';
+import CodexPage          from '@features/codex/pages/CodexPage.jsx';
+import CommunityPage      from '@features/communities/pages/Communities.jsx';
+import SessionsPage       from '@features/sessions/pages/Sessions.jsx';
+import EventsPage         from '@features/events/pages/Events.jsx';
+import ResourcesPage      from '@features/resources/pages/Resources.jsx';
+import TestsPage          from '@features/tests/pages/Tests.jsx';
+import ProfilePage        from '@features/profile/pages/Profile.jsx';
+import SubscriptionPage   from '@features/subscription/pages/Subscription.jsx';
+import BillingPage        from '@features/subscription/pages/Billing.jsx';
+import SettingsPage       from '@features/settings/pages/Settings.jsx';
+import NotificationsPage  from '@features/notifications/pages/Notifications.jsx';
+import PublicProfilePage  from '@features/profile/pages/PublicProfilePage.jsx';
 
-// ─── Landing / public pages (Lazy loaded with lightweight top-bar) ───────────────
+// ─── Landing / public pages (Lazy loaded with zero-delay fallback) ───────────────
 const AboutPage     = lazy(() => import('@features/landing/pages/About.jsx'));
 const PricingPage   = lazy(() => import('@features/landing/pages/Pricing.jsx'));
 const FeaturesPage  = lazy(() => import('@features/landing/pages/FeaturesPage.jsx'));
@@ -38,40 +53,25 @@ const PrivacyPage   = lazy(() => import('@features/legal/pages/PrivacyPolicy.jsx
 const TermsPage     = lazy(() => import('@features/legal/pages/TermsOfService.jsx'));
 const CookiesPage   = lazy(() => import('@features/legal/pages/CookiePolicy.jsx'));
 
-// ─── Student dashboard pages (Lazily loaded for maximum performance & fast load) ─
-const LeaderboardPage       = lazy(() => import('@features/leaderboard/pages/LeaderboardPage.jsx'));
-const LearningPage          = lazy(() => import('@features/learning/pages/Learning.jsx'));
+// ─── Secondary sub-pages (Lazy loaded with zero-delay fallback) ──────────────────
 const LearningPathPage      = lazy(() => import('@features/learning/pages/LearningDetails.jsx'));
 const LessonPage            = lazy(() => import('@features/learning/pages/LessonViewer.jsx'));
 const ArticlePage           = lazy(() => import('@features/learning/pages/ArticlePage.jsx'));
-const ResourcesPage         = lazy(() => import('@features/resources/pages/Resources.jsx'));
 const ResourceDetailPage     = lazy(() => import('@features/resources/pages/ResourceDetails.jsx'));
-const CommunityPage         = lazy(() => import('@features/communities/pages/Communities.jsx'));
 const CommunityDetailPage   = lazy(() => import('@features/communities/pages/CommunityDetails.jsx'));
 const CreateCommunityPage   = lazy(() => import('@features/communities/pages/CreateCommunity.jsx'));
 const CommunitySettingsPage = lazy(() => import('@features/communities/pages/CommunitySettings.jsx'));
-const SessionsPage          = lazy(() => import('@features/sessions/pages/Sessions.jsx'));
 const SessionDetailPage    = lazy(() => import('@features/sessions/pages/SessionDetails.jsx'));
 const LiveSessionPage       = lazy(() => import('@features/sessions/pages/LiveSession.jsx'));
-const EventsPage            = lazy(() => import('@features/events/pages/Events.jsx'));
 const EventDetailPage      = lazy(() => import('@features/events/pages/EventDetails.jsx'));
-const CodexPage             = lazy(() => import('@features/codex/pages/CodexPage.jsx'));
 const CreateWorkspacePage   = lazy(() => import('@features/codex/pages/CreateWorkspace.jsx'));
 const WorkspacePage         = lazy(() => import('@features/codex/pages/WorkspacePage.jsx'));
-const SandboxPage           = lazy(() => import('@features/sandbox/pages/Sandbox.jsx'));
 const SandboxProjectPage   = lazy(() => import('@features/sandbox/pages/SandboxProject.jsx'));
 const CloudWorkspaceView    = lazy(() => import('@features/workspace/pages/CloudWorkspaceView.jsx'));
 const WebIDEPage            = lazy(() => import('@features/ide/WebIDE.jsx'));
-const TestsPage             = lazy(() => import('@features/tests/pages/Tests.jsx'));
 const TestDetailPage       = lazy(() => import('@features/tests/pages/TestDetails.jsx'));
 const TestAttemptPage      = lazy(() => import('@features/tests/pages/TestAttempt.jsx'));
 const TestResultsPage      = lazy(() => import('@features/tests/pages/TestResults.jsx'));
-const ProfilePage           = lazy(() => import('@features/profile/pages/Profile.jsx'));
-const PublicProfilePage     = lazy(() => import('@features/profile/pages/PublicProfilePage.jsx'));
-const NotificationsPage     = lazy(() => import('@features/notifications/pages/Notifications.jsx'));
-const SubscriptionPage      = lazy(() => import('@features/subscription/pages/Subscription.jsx'));
-const BillingPage           = lazy(() => import('@features/subscription/pages/Billing.jsx'));
-const SettingsPage          = lazy(() => import('@features/settings/pages/Settings.jsx'));
 
 // ─── DSA Learning Path pages (Lazily loaded) ──────────────────────────────────
 const DSARoadmapPage      = lazy(() => import('@features/dsa/pages/DSARoadmapPage.jsx'));
@@ -185,72 +185,72 @@ const AppRoutes = () => {
           </RouteGuard>
         }
       >
-        {/* Main Dashboard is statically imported for 0ms immediate render */}
+        {/* Main Dashboard & Core Student Tabs (Instant 0ms render without any loader or screen) */}
         <Route path={ROUTES.DASHBOARD}         element={<DashboardPage />} />
-        <Route path={ROUTES.LEADERBOARD}       element={<W><LeaderboardPage /></W>} />
+        <Route path={ROUTES.LEADERBOARD}       element={<LeaderboardPage />} />
 
         {/* Learning */}
-        <Route path={ROUTES.LEARNING}          element={<W><LearningPage /></W>} />
-        <Route path={ROUTES.LEARNING_PATH}     element={<W><LearningPathPage /></W>} />
-        <Route path={ROUTES.LEARNING_LESSON}   element={<W><LessonPage /></W>} />
+        <Route path={ROUTES.LEARNING}          element={<LearningPage />} />
+        <Route path={ROUTES.LEARNING_PATH}     element={<LearningPathPage />} />
+        <Route path={ROUTES.LEARNING_LESSON}   element={<LessonPage />} />
 
         {/* DSA Learning Path */}
-        <Route path={ROUTES.DSA_ROADMAP}      element={<W><DSARoadmapPage /></W>} />
-        <Route path={ROUTES.DSA_TOPIC}        element={<W><DSATopicPage /></W>} />
-        <Route path={ROUTES.DSA_PROGRESS}     element={<W><DSAProgressPage /></W>} />
-        <Route path={ROUTES.DSA_REVISION}     element={<W><DSARevisionPage /></W>} />
-        <Route path={ROUTES.DSA_BOOKMARKS}    element={<W><DSABookmarksPage /></W>} />
-        <Route path={ROUTES.DSA_SEARCH}       element={<W><DSASearchPage /></W>} />
-        <Route path={ROUTES.DSA_PATTERNS}     element={<W><DSAPatternPage /></W>} />
-        <Route path={ROUTES.DSA_ACHIEVEMENTS} element={<W><DSAAchievementsPage /></W>} />
+        <Route path={ROUTES.DSA_ROADMAP}      element={<DSARoadmapPage />} />
+        <Route path={ROUTES.DSA_TOPIC}        element={<DSATopicPage />} />
+        <Route path={ROUTES.DSA_PROGRESS}     element={<DSAProgressPage />} />
+        <Route path={ROUTES.DSA_REVISION}     element={<DSARevisionPage />} />
+        <Route path={ROUTES.DSA_BOOKMARKS}    element={<DSABookmarksPage />} />
+        <Route path={ROUTES.DSA_SEARCH}       element={<DSASearchPage />} />
+        <Route path={ROUTES.DSA_PATTERNS}     element={<DSAPatternPage />} />
+        <Route path={ROUTES.DSA_ACHIEVEMENTS} element={<DSAAchievementsPage />} />
 
         {/* Resources */}
-        <Route path={ROUTES.RESOURCES}         element={<W><ResourcesPage /></W>} />
-        <Route path={ROUTES.RESOURCE_DETAIL}   element={<W><ResourceDetailPage /></W>} />
+        <Route path={ROUTES.RESOURCES}         element={<ResourcesPage />} />
+        <Route path={ROUTES.RESOURCE_DETAIL}   element={<ResourceDetailPage />} />
 
         {/* Community */}
-        <Route path={ROUTES.COMMUNITY}          element={<W><CommunityPage /></W>} />
-        <Route path={ROUTES.COMMUNITY_CREATE}   element={<W><CreateCommunityPage /></W>} />
-        <Route path={ROUTES.COMMUNITY_DETAIL}   element={<W><CommunityDetailPage /></W>} />
-        <Route path={ROUTES.COMMUNITY_SETTINGS} element={<W><CommunitySettingsPage /></W>} />
+        <Route path={ROUTES.COMMUNITY}          element={<CommunityPage />} />
+        <Route path={ROUTES.COMMUNITY_CREATE}   element={<CreateCommunityPage />} />
+        <Route path={ROUTES.COMMUNITY_DETAIL}   element={<CommunityDetailPage />} />
+        <Route path={ROUTES.COMMUNITY_SETTINGS} element={<CommunitySettingsPage />} />
 
         {/* Sessions */}
-        <Route path={ROUTES.SESSIONS}          element={<W><SessionsPage /></W>} />
-        <Route path={ROUTES.SESSION_DETAIL}    element={<W><SessionDetailPage /></W>} />
-        <Route path={ROUTES.SESSION_LIVE}      element={<W><LiveSessionPage /></W>} />
+        <Route path={ROUTES.SESSIONS}          element={<SessionsPage />} />
+        <Route path={ROUTES.SESSION_DETAIL}    element={<SessionDetailPage />} />
+        <Route path={ROUTES.SESSION_LIVE}      element={<LiveSessionPage />} />
 
         {/* Events */}
-        <Route path={ROUTES.EVENTS}            element={<W><EventsPage /></W>} />
-        <Route path={ROUTES.EVENT_DETAIL}      element={<W><EventDetailPage /></W>} />
+        <Route path={ROUTES.EVENTS}            element={<EventsPage />} />
+        <Route path={ROUTES.EVENT_DETAIL}      element={<EventDetailPage />} />
 
         {/* Codex */}
-        <Route path={ROUTES.CODEX}             element={<W><CodexPage /></W>} />
-        <Route path={ROUTES.CODEX_CREATE}      element={<W><CreateWorkspacePage /></W>} />
-        <Route path={ROUTES.WORKSPACE}         element={<W><WorkspacePage /></W>} />
+        <Route path={ROUTES.CODEX}             element={<CodexPage />} />
+        <Route path={ROUTES.CODEX_CREATE}      element={<CreateWorkspacePage />} />
+        <Route path={ROUTES.WORKSPACE}         element={<WorkspacePage />} />
 
         {/* Sandbox & Web IDE */}
-        <Route path={ROUTES.SANDBOX}           element={<W><SandboxPage /></W>} />
-        <Route path={ROUTES.SANDBOX_PROJECT}   element={<W><SandboxProjectPage /></W>} />
-        <Route path="/vscode/:projectId"       element={<W><SandboxProjectPage /></W>} />
-        <Route path={ROUTES.IDE}               element={<W><WebIDEPage /></W>} />
+        <Route path={ROUTES.SANDBOX}           element={<SandboxPage />} />
+        <Route path={ROUTES.SANDBOX_PROJECT}   element={<SandboxProjectPage />} />
+        <Route path="/vscode/:projectId"       element={<SandboxProjectPage />} />
+        <Route path={ROUTES.IDE}               element={<WebIDEPage />} />
 
         {/* Tests */}
-        <Route path={ROUTES.TESTS}             element={<W><TestsPage /></W>} />
-        <Route path={ROUTES.TEST_DETAIL}       element={<W><TestDetailPage /></W>} />
-        <Route path={ROUTES.TEST_ATTEMPT}      element={<W><TestAttemptPage /></W>} />
-        <Route path={ROUTES.TEST_RESULTS}      element={<W><TestResultsPage /></W>} />
+        <Route path={ROUTES.TESTS}             element={<TestsPage />} />
+        <Route path={ROUTES.TEST_DETAIL}       element={<TestDetailPage />} />
+        <Route path={ROUTES.TEST_ATTEMPT}      element={<TestAttemptPage />} />
+        <Route path={ROUTES.TEST_RESULTS}      element={<TestResultsPage />} />
 
         {/* Profile & Notifications */}
-        <Route path={ROUTES.PROFILE}           element={<W><ProfilePage /></W>} />
-        <Route path={ROUTES.NOTIFICATIONS}     element={<W><NotificationsPage /></W>} />
+        <Route path={ROUTES.PROFILE}           element={<ProfilePage />} />
+        <Route path={ROUTES.NOTIFICATIONS}     element={<NotificationsPage />} />
 
         {/* Subscription */}
-        <Route path={ROUTES.SUBSCRIPTION}      element={<W><SubscriptionPage /></W>} />
-        <Route path={ROUTES.BILLING}           element={<W><BillingPage /></W>} />
+        <Route path={ROUTES.SUBSCRIPTION}      element={<SubscriptionPage />} />
+        <Route path={ROUTES.BILLING}           element={<BillingPage />} />
 
         {/* Settings */}
-        <Route path={ROUTES.SETTINGS}          element={<W><SettingsPage /></W>} />
-        <Route path={ROUTES.PROFILE_PUBLIC}    element={<W><PublicProfilePage /></W>} />
+        <Route path={ROUTES.SETTINGS}          element={<SettingsPage />} />
+        <Route path={ROUTES.PROFILE_PUBLIC}    element={<PublicProfilePage />} />
 
         {/* Instructor application (any auth user) */}
         <Route path={ROUTES.INSTRUCTOR_APPLY}  element={<W><InstructorApplyPage /></W>} />
