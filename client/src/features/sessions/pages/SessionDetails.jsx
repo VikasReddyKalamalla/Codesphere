@@ -194,10 +194,10 @@ export const SessionDetails = () => {
 
       {/* Grid container */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 z-10">
-        
+
         {/* Left Column: Details, Resources & Actions */}
         <div className="lg:col-span-2 flex flex-col gap-8">
-          
+
           {/* Header Card */}
           <div className="bg-slate-50/80 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-900 p-6 rounded-2xl backdrop-blur-md flex flex-col gap-4">
             <div className="flex justify-between items-start gap-4">
@@ -248,7 +248,7 @@ export const SessionDetails = () => {
           {/* Resources checklist */}
           <div className="bg-slate-50/60 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-900 p-6 rounded-2xl flex flex-col gap-4">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Session Resources</h3>
-            
+
             <div className="flex flex-col gap-3">
               {interactivity.resources?.length > 0 ? (
                 interactivity.resources.map((res) => (
@@ -339,11 +339,11 @@ export const SessionDetails = () => {
 
         {/* Right Column: Timings, Registrations, Live Buttons, Feedback */}
         <div className="flex flex-col gap-6">
-          
+
           {/* Scheduling particulars card */}
           <div className="bg-slate-50/80 dark:bg-slate-950/30 border border-slate-200 dark:border-slate-900 p-6 rounded-2xl backdrop-blur-md flex flex-col gap-4">
             <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Session Schedule</h3>
-            
+
             <div className="flex flex-col gap-3 text-xs text-slate-700 dark:text-slate-300">
               <div className="flex items-center gap-3">
                 <Calendar className="w-4 h-4 text-[#04AA6D] dark:text-emerald-400" />
@@ -497,7 +497,7 @@ export const SessionDetails = () => {
           {session.status === 'completed' && (
             <div className="bg-slate-50/60 dark:bg-slate-950/20 border border-slate-200 dark:border-slate-900 p-6 rounded-2xl flex flex-col gap-4">
               <h3 className="text-xs font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">Leave Your Feedback</h3>
-              
+
               <form onSubmit={handleSubmitFeedback} className="flex flex-col gap-3.5">
                 <div className="flex items-center gap-2">
                   {[1, 2, 3, 4, 5].map((star) => (

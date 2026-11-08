@@ -13,8 +13,8 @@ export const LearningDetails = () => {
   const params = useParams();
   const courseId = params.pathId || params.courseId;
   const cleanId = (courseId || '').toLowerCase().trim();
-  const nativeMatch = NATIVE_ROADMAPS.find(r => 
-    r.id?.toLowerCase() === cleanId || 
+  const nativeMatch = NATIVE_ROADMAPS.find(r =>
+    r.id?.toLowerCase() === cleanId ||
     (r._id && r._id.toString().toLowerCase() === cleanId) ||
     (r.slug && r.slug.toLowerCase() === cleanId) ||
     r.title?.toLowerCase().replace(/[^a-z0-9]+/g, '-').includes(cleanId)
@@ -28,7 +28,7 @@ export const LearningDetails = () => {
 
   useEffect(() => {
     if (!courseId) return;
-    
+
     Promise.allSettled([
       fetchCourseDetailsAPI(courseId),
       fetchPathProgressAPI(courseId)
@@ -95,11 +95,11 @@ export const LearningDetails = () => {
 
   return (
     <div className="w-full flex flex-col gap-6 select-none animate-fade-in font-sans pb-16">
-      
+
       {/* ── Top Navigation Bar ── */}
       <div className="flex flex-wrap items-center justify-between gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200/80 dark:border-slate-800">
-        <Link 
-          to="/learning" 
+        <Link
+          to="/learning"
           className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:text-[#04AA6D] text-xs font-mono font-bold transition-all"
         >
           <ArrowLeft className="w-4 h-4" />
@@ -126,11 +126,10 @@ export const LearningDetails = () => {
           <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl">
             <button
               onClick={() => setViewMode('roadmap')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
-                viewMode === 'roadmap'
-                  ? 'bg-[#04AA6D] text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all ${viewMode === 'roadmap'
+                ? 'bg-[#04AA6D] text-white shadow-xs'
+                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
             >
               <Map className="w-3.5 h-3.5" />
               <span>Visual Roadmap</span>
@@ -138,11 +137,10 @@ export const LearningDetails = () => {
 
             <button
               onClick={() => setViewMode('list')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all ${
-                viewMode === 'list'
-                  ? 'bg-[#04AA6D] text-white shadow-xs'
-                  : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer transition-all ${viewMode === 'list'
+                ? 'bg-[#04AA6D] text-white shadow-xs'
+                : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
+                }`}
             >
               <List className="w-3.5 h-3.5" />
               <span>Module Syllabus</span>

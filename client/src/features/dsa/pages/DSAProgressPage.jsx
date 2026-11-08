@@ -21,7 +21,7 @@ export default function DSAProgressPage() {
       setData(res.data);
       try {
         sessionStorage.setItem('cs_dsa_dash', JSON.stringify(res.data));
-      } catch (_) {}
+      } catch (_) { }
     }).catch(err => {
       console.error('Failed to load dashboard:', err);
     });

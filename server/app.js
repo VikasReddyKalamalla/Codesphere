@@ -1,4 +1,7 @@
-// CodeSphere Express Core App v1.0.7 - Auto sanitize event source & schema reload
+
+// CodeSphere Express Core App v1.0.8
+// Fixed: Production CORS, OPTIONS preflight handling & middleware ordering
+
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
@@ -8,82 +11,148 @@ const swaggerSpec = require('./config/swagger');
 const { apiLimiter, authLimiter } = require('./middlewares/rateLimit.middleware');
 const { performanceMonitoring } = require('./config/monitoring');
 
-const authRoutes         = require('./routes/auth.routes');
-const dashboardRoutes    = require('./routes/dashboard.routes');
-const learningRoutes     = require('./routes/learning.routes');
-const moduleRoutes       = require('./routes/module.routes');
-const lessonRoutes       = require('./routes/lesson.routes');
-const resourceRoutes     = require('./routes/resource.routes');
-const categoryRoutes     = require('./routes/category.routes');
-const bookmarkRoutes     = require('./routes/bookmark.routes');
-const downloadRoutes     = require('./routes/download.routes');
-const communityRoutes    = require('./routes/community.routes');
-const postRoutes         = require('./routes/post.routes');
-const commentRoutes      = require('./routes/comment.routes');
-const taskCommentRoutes  = require('./routes/taskComment.routes');
-const inviteRoutes       = require('./routes/invite.routes');
-const reportRoutes       = require('./routes/report.routes');
-const sessionRoutes      = require('./routes/session.routes');
-const reminderRoutes     = require('./routes/reminder.routes');
-const recordingRoutes    = require('./routes/recording.routes');
-const eventRoutes         = require('./routes/event.routes');
+const authRoutes = require('./routes/auth.routes');
+const dashboardRoutes = require('./routes/dashboard.routes');
+const learningRoutes = require('./routes/learning.routes');
+const moduleRoutes = require('./routes/module.routes');
+const lessonRoutes = require('./routes/lesson.routes');
+const resourceRoutes = require('./routes/resource.routes');
+const categoryRoutes = require('./routes/category.routes');
+const bookmarkRoutes = require('./routes/bookmark.routes');
+const downloadRoutes = require('./routes/download.routes');
+const communityRoutes = require('./routes/community.routes');
+const postRoutes = require('./routes/post.routes');
+const commentRoutes = require('./routes/comment.routes');
+const taskCommentRoutes = require('./routes/taskComment.routes');
+const inviteRoutes = require('./routes/invite.routes');
+const reportRoutes = require('./routes/report.routes');
+const sessionRoutes = require('./routes/session.routes');
+const reminderRoutes = require('./routes/reminder.routes');
+const recordingRoutes = require('./routes/recording.routes');
+const eventRoutes = require('./routes/event.routes');
 const eventCategoryRoutes = require('./routes/eventCategory.routes');
 const eventReminderRoutes = require('./routes/eventReminder.routes');
-const workspaceRoutes     = require('./routes/workspace.routes');
-const taskRoutes          = require('./routes/task.routes');
+const workspaceRoutes = require('./routes/workspace.routes');
+const taskRoutes = require('./routes/task.routes');
 const taskAttachmentRoutes = require('./routes/taskAttachment.routes');
-const milestoneRoutes     = require('./routes/milestone.routes');
-const codexRoutes         = require('./routes/codex.routes');
-const sandboxRoutes          = require('./routes/sandbox.routes');
-const sandboxStepRoutes      = require('./routes/sandboxStep.routes');
-const sandboxTemplateRoutes  = require('./routes/sandboxTemplate.routes');
+const milestoneRoutes = require('./routes/milestone.routes');
+const codexRoutes = require('./routes/codex.routes');
+const sandboxRoutes = require('./routes/sandbox.routes');
+const sandboxStepRoutes = require('./routes/sandboxStep.routes');
+const sandboxTemplateRoutes = require('./routes/sandboxTemplate.routes');
 const sandboxSubmissionRoutes = require('./routes/sandboxSubmission.routes');
-const testRoutes             = require('./routes/test.routes');
-const questionRoutes         = require('./routes/question.routes');
+const testRoutes = require('./routes/test.routes');
+const questionRoutes = require('./routes/question.routes');
 const questionCategoryRoutes = require('./routes/questionCategory.routes');
-const testAttemptRoutes      = require('./routes/testAttempt.routes');
-const profileRoutes      = require('./routes/profile.routes');
-const instructorRoutes   = require('./routes/instructor.routes');
-const adminRoutes        = require('./routes/admin.routes');
+const testAttemptRoutes = require('./routes/testAttempt.routes');
+const profileRoutes = require('./routes/profile.routes');
+const instructorRoutes = require('./routes/instructor.routes');
+const adminRoutes = require('./routes/admin.routes');
 const subscriptionRoutes = require('./routes/subscription.routes');
-const planRoutes         = require('./routes/plan.routes');
-const billingRoutes      = require('./routes/billing.routes');
-const invoiceRoutes      = require('./routes/invoice.routes');
-const paymentRoutes      = require('./routes/payment.routes');
-const featureRoutes      = require('./routes/feature.routes');
+const planRoutes = require('./routes/plan.routes');
+const billingRoutes = require('./routes/billing.routes');
+const invoiceRoutes = require('./routes/invoice.routes');
+const paymentRoutes = require('./routes/payment.routes');
+const featureRoutes = require('./routes/feature.routes');
 const notificationRoutes = require('./routes/notification.routes');
-const templateRoutes     = require('./routes/template.routes');
-const preferenceRoutes   = require('./routes/preference.routes');
+const templateRoutes = require('./routes/template.routes');
+const preferenceRoutes = require('./routes/preference.routes');
 const announcementRoutes = require('./routes/announcement.routes');
-const logRoutes          = require('./routes/log.routes');
-const applicationRoutes  = require('./routes/application.routes');
-const instructorCourseRoutes   = require('./routes/instructorCourse.routes');
-const instructorStudentRoutes  = require('./routes/instructorStudent.routes');
+const logRoutes = require('./routes/log.routes');
+const applicationRoutes = require('./routes/application.routes');
+const instructorCourseRoutes = require('./routes/instructorCourse.routes');
+const instructorStudentRoutes = require('./routes/instructorStudent.routes');
 const instructorAnalyticsRoutes = require('./routes/instructorAnalytics.routes');
 const instructorCertificateRoutes = require('./routes/instructorCertificate.routes');
 
 const cloudWorkspaceRoutes = require('./routes/cloudWorkspace.routes');
 const dsaRoutes = require('./routes/dsa.routes');
 const networkRoutes = require('./routes/network.routes');
+
 const cloudWorkspaceProxyHandler = require('./middlewares/cloudWorkspaceProxy.middleware');
 const errorMiddleware = require('./middlewares/error.middleware');
 
 const app = express();
 
-// ─── Reverse Proxy for Cloud Workspace containers ──────────────────
-app.use('/workspace-proxy', cloudWorkspaceProxyHandler);
+// ─── PRODUCTION CORS CONFIGURATION ───────────────────────────────────────
 
-// ─── Global Middlewares ───────────────────────────────────────────────────────
-const allowedOrigins = (process.env.ALLOWED_ORIGINS || 'http://localhost:5173').split(',');
+// Read allowed frontend URLs from Render environment variables.
+const configuredOrigins = [
+  process.env.ALLOWED_ORIGINS,
+  process.env.CLIENT_URL
+]
+  .filter(Boolean)
+  .flatMap(value => value.split(','));
 
-// Security headers (allow VS Code iframe to load from same origin & Firebase Auth popups)
+const allowedOrigins = new Set([
+  ...configuredOrigins,
+
+  // CodeSphere deployed frontend
+  'https://codesphere-frontend-v7ea.onrender.com',
+
+  // Local development
+  'http://localhost:5173',
+  'http://127.0.0.1:5173'
+].map(origin => origin.trim().replace(/\/$/, '')));
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // Allow requests without an Origin header (server-to-server).
+    if (!origin) {
+      return callback(null, true);
+    }
+
+    const normalizedOrigin = origin.replace(/\/$/, '');
+
+    if (
+      allowedOrigins.has(normalizedOrigin) ||
+      /^http:\/\/localhost:\d+$/.test(normalizedOrigin) ||
+      /^http:\/\/127\.0\.0\.1:\d+$/.test(normalizedOrigin)
+    ) {
+      return callback(null, true);
+    }
+
+    console.warn('[CORS] Blocked origin:', origin);
+
+    // Reject unapproved origins without generating an application 500.
+    return callback(null, false);
+  },
+
+  methods: [
+    'GET',
+    'POST',
+    'PUT',
+    'PATCH',
+    'DELETE',
+    'OPTIONS',
+    'HEAD'
+  ],
+
+  credentials: true,
+
+  // Reflect requested headers, including authorization headers.
+  optionsSuccessStatus: 204,
+  maxAge: 86400
+};
+
+// IMPORTANT:
+// CORS must be registered before API routes, rate limiting
+// and reverse proxy middleware so OPTIONS requests are handled first.
+
+app.use(cors(corsOptions));
+
+// ─── SECURITY HEADERS ───────────────────────────────────────────────────
+
 app.use(helmet({
-  contentSecurityPolicy: false,   // VS Code Web sets its own CSP
-  frameguard: false,              // we control X-Frame-Options per-route
-  crossOriginOpenerPolicy: { policy: "same-origin-allow-popups" },
+  contentSecurityPolicy: false,
+  frameguard: false,
+  crossOriginOpenerPolicy: {
+    policy: 'same-origin-allow-popups'
+  }
 }));
 
-// Compression with optimized level and threshold
+// ─── COMPRESSION ────────────────────────────────────────────────────────
+
 app.use(compression({
   level: 6,
   threshold: 1024,
@@ -93,147 +162,187 @@ app.use(compression({
   }
 }));
 
-// Performance monitoring
+// ─── PERFORMANCE MONITORING ─────────────────────────────────────────────
+
 app.use(performanceMonitoring);
 
-// Rate limiting
+// ─── RATE LIMITING ──────────────────────────────────────────────────────
+
+// CORS is already applied, so preflight requests are handled before
+// reaching the API rate limiter.
+
 app.use('/api/', apiLimiter);
 
-app.use(cors({
-  origin: (origin, callback) => {
-    if (
-      !origin ||
-      allowedOrigins.includes(origin) ||
-      origin.startsWith('http://localhost:') ||
-      origin.startsWith('http://127.0.0.1:')
-    ) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true
-}));
-const { sanitizeNoSQL, sanitizeXSS, securityHeaders } = require('./middlewares/security.middleware');
+// ─── SECURITY & REQUEST SANITIZATION ────────────────────────────────────
+
+const {
+  sanitizeNoSQL,
+  sanitizeXSS,
+  securityHeaders
+} = require('./middlewares/security.middleware');
 
 app.use(express.json({ limit: '1mb' }));
-app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+app.use(express.urlencoded({
+  extended: true,
+  limit: '1mb'
+}));
+
 app.use(securityHeaders);
 app.use(sanitizeNoSQL);
 app.use(sanitizeXSS);
 
-// ─── Static Uploads ──────────────────────────────────────────────────────────
-const staticOptions = { maxAge: '1d', etag: true };
-app.use('/uploads', express.static('uploads', staticOptions));
-app.use('/preview', express.static(require('path').join(__dirname, 'uploads/workspaces'), staticOptions));
-app.use('/mock-resources-proxy', express.static(require('path').join(__dirname, '../notes(resources)'), staticOptions));
+// ─── REVERSE PROXY FOR CLOUD WORKSPACE ──────────────────────────────────
 
-// ─── API Routes ──────────────────────────────────────────────────────────────
-app.use('/api/auth',          authRoutes);
-app.use('/api/dashboard',     dashboardRoutes);
-app.use('/api/learning',      learningRoutes);
-app.use('/api/modules',       moduleRoutes);
-app.use('/api/lessons',       lessonRoutes);
-app.use('/api/resources',     resourceRoutes);
-app.use('/api/categories',    categoryRoutes);
-app.use('/api/bookmarks',     bookmarkRoutes);
-app.use('/api/downloads',     downloadRoutes);
-app.use('/api/community',     communityRoutes);
-app.use('/api/communities',   communityRoutes);
-app.use('/api/posts',         postRoutes);
+app.use('/workspace-proxy', cloudWorkspaceProxyHandler);
+
+// ─── STATIC UPLOADS ─────────────────────────────────────────────────────
+
+const staticOptions = {
+  maxAge: '1d',
+  etag: true
+};
+
+app.use('/uploads', express.static('uploads', staticOptions));
+
+app.use(
+  '/preview',
+  express.static(
+    require('path').join(__dirname, 'uploads/workspaces'),
+    staticOptions
+  )
+);
+
+app.use(
+  '/mock-resources-proxy',
+  express.static(
+    require('path').join(__dirname, '../notes(resources)'),
+    staticOptions
+  )
+);
+
+// ─── API ROUTES ─────────────────────────────────────────────────────────
+
+app.use('/api/auth', authRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/learning', learningRoutes);
+app.use('/api/modules', moduleRoutes);
+app.use('/api/lessons', lessonRoutes);
+app.use('/api/resources', resourceRoutes);
+app.use('/api/categories', categoryRoutes);
+app.use('/api/bookmarks', bookmarkRoutes);
+app.use('/api/downloads', downloadRoutes);
+app.use('/api/community', communityRoutes);
+app.use('/api/communities', communityRoutes);
+app.use('/api/posts', postRoutes);
 app.use('/api/post-comments', commentRoutes);
-app.use('/api/invites',       inviteRoutes);
-app.use('/api/reports',       reportRoutes);
-app.use('/api/sessions',      sessionRoutes);
-app.use('/api/reminders',     reminderRoutes);
-app.use('/api/recordings',    recordingRoutes);
-app.use('/api/events',           eventRoutes);
+app.use('/api/invites', inviteRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/sessions', sessionRoutes);
+app.use('/api/reminders', reminderRoutes);
+app.use('/api/recordings', recordingRoutes);
+app.use('/api/events', eventRoutes);
 app.use('/api/event-categories', eventCategoryRoutes);
-app.use('/api/event-reminders',  eventReminderRoutes);
-app.use('/api/workspaces',       workspaceRoutes);
-app.use('/api/tasks',            taskRoutes);
-app.use('/api/task-comments',    taskCommentRoutes);
-app.use('/api/attachments',      taskAttachmentRoutes);
-app.use('/api/milestones',       milestoneRoutes);
-app.use('/api/codex/projects',   codexRoutes);
-app.use('/api/codex',            workspaceRoutes);
-app.use('/api/sandbox',            sandboxRoutes);
-app.use('/api/steps',              sandboxStepRoutes);
-app.use('/api/templates',          sandboxTemplateRoutes);
-app.use('/api/submissions',        sandboxSubmissionRoutes);
-app.use('/api/tests',            testRoutes);
-app.use('/api/questions',        questionRoutes);
+app.use('/api/event-reminders', eventReminderRoutes);
+app.use('/api/workspaces', workspaceRoutes);
+app.use('/api/tasks', taskRoutes);
+app.use('/api/task-comments', taskCommentRoutes);
+app.use('/api/attachments', taskAttachmentRoutes);
+app.use('/api/milestones', milestoneRoutes);
+app.use('/api/codex/projects', codexRoutes);
+app.use('/api/codex', workspaceRoutes);
+app.use('/api/sandbox', sandboxRoutes);
+app.use('/api/steps', sandboxStepRoutes);
+app.use('/api/templates', sandboxTemplateRoutes);
+app.use('/api/submissions', sandboxSubmissionRoutes);
+app.use('/api/tests', testRoutes);
+app.use('/api/questions', questionRoutes);
 app.use('/api/question-categories', questionCategoryRoutes);
-app.use('/api/attempts',         testAttemptRoutes);
-app.use('/api/profile',          profileRoutes);
-app.use('/api/instructor',    instructorRoutes);
-app.use('/api/admin',         adminRoutes);
-app.use('/api/instructor-applications',   applicationRoutes);
-app.use('/api/instructor-courses',        instructorCourseRoutes);
-app.use('/api/instructor-students',       instructorStudentRoutes);
-app.use('/api/instructor-analytics',      instructorAnalyticsRoutes);
-app.use('/api/instructor-certificates',   instructorCertificateRoutes);
-const couponRoutes       = require('./routes/coupon.routes');
-const referralRoutes     = require('./routes/referral.routes');
-const usageRoutes        = require('./routes/usage.routes');
+app.use('/api/attempts', testAttemptRoutes);
+app.use('/api/profile', profileRoutes);
+app.use('/api/instructor', instructorRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/instructor-applications', applicationRoutes);
+app.use('/api/instructor-courses', instructorCourseRoutes);
+app.use('/api/instructor-students', instructorStudentRoutes);
+app.use('/api/instructor-analytics', instructorAnalyticsRoutes);
+app.use('/api/instructor-certificates', instructorCertificateRoutes);
+
+// Additional route modules
+const couponRoutes = require('./routes/coupon.routes');
+const referralRoutes = require('./routes/referral.routes');
+const usageRoutes = require('./routes/usage.routes');
 const organizationRoutes = require('./routes/organization.routes');
 const codeExecutionRoutes = require('./routes/codeExecution.routes');
 const liveStreamRoutes = require('./routes/liveStream.routes');
 const analyticsAdvancedRoutes = require('./routes/analyticsAdvanced.routes');
 const backupRoutes = require('./routes/backup.routes');
 const webIDERoutes = require('./routes/webIDE.routes');
-
 const settingsRoutes = require('./routes/settings.routes');
 
-app.use('/api/coupons',       couponRoutes);
-app.use('/api/referrals',     referralRoutes);
-app.use('/api/usage',         usageRoutes);
+app.use('/api/coupons', couponRoutes);
+app.use('/api/referrals', referralRoutes);
+app.use('/api/usage', usageRoutes);
 app.use('/api/organizations', organizationRoutes);
-app.use('/api/execute',       codeExecutionRoutes);
-app.use('/api/streaming',     liveStreamRoutes);
-app.use('/api/analytics',     analyticsAdvancedRoutes);
-app.use('/api/backups',       backupRoutes);
+app.use('/api/execute', codeExecutionRoutes);
+app.use('/api/streaming', liveStreamRoutes);
+app.use('/api/analytics', analyticsAdvancedRoutes);
+app.use('/api/backups', backupRoutes);
 app.use('/api/cloud-workspace', cloudWorkspaceRoutes);
-app.use('/api/dsa',             dsaRoutes);
-app.use('/api/ide',           webIDERoutes);
+app.use('/api/dsa', dsaRoutes);
+app.use('/api/ide', webIDERoutes);
 app.use('/api/subscriptions', subscriptionRoutes);
-app.use('/api/plans',         planRoutes);
-app.use('/api/billing',       billingRoutes);
-app.use('/api/invoices',      invoiceRoutes);
-app.use('/api/payments',      paymentRoutes);
-app.use('/api/features',                featureRoutes);
-app.use('/api/notifications',           notificationRoutes);
-app.use('/api/notification-templates',  templateRoutes);
-app.use('/api/notification-preferences',preferenceRoutes);
-app.use('/api/announcements',           announcementRoutes);
-app.use('/api/notification-logs',       logRoutes);
-app.use('/api/network',                  networkRoutes);
-app.use('/api/settings',                 settingsRoutes);
+app.use('/api/plans', planRoutes);
+app.use('/api/billing', billingRoutes);
+app.use('/api/invoices', invoiceRoutes);
+app.use('/api/payments', paymentRoutes);
+app.use('/api/features', featureRoutes);
+app.use('/api/notifications', notificationRoutes);
+app.use('/api/notification-templates', templateRoutes);
+app.use('/api/notification-preferences', preferenceRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/notification-logs', logRoutes);
+app.use('/api/network', networkRoutes);
+app.use('/api/settings', settingsRoutes);
 
-// ─── Basic Route ───────────────────────────────────────────────────────────────
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  swaggerOptions: {
-    url: '/api/swagger-spec',
-  },
-}));
+// ─── SWAGGER API DOCUMENTATION ──────────────────────────────────────────
+
+app.use(
+  '/api-docs',
+  swaggerUi.serve,
+  swaggerUi.setup(swaggerSpec, {
+    swaggerOptions: {
+      url: '/api/swagger-spec'
+    }
+  })
+);
 
 app.get('/api/swagger-spec', (req, res) => {
   res.json(swaggerSpec);
 });
 
-// ─── Health Check ─────────────────────────────────────────────────────────────
+// ─── BASIC ROUTE ────────────────────────────────────────────────────────
+
 app.get('/', (req, res) => {
-  res.json({ message: 'CodeSphere API is running' });
+  res.json({
+    message: 'CodeSphere API is running'
+  });
 });
+
+// ─── HEALTH CHECK ───────────────────────────────────────────────────────
 
 app.get('/health', async (req, res) => {
   const { getHealthStatus } = require('./config/monitoring');
   const mongoose = require('mongoose');
+
   const health = await getHealthStatus(mongoose);
-  res.status(health.status === 'healthy' ? 200 : 503).json(health);
+
+  res.status(
+    health.status === 'healthy' ? 200 : 503
+  ).json(health);
 });
 
-// ─── Global Error Handler ────────────────────────────────────────────────────
+// ─── GLOBAL ERROR HANDLER ───────────────────────────────────────────────
+
 app.use(errorMiddleware);
 
 module.exports = app;
